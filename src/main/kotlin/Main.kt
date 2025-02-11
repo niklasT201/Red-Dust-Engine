@@ -6,36 +6,15 @@ import javax.swing.SwingUtilities
 
 fun main() {
     SwingUtilities.invokeLater {
-        val frame = JFrame("3D Game Editor")
+        val frame = JFrame("3D Engine")
         frame.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
 
         val game = Game3D()
-        val gridEditor = GridEditor(800, 600)
-        val editorUI = EditorUI(game)
-
-        // Set up the bidirectional references
-        gridEditor.setGame(game)
-
-        val contentPane = JPanel(CardLayout())
-        contentPane.add(game, "game")
-        contentPane.add(gridEditor, "editor")
-
-        // Set up the components
-        game.setComponents(contentPane, editorUI, gridEditor)
-
-        // Initially hide the sidebar
-        editorUI.sideBar.isVisible = false
-
-        frame.jMenuBar = editorUI.createMenuBar()
-        frame.add(contentPane, BorderLayout.CENTER)
-        frame.add(editorUI.sideBar, BorderLayout.WEST)
-
+        frame.add(game)
         frame.pack()
         frame.setLocationRelativeTo(null)
         frame.isVisible = true
-        game.requestFocusInWindow()
 
-        // Game update loop
         Thread {
             while (true) {
                 game.update()

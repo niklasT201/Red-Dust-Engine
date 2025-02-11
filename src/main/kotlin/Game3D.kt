@@ -7,13 +7,9 @@ class Game3D : JPanel(), KeyListener, MouseMotionListener {
     private val camera = Camera(Vec3(0.0, 1.7, -5.0))
     private val renderer = Renderer(800, 600)
     private val keysPressed = mutableSetOf<Int>()
-    private var editorMode = false
-    private lateinit var contentPane: JPanel
-    private lateinit var editorUI: EditorUI
-    private lateinit var gridEditor: GridEditor
-
-    // Empty lists for walls and floors - will be populated by editor
-    private val walls = mutableListOf<Wall>()
+    private val walls = listOf(
+        Wall(Vec3(-2.0, 0.0, 2.0), Vec3(2.0, 0.0, 2.0), 3.0, Color(150, 0, 0))
+    )
     private val floors = mutableListOf<Floor>()
 
     init {
@@ -21,53 +17,27 @@ class Game3D : JPanel(), KeyListener, MouseMotionListener {
         isFocusable = true
         addKeyListener(this)
         addMouseMotionListener(this)
-
+        // Create 3x3 floor grid
+        for (x in -1..1) {
+            for (z in -1..1) {
+                floors.add(
+                    Floor(
+                        x1 = x.toDouble() * 2.0,
+                        z1 = z.toDouble() * 2.0,
+                        x2 = (x + 1).toDouble() * 2.0,
+                        z2 = (z + 1).toDouble() * 2.0,
+                        y = 0.0,
+                        color = if ((x + z) % 2 == 0) Color(100, 100, 100) else Color(150, 150, 150)
+                    )
+                )
+            }
+        }
         cursor = Toolkit.getDefaultToolkit().createCustomCursor(
             BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB),
             Point(8, 8),
             "blank"
         )
     }
-
-    fun setComponents(contentPane: JPanel, editorUI: EditorUI, gridEditor: GridEditor) {
-        this.contentPane = contentPane
-        this.editorUI = editorUI
-        this.gridEditor = gridEditor
-    }
-
-    fun updateGeometry(editorWalls: List<Wall>, editorFloors: List<Floor>) {
-        walls.clear()
-        floors.clear()
-        walls.addAll(editorWalls)
-        floors.addAll(editorFloors)
-        repaint()
-    }
-
-    private fun toggleEditorMode() {
-        editorMode = !editorMode
-        val cardLayout = contentPane.layout as CardLayout
-
-        if (editorMode) {
-            cardLayout.show(contentPane, "editor")
-            cursor = Cursor.getDefaultCursor()
-            editorUI.sideBar.isVisible = true
-            gridEditor.requestFocusInWindow()
-        } else {
-            // Update the game geometry when switching back to game mode
-            updateGeometry(gridEditor.getWalls(), gridEditor.getFloors())
-            cardLayout.show(contentPane, "game")
-            cursor = Toolkit.getDefaultToolkit().createCustomCursor(
-                BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB),
-                Point(8, 8),
-                "blank"
-            )
-            editorUI.sideBar.isVisible = false
-            requestFocusInWindow()
-        }
-
-        editorUI.updateModeButton()
-    }
-
     override fun paintComponent(g: Graphics) {
         super.paintComponent(g)
         val g2 = g as Graphics2D
@@ -126,14 +96,7 @@ class Game3D : JPanel(), KeyListener, MouseMotionListener {
             // Handle potential security exceptions
         }
     }
-
-    override fun keyPressed(e: KeyEvent) {
-        keysPressed.add(e.keyCode)
-
-        if (e.keyCode == KeyEvent.VK_E) {
-            toggleEditorMode()
-        }
-    }
+    override fun keyPressed(e: KeyEvent) { keysPressed.add(e.keyCode) }
     override fun keyReleased(e: KeyEvent) { keysPressed.remove(e.keyCode) }
     override fun keyTyped(e: KeyEvent) {}
     override fun mouseDragged(e: MouseEvent) {}
