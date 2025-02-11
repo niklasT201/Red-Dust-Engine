@@ -22,10 +22,12 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
         val wrapperPanel = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             background = Color(40, 44, 52)
+
+            add(Box.createVerticalStrut(10))
             add(modeButton)
             add(Box.createVerticalStrut(10))
             add(JSeparator())
-            add(Box.createVerticalStrut(10))
+            add(Box.createVerticalStrut(-150))   // Reduced from 10 to 5
             add(mainPanel)
             // Add glue at the bottom to push everything up
             add(Box.createVerticalGlue())

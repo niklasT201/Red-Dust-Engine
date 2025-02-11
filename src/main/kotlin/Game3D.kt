@@ -1,6 +1,8 @@
 import java.awt.*
 import java.awt.event.*
 import javax.swing.*
+import kotlin.math.cos
+import kotlin.math.sin
 
 class Game3D : JPanel() {
     private val camera = Camera(Vec3(0.0, 1.7, -5.0))
@@ -46,6 +48,7 @@ class Game3D : JPanel() {
         val menuBar = JMenuBar()
         menuBar.add(createFileMenu())
         menuBar.add(createEditMenu())
+        menuBar.add(createControlsMenu())
         menuBar.add(createHelpMenu())
         add(menuBar, BorderLayout.NORTH)
 
@@ -80,6 +83,18 @@ class Game3D : JPanel() {
         return JMenu("Help").apply {
             add(JMenuItem("Documentation"))
             add(JMenuItem("About"))
+        }
+    }
+
+    private fun createControlsMenu(): JMenu {
+        return JMenu("Controls").apply {
+            add(JMenuItem("WASD: Movement"))
+            add(JMenuItem("Mouse: Look around"))
+            add(JMenuItem("Space: Jump/Up"))
+            add(JMenuItem("Shift: Crouch/Down"))
+            add(JMenuItem("E: Toggle Editor Mode"))
+            addSeparator()
+            add(JMenuItem("Configure Controls..."))
         }
     }
 
@@ -156,6 +171,7 @@ class Game3D : JPanel() {
             var right = 0.0
             var up = 0.0
 
+            // Get movement input
             if (KeyEvent.VK_W in keysPressed) forward += 1.0
             if (KeyEvent.VK_S in keysPressed) forward -= 1.0
             if (KeyEvent.VK_A in keysPressed) right -= 1.0
@@ -163,8 +179,17 @@ class Game3D : JPanel() {
             if (KeyEvent.VK_SPACE in keysPressed) up += 1.0
             if (KeyEvent.VK_SHIFT in keysPressed) up -= 1.0
 
-            camera.move(forward, right, up)
+            // Calculate movement based on camera direction
+            val moveSpeed = 0.05
+            val cosYaw = cos(camera.yaw)
+            val sinYaw = sin(camera.yaw)
 
+            // Forward/backward movement in camera direction
+            camera.position.x += (forward * sinYaw + right * cosYaw) * moveSpeed
+            camera.position.z += (forward * cosYaw - right * sinYaw) * moveSpeed
+            camera.position.y += up * moveSpeed
+
+            // Apply position constraints
             val margin = 0.5
             camera.position.x = camera.position.x.coerceIn(-5.0 + margin, 5.0 - margin)
             camera.position.z = camera.position.z.coerceIn(-5.0 + margin, 5.0 - margin)
