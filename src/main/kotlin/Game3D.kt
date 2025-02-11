@@ -12,10 +12,8 @@ class Game3D : JPanel(), KeyListener, MouseMotionListener {
     private lateinit var editorUI: EditorUI
     private lateinit var gridEditor: GridEditor
 
-    private val walls = mutableListOf(
-        Wall(Vec3(-2.0, 0.0, 2.0), Vec3(2.0, 0.0, 2.0), 3.0, Color(150, 0, 0))
-    )
-
+    // Empty lists for walls and floors - will be populated by editor
+    private val walls = mutableListOf<Wall>()
     private val floors = mutableListOf<Floor>()
 
     init {
@@ -23,22 +21,6 @@ class Game3D : JPanel(), KeyListener, MouseMotionListener {
         isFocusable = true
         addKeyListener(this)
         addMouseMotionListener(this)
-
-        // Create 3x3 floor grid
-        for (x in -1..1) {
-            for (z in -1..1) {
-                floors.add(
-                    Floor(
-                        x1 = x.toDouble() * 2.0,
-                        z1 = z.toDouble() * 2.0,
-                        x2 = (x + 1).toDouble() * 2.0,
-                        z2 = (z + 1).toDouble() * 2.0,
-                        y = 0.0,
-                        color = if ((x + z) % 2 == 0) Color(100, 100, 100) else Color(150, 150, 150)
-                    )
-                )
-            }
-        }
 
         cursor = Toolkit.getDefaultToolkit().createCustomCursor(
             BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB),
@@ -53,6 +35,14 @@ class Game3D : JPanel(), KeyListener, MouseMotionListener {
         this.gridEditor = gridEditor
     }
 
+    fun updateGeometry(editorWalls: List<Wall>, editorFloors: List<Floor>) {
+        walls.clear()
+        floors.clear()
+        walls.addAll(editorWalls)
+        floors.addAll(editorFloors)
+        repaint()
+    }
+
     private fun toggleEditorMode() {
         editorMode = !editorMode
         val cardLayout = contentPane.layout as CardLayout
@@ -63,6 +53,8 @@ class Game3D : JPanel(), KeyListener, MouseMotionListener {
             editorUI.sideBar.isVisible = true
             gridEditor.requestFocusInWindow()
         } else {
+            // Update the game geometry when switching back to game mode
+            updateGeometry(gridEditor.getWalls(), gridEditor.getFloors())
             cardLayout.show(contentPane, "game")
             cursor = Toolkit.getDefaultToolkit().createCustomCursor(
                 BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB),

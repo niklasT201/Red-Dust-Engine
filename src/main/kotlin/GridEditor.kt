@@ -6,7 +6,7 @@ import kotlin.math.round
 class GridEditor(
     private val width: Int,
     private val height: Int,
-    private val cellSize: Int = 50
+    private val cellSize: Int = 50  // This defines the size of walls and floors
 ) : JPanel(), KeyListener {
     private var cameraOffset = Vec3(0.0, 0.0, 0.0)
     private var lastMousePos = Point(0, 0)
@@ -76,10 +76,23 @@ class GridEditor(
             e.y - cameraOffset.y
         )
 
+        // Create a square wall segment
+        val wallLength = cellSize.toDouble()
         val start = Vec3(gridX, 0.0, gridY)
-        val end = Vec3(gridX + cellSize, 0.0, gridY)
+        val end = Vec3(gridX + wallLength, 0.0, gridY)
+
+        // Wall height of 3.0 units (about twice player height)
         walls.add(Wall(start, end, 3.0, Color.RED))
+
+        // Add the perpendicular wall to make it square
+        val start2 = Vec3(gridX + wallLength, 0.0, gridY)
+        val end2 = Vec3(gridX + wallLength, 0.0, gridY + wallLength)
+        walls.add(Wall(start2, end2, 3.0, Color.RED))
+
         repaint()
+
+        // Update the game view immediately
+        game.updateGeometry(walls, floors)
     }
 
     private fun handleFloorPlacement(e: MouseEvent) {
@@ -88,12 +101,17 @@ class GridEditor(
             e.y - cameraOffset.y
         )
 
+        // Create a square floor tile
         floors.add(Floor(
             gridX, gridY,
             gridX + cellSize, gridY + cellSize,
             0.0, Color.GRAY
         ))
+
         repaint()
+
+        // Update the game view immediately
+        game.updateGeometry(walls, floors)
     }
 
     private fun handlePlayerPlacement(e: MouseEvent) {
