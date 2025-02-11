@@ -7,8 +7,12 @@ class Game3D : JPanel(), KeyListener, MouseMotionListener {
     private val camera = Camera(Vec3(0.0, 1.7, -5.0))
     private val renderer = Renderer(800, 600)
     private val keysPressed = mutableSetOf<Int>()
+    private var editorMode = false
+    private lateinit var contentPane: JPanel
+    private lateinit var editorUI: EditorUI
+    private lateinit var gridEditor: GridEditor
 
-    private val walls = listOf(
+    private val walls = mutableListOf(
         Wall(Vec3(-2.0, 0.0, 2.0), Vec3(2.0, 0.0, 2.0), 3.0, Color(150, 0, 0))
     )
 
@@ -41,6 +45,35 @@ class Game3D : JPanel(), KeyListener, MouseMotionListener {
             Point(8, 8),
             "blank"
         )
+    }
+
+    fun setComponents(contentPane: JPanel, editorUI: EditorUI, gridEditor: GridEditor) {
+        this.contentPane = contentPane
+        this.editorUI = editorUI
+        this.gridEditor = gridEditor
+    }
+
+    private fun toggleEditorMode() {
+        editorMode = !editorMode
+        val cardLayout = contentPane.layout as CardLayout
+
+        if (editorMode) {
+            cardLayout.show(contentPane, "editor")
+            cursor = Cursor.getDefaultCursor()
+            editorUI.sideBar.isVisible = true
+            gridEditor.requestFocusInWindow()
+        } else {
+            cardLayout.show(contentPane, "game")
+            cursor = Toolkit.getDefaultToolkit().createCustomCursor(
+                BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB),
+                Point(8, 8),
+                "blank"
+            )
+            editorUI.sideBar.isVisible = false
+            requestFocusInWindow()
+        }
+
+        editorUI.updateModeButton()
     }
 
     override fun paintComponent(g: Graphics) {
@@ -102,7 +135,13 @@ class Game3D : JPanel(), KeyListener, MouseMotionListener {
         }
     }
 
-    override fun keyPressed(e: KeyEvent) { keysPressed.add(e.keyCode) }
+    override fun keyPressed(e: KeyEvent) {
+        keysPressed.add(e.keyCode)
+
+        if (e.keyCode == KeyEvent.VK_E) {
+            toggleEditorMode()
+        }
+    }
     override fun keyReleased(e: KeyEvent) { keysPressed.remove(e.keyCode) }
     override fun keyTyped(e: KeyEvent) {}
     override fun mouseDragged(e: MouseEvent) {}

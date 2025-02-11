@@ -1,141 +1,89 @@
+import javax.swing.*
 import java.awt.*
 import java.awt.event.*
 import java.io.File
-import javax.swing.*
 import javax.swing.filechooser.FileNameExtensionFilter
 
 class EditorUI(private val game: Game3D) {
-    val sideBar: JPanel
-    lateinit var modeButton: JButton
-    lateinit var toolButtons: Map<EditorTool, JRadioButton>
-    var currentFloorLevel = 0
-
-    enum class EditorTool {
-        WALL, FLOOR, PLAYER, MOVE
-    }
-
-    private var selectedTool = EditorTool.WALL
+    val sideBar = JPanel()
+    private val gridEditor = GridEditor(800, 600)
     private var isEditMode = true
+    private var currentFloorLevel = 0
+    private lateinit var modeButton: JButton
+    private lateinit var floorLevelLabel: JLabel
 
     init {
-        sideBar = createSideBar()
+        setupSideBar()
     }
 
-    fun createMenuBar(): JMenuBar {
-        val menuBar = JMenuBar()
-
-        // File Menu
-        val fileMenu = JMenu("File")
-        val saveItem = JMenuItem("Save Map").apply {
-            accelerator = KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK)
+    private fun setupSideBar() {
+        sideBar.apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
+            background = Color(60, 60, 60)
+            preferredSize = Dimension(200, game.height)
         }
-        val loadItem = JMenuItem("Load Map").apply {
-            accelerator = KeyStroke.getKeyStroke(KeyEvent.VK_O, InputEvent.CTRL_DOWN_MASK)
-        }
-
-        saveItem.addActionListener {
-            val fileChooser = JFileChooser().apply {
-                fileFilter = FileNameExtensionFilter("Map Files (*.map)", "map")
-            }
-            if (fileChooser.showSaveDialog(game) == JFileChooser.APPROVE_OPTION) {
-                var file = fileChooser.selectedFile
-                if (!file.name.endsWith(".map")) {
-                    file = File(file.absolutePath + ".map")
-                }
-                // Implement saveMap functionality
-            }
-        }
-
-        loadItem.addActionListener {
-            val fileChooser = JFileChooser().apply {
-                fileFilter = FileNameExtensionFilter("Map Files (*.map)", "map")
-            }
-            if (fileChooser.showOpenDialog(game) == JFileChooser.APPROVE_OPTION) {
-                // Implement loadMap functionality
-            }
-        }
-
-        // Help Menu
-        val helpMenu = JMenu("Help")
-        val controlsItem = JMenuItem("Controls")
-        controlsItem.addActionListener {
-            showControlsDialog()
-        }
-
-        fileMenu.add(saveItem)
-        fileMenu.add(loadItem)
-        helpMenu.add(controlsItem)
-        menuBar.add(fileMenu)
-        menuBar.add(helpMenu)
-
-        return menuBar
-    }
-
-    private fun createSideBar(): JPanel {
-        val panel = JPanel()
-        panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
-        panel.border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
-        panel.preferredSize = Dimension(200, game.height)
-        panel.background = Color(60, 60, 60)
 
         // Mode Section
-        panel.add(createSectionLabel("Mode"))
+        addSectionLabel("Mode")
+        setupModeToggle()
+        sideBar.add(Box.createVerticalStrut(20))
+
+        // Tools Section
+        addSectionLabel("Tools")
+        setupToolButtons()
+        sideBar.add(Box.createVerticalStrut(20))
+
+        // Floor Controls
+        addFloorControls()
+        sideBar.add(Box.createVerticalStrut(20))
+
+        // Clear Button
+        addClearButton()
+    }
+
+    private fun addSectionLabel(text: String) {
+        sideBar.add(JLabel(text).apply {
+            foreground = Color.WHITE
+            font = font.deriveFont(Font.BOLD, 14f)
+            alignmentX = Component.LEFT_ALIGNMENT
+            maximumSize = Dimension(180, 25)
+        })
+    }
+
+    private fun setupModeToggle() {
         modeButton = JButton(if (isEditMode) "Edit Mode" else "Play Mode").apply {
             alignmentX = Component.LEFT_ALIGNMENT
             maximumSize = Dimension(180, 30)
-        }
-        modeButton.addActionListener {
-            isEditMode = !isEditMode
-            updateModeButton()
-            game.requestFocusInWindow()
-        }
-        panel.add(modeButton)
-        panel.add(Box.createVerticalStrut(20))
-
-        // Tools Section
-        panel.add(createSectionLabel("Tools"))
-        val toolGroup = ButtonGroup()
-        toolButtons = mutableMapOf()
-
-        for (tool in EditorTool.values()) {
-            val radioButton = JRadioButton(tool.name).apply {
-                foreground = Color.WHITE
-                background = panel.background
-                isSelected = selectedTool == tool
-                alignmentX = Component.LEFT_ALIGNMENT
-                maximumSize = Dimension(180, 25)
-            }
-            radioButton.addActionListener {
-                selectedTool = tool
+            addActionListener {
+                isEditMode = !isEditMode
+                text = if (isEditMode) "Edit Mode" else "Play Mode"
                 game.requestFocusInWindow()
             }
-            toolGroup.add(radioButton)
-            panel.add(radioButton)
-            (toolButtons as MutableMap<EditorTool, JRadioButton>)[tool] = radioButton
         }
-        panel.add(Box.createVerticalStrut(20))
-
-        // Floor Controls
-        val floorControlsPanel = createFloorControls()
-        floorControlsPanel.alignmentX = Component.LEFT_ALIGNMENT
-        panel.add(floorControlsPanel)
-
-        // Clear Walls Button
-        panel.add(Box.createVerticalStrut(20))
-        val clearButton = JButton("Clear All").apply {
-            alignmentX = Component.LEFT_ALIGNMENT
-            maximumSize = Dimension(180, 30)
-        }
-        clearButton.addActionListener {
-            // Implement clear functionality
-            game.requestFocusInWindow()
-        }
-        panel.add(clearButton)
-
-        return panel
+        sideBar.add(modeButton)
     }
 
-    private fun createFloorControls(): JPanel {
+    private fun setupToolButtons() {
+        val toolGroup = ButtonGroup()
+        GridEditor.EditorTool.values().forEach { tool ->
+            JRadioButton(tool.name).apply {
+                foreground = Color.WHITE
+                background = sideBar.background
+                alignmentX = Component.LEFT_ALIGNMENT
+                maximumSize = Dimension(180, 25)
+                addActionListener {
+                    gridEditor.setTool(tool)
+                    game.requestFocusInWindow()
+                }
+                toolGroup.add(this)
+                sideBar.add(this)
+                isSelected = tool == GridEditor.EditorTool.WALL
+            }
+        }
+    }
+
+    private fun addFloorControls() {
         val floorControls = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.X_AXIS)
             background = Color(60, 60, 60)
@@ -143,46 +91,105 @@ class EditorUI(private val game: Game3D) {
             alignmentX = Component.LEFT_ALIGNMENT
         }
 
-        val floorLabel = JLabel("Floor Level: $currentFloorLevel").apply {
+        floorLevelLabel = JLabel("Floor Level: $currentFloorLevel").apply {
             foreground = Color.WHITE
         }
 
-        val decreaseFloorBtn = JButton("-").apply {
+        val decreaseBtn = JButton("-").apply {
             maximumSize = Dimension(40, 25)
-        }
-        decreaseFloorBtn.addActionListener {
-            if (currentFloorLevel > 0) {
-                currentFloorLevel--
-                floorLabel.text = "Floor Level: $currentFloorLevel"
-                game.repaint()
-            }
+            addActionListener { adjustFloorLevel(-1) }
         }
 
-        val increaseFloorBtn = JButton("+").apply {
+        val increaseBtn = JButton("+").apply {
             maximumSize = Dimension(40, 25)
-        }
-        increaseFloorBtn.addActionListener {
-            currentFloorLevel++
-            floorLabel.text = "Floor Level: $currentFloorLevel"
-            game.repaint()
+            addActionListener { adjustFloorLevel(1) }
         }
 
-        floorControls.add(decreaseFloorBtn)
-        floorControls.add(Box.createHorizontalStrut(10))
-        floorControls.add(floorLabel)
-        floorControls.add(Box.createHorizontalStrut(10))
-        floorControls.add(increaseFloorBtn)
-        floorControls.add(Box.createHorizontalGlue())
+        floorControls.apply {
+            add(decreaseBtn)
+            add(Box.createHorizontalStrut(10))
+            add(floorLevelLabel)
+            add(Box.createHorizontalStrut(10))
+            add(increaseBtn)
+            add(Box.createHorizontalGlue())
+        }
 
-        return floorControls
+        sideBar.add(floorControls)
     }
 
-    private fun createSectionLabel(text: String): JLabel {
-        return JLabel(text).apply {
-            foreground = Color.WHITE
-            font = font.deriveFont(Font.BOLD, 14f)
+    private fun adjustFloorLevel(delta: Int) {
+        if (currentFloorLevel + delta >= 0) {
+            currentFloorLevel += delta
+            floorLevelLabel.text = "Floor Level: $currentFloorLevel"
+            game.repaint()
+        }
+    }
+
+    private fun addClearButton() {
+        JButton("Clear All").apply {
             alignmentX = Component.LEFT_ALIGNMENT
-            maximumSize = Dimension(180, 25)
+            maximumSize = Dimension(180, 30)
+            addActionListener {
+                gridEditor.clearAll()
+                game.requestFocusInWindow()
+            }
+            sideBar.add(this)
+        }
+    }
+
+     fun createMenuBar(): JMenuBar {
+        val menuBar = JMenuBar()
+
+        // File Menu
+        val fileMenu = JMenu("File").apply {
+            add(createMenuItem("New", KeyEvent.VK_N) {
+                gridEditor.clearAll() // This will clear both walls and floors
+                gridEditor.repaint()
+            })
+            add(createMenuItem("Save", KeyEvent.VK_S) { showSaveDialog() })
+            add(createMenuItem("Load", KeyEvent.VK_O) { showLoadDialog() })
+        }
+
+        // Help Menu
+        val helpMenu = JMenu("Help").apply {
+            add(JMenuItem("Controls").apply {
+                addActionListener { showControlsDialog() }
+            })
+        }
+
+        menuBar.add(fileMenu)
+        menuBar.add(helpMenu)
+        return menuBar
+    }
+
+    private fun createMenuItem(text: String, keystroke: Int, action: () -> Unit): JMenuItem {
+        return JMenuItem(text).apply {
+            accelerator = KeyStroke.getKeyStroke(keystroke, InputEvent.CTRL_DOWN_MASK)
+            addActionListener { action() }
+        }
+    }
+
+    private fun showSaveDialog() {
+        JFileChooser().apply {
+            fileFilter = FileNameExtensionFilter("Map Files (*.map)", "map")
+            if (showSaveDialog(game) == JFileChooser.APPROVE_OPTION) {
+                var file = selectedFile
+                if (!file.name.endsWith(".map")) {
+                    file = File(file.absolutePath + ".map")
+                }
+                // Implement save functionality
+                // You'll need to implement the actual saving logic based on your map format
+            }
+        }
+    }
+
+    private fun showLoadDialog() {
+        JFileChooser().apply {
+            fileFilter = FileNameExtensionFilter("Map Files (*.map)", "map")
+            if (showOpenDialog(game) == JFileChooser.APPROVE_OPTION) {
+                // Implement load functionality
+                // You'll need to implement the actual loading logic based on your map format
+            }
         }
     }
 
@@ -215,5 +222,5 @@ class EditorUI(private val game: Game3D) {
     }
 
     fun isInEditMode(): Boolean = isEditMode
-    fun getSelectedTool(): EditorTool = selectedTool
+    fun getCurrentFloorLevel(): Int = currentFloorLevel
 }
