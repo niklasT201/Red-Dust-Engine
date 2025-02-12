@@ -24,6 +24,18 @@ fun main() {
 // player movement rotated
 // move top bar code to gui class
 // rotated mouse movement for north and south
+// walls rotation fixing
+// walls flickering fix
+// add cube walls optional button
+// add shortcuts for objects
+// visible player in editor
+// optional shadows
+// weapon system
+// create own weapons
+// damage system
+// all objects in editor menu
+// mode button add a bit space
+// grid cell map infinite range
 
 // image support
 // FPS show

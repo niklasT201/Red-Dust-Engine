@@ -8,6 +8,7 @@ class GridEditor : JPanel() {
     private var selectedCellType = CellType.WALL
     private var isDragging = false
     private var lastCell: Pair<Int, Int>? = null
+    private var useBlockWalls = false // Toggle between simple walls and block walls
 
     enum class CellType {
         EMPTY, WALL, FLOOR
@@ -99,25 +100,77 @@ class GridEditor : JPanel() {
         repaint()
     }
 
+    // Toggle between simple walls and block walls
+    fun toggleWallStyle() {
+        useBlockWalls = !useBlockWalls
+        firePropertyChange("gridChanged", null, grid)
+    }
+
     // Convert grid to game walls
     fun generateWalls(): List<Wall> {
         val walls = mutableListOf<Wall>()
-        val scale = 0.5 // Scale factor to convert grid coordinates to game coordinates
+        val scale = 2.0 // Each cell represents a 2x2 unit area in the game world
+        val wallHeight = 3.0
 
-        for (x in 0 until gridSize) {
-            for (y in 0 until gridSize) {
-                if (grid[x][y] == CellType.WALL) {
-                    // Convert grid coordinates to game coordinates
-                    val gameX = (x - gridSize/2) * scale
-                    val gameZ = (y - gridSize/2) * scale
+        if (useBlockWalls) {
+            // Generate block-style walls (full cubes)
+            for (x in 0 until gridSize) {
+                for (y in 0 until gridSize) {
+                    if (grid[x][y] == CellType.WALL) {
+                        val gameX = (x - gridSize/2) * scale
+                        val gameZ = (y - gridSize/2) * scale
 
-                    // Create a wall at this position
-                    walls.add(Wall(
-                        start = Vec3(gameX.toDouble(), 0.0, gameZ.toDouble()),
-                        end = Vec3(gameX.toDouble() + scale, 0.0, gameZ.toDouble()),
-                        height = 3.0,
-                        color = Color(150, 0, 0)
-                    ))
+                        walls.addAll(listOf(
+                            // North wall
+                            Wall(
+                                start = Vec3(gameX, 0.0, gameZ),
+                                end = Vec3(gameX + scale, 0.0, gameZ),
+                                height = wallHeight,
+                                color = Color(150, 0, 0)
+                            ),
+                            // East wall
+                            Wall(
+                                start = Vec3(gameX + scale, 0.0, gameZ),
+                                end = Vec3(gameX + scale, 0.0, gameZ + scale),
+                                height = wallHeight,
+                                color = Color(150, 0, 0)
+                            ),
+                            // South wall
+                            Wall(
+                                start = Vec3(gameX + scale, 0.0, gameZ + scale),
+                                end = Vec3(gameX, 0.0, gameZ + scale),
+                                height = wallHeight,
+                                color = Color(150, 0, 0)
+                            ),
+                            // West wall
+                            Wall(
+                                start = Vec3(gameX, 0.0, gameZ + scale),
+                                end = Vec3(gameX, 0.0, gameZ),
+                                height = wallHeight,
+                                color = Color(150, 0, 0)
+                            )
+                        ))
+                    }
+                }
+            }
+        } else {
+            // Generate classic DOOM-style single walls
+            for (x in 0 until gridSize) {
+                for (y in 0 until gridSize) {
+                    if (grid[x][y] == CellType.WALL) {
+                        val gameX = (x - gridSize/2) * scale
+                        val gameZ = (y - gridSize/2) * scale
+
+                        // Create a single wall with proper width (scale)
+                        walls.add(
+                            Wall(
+                                start = Vec3(gameX, 0.0, gameZ),
+                                end = Vec3(gameX + scale, 0.0, gameZ),
+                                height = wallHeight,
+                                color = Color(150, 0, 0)
+                            )
+                        )
+                    }
                 }
             }
         }
