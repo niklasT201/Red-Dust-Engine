@@ -5,6 +5,7 @@ import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
 
 class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
+    private val gridEditor = GridEditor()
     private val modeButton = JButton("Editor Mode")
     private val mainPanel = JPanel()
     private val cardLayout = CardLayout()

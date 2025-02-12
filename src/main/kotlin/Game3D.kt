@@ -12,10 +12,18 @@ class Game3D : JPanel() {
         Wall(Vec3(-2.0, 0.0, 2.0), Vec3(2.0, 0.0, 2.0), 3.0, Color(150, 0, 0))
     )
     private val floors = mutableListOf<Floor>()
-    private var isEditorMode = true  // Start in editor mode
+    private var isEditorMode = true
 
     private val renderPanel = RenderPanel()
     private val editorPanel = EditorPanel { toggleEditorMode() }
+
+    private val splitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT).apply {
+        leftComponent = renderPanel
+        rightComponent = editorPanel
+        dividerSize = 5  // Width of the divider
+        isContinuousLayout = true  // Continuous update while dragging
+        resizeWeight = 0.7  // Game view gets 70% of the space by default
+    }
 
     init {
         layout = BorderLayout()
@@ -51,7 +59,7 @@ class Game3D : JPanel() {
             isFocusable = true
         }
 
-        // Create menu bar
+        // Create menu bar (keep your existing menu code)
         val menuBar = JMenuBar()
         menuBar.add(createFileMenu())
         menuBar.add(createEditMenu())
@@ -59,9 +67,8 @@ class Game3D : JPanel() {
         menuBar.add(createHelpMenu())
         add(menuBar, BorderLayout.NORTH)
 
-        // Add panels (editor panel on the left)
-        add(editorPanel, BorderLayout.WEST)
-        add(renderPanel, BorderLayout.CENTER)
+        // Add the split pane to the main panel
+        add(splitPane, BorderLayout.CENTER)
 
         setupKeyBindings()
     }
@@ -116,7 +123,13 @@ class Game3D : JPanel() {
 
     private fun toggleEditorMode() {
         isEditorMode = !isEditorMode
-        renderPanel.requestFocus()
+        if (isEditorMode) {
+            splitPane.rightComponent = editorPanel
+            splitPane.dividerLocation = splitPane.width - 300  // Show editor panel
+        } else {
+            splitPane.rightComponent = null  // Hide editor panel
+            renderPanel.requestFocus()
+        }
     }
 
     inner class RenderPanel : JPanel() {
@@ -204,5 +217,10 @@ class Game3D : JPanel() {
         }
 
         renderPanel.repaint()
+    }
+
+    fun updateWalls(newWalls: List<Wall>) {
+        walls.clear()
+        walls.addAll(newWalls)
     }
 }
