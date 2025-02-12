@@ -38,8 +38,28 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
         border = BorderFactory.createEmptyBorder(15, 5, 2, 5)
 
         add(modeButton)
-        add(Box.createVerticalStrut(5))
-        add(JSeparator())
+        add(Box.createVerticalStrut(15))
+
+        // Create a panel for the separator with margins
+        val separatorPanel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.X_AXIS)
+            background = Color(40, 44, 52)
+            border = BorderFactory.createEmptyBorder(0, 0, 0, 0)
+
+            // Add left margin
+            add(Box.createHorizontalStrut(5))
+
+            // Add separator with fixed width
+            add(JSeparator().apply {
+                maximumSize = Dimension(Short.MAX_VALUE.toInt(), 1)
+                alignmentX = Component.LEFT_ALIGNMENT
+            })
+
+            // Add right margin
+            add(Box.createHorizontalStrut(5))
+        }
+
+        add(separatorPanel)
         add(Box.createVerticalStrut(2))
     }
 
