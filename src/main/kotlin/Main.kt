@@ -24,7 +24,11 @@ fun main() {
     }
 }
 
-// image floor laufband
+// player movement rotated
+// move top bar code to gui class
+// rotated mouse movement for north and south
+
+// image support
 // FPS show
 // remove tiles dragging adding
 

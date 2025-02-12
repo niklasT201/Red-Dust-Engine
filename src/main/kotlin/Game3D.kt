@@ -20,6 +20,13 @@ class Game3D : JPanel() {
     init {
         layout = BorderLayout()
 
+        addComponentListener(object : ComponentAdapter() {
+            override fun componentResized(e: ComponentEvent) {
+                renderPanel.preferredSize = Dimension(width - editorPanel.width, height)
+                revalidate()
+            }
+        })
+
         // Initialize floor grid
         for (x in -1..1) {
             for (z in -1..1) {

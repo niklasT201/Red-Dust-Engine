@@ -1,7 +1,8 @@
 import java.awt.*
 import javax.swing.*
 import javax.swing.border.TitledBorder
-import java.awt.event.ActionListener
+import java.awt.event.ComponentAdapter
+import java.awt.event.ComponentEvent
 
 class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
     private val modeButton = JButton("Editor Mode")
@@ -10,30 +11,47 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
     private val contentPanel = JPanel(cardLayout)
 
     init {
-        preferredSize = Dimension(250, 600)
         layout = BorderLayout()
         background = Color(40, 44, 52)
+
+        // Add component listener to handle resize events
+        addComponentListener(object : ComponentAdapter() {
+            override fun componentResized(e: ComponentEvent) {
+                updateSizes()
+            }
+        })
 
         setupModeButton()
         setupMainPanel()
         setupContentPanel()
 
-        // Create a wrapper panel for vertical organization
+        val scrollPane = JScrollPane(mainPanel).apply {
+            border = null
+            verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
+            horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
+        }
+
+        // Create wrapper panel with better layout
         val wrapperPanel = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             background = Color(40, 44, 52)
-
-            add(Box.createVerticalStrut(10))
-            add(modeButton)
-            add(Box.createVerticalStrut(10))
-            add(JSeparator())
-            add(Box.createVerticalStrut(-150))   // Reduced from 10 to 5
-            add(mainPanel)
-            // Add glue at the bottom to push everything up
-            add(Box.createVerticalGlue())
+            add(createTopPanel())
+            add(scrollPane)
         }
 
         add(wrapperPanel, BorderLayout.CENTER)
+    }
+
+    private fun createTopPanel(): JPanel = JPanel().apply {
+        layout = BoxLayout(this, BoxLayout.Y_AXIS)
+        background = Color(40, 44, 52)
+        border = BorderFactory.createEmptyBorder(5, 5, 5, 5)
+
+        add(modeButton)
+        add(Box.createVerticalStrut(5))
+        add(JSeparator())
+
+        maximumSize = Dimension(Integer.MAX_VALUE, 50)
     }
 
     private fun setupModeButton() {
@@ -41,7 +59,6 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             background = Color(60, 63, 65)
             foreground = Color.WHITE
             isFocusPainted = false
-            maximumSize = Dimension(250, 30)
             alignmentX = Component.LEFT_ALIGNMENT
             addActionListener {
                 text = if (text == "Editor Mode") "Game Mode" else "Editor Mode"
@@ -95,13 +112,10 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
                 add(Box.createVerticalStrut(5))
             }
 
-            // Add left margin to components
             border = BorderFactory.createCompoundBorder(
                 border,
-                BorderFactory.createEmptyBorder(5, 10, 5, 10)
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
             )
-
-            maximumSize = Dimension(250, getPreferredSize().height)
         }
     }
 
@@ -112,7 +126,6 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             isFocusPainted = false
             alignmentX = Component.LEFT_ALIGNMENT
             horizontalAlignment = SwingConstants.LEFT
-            maximumSize = Dimension(230, 30)
         }
     }
 
@@ -123,25 +136,21 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             isFocusPainted = false
             alignmentX = Component.LEFT_ALIGNMENT
             horizontalAlignment = SwingConstants.LEFT
-            maximumSize = Dimension(230, 30)
         }
     }
 
     private fun createTabPanel(): JPanel {
+        val tabsPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0)).apply {
+            background = Color(40, 44, 52)
+            add(createTabButton("Objects", true))
+            add(createTabButton("Player", false))
+            add(createTabButton("Enemies", false))
+        }
+
         return JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             background = Color(40, 44, 52)
-            alignmentX = Component.LEFT_ALIGNMENT
-            maximumSize = Dimension(250, getPreferredSize().height)
-
-            val tabPanel = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-                background = Color(40, 44, 52)
-                add(createTabButton("Objects", true))
-                add(createTabButton("Player", false))
-                add(createTabButton("Enemies", false))
-            }
-
-            add(tabPanel)
+            add(tabsPanel)
             add(contentPanel)
         }
     }
@@ -155,29 +164,39 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
         }
     }
 
-    private fun createObjectsPanel() = JPanel().apply {
-        background = Color(40, 44, 52)
-        add(JLabel("Objects Panel").apply { foreground = Color.WHITE })
-    }
-
-    private fun createPlayerPanel() = JPanel().apply {
-        background = Color(40, 44, 52)
-        add(JLabel("Player Panel").apply { foreground = Color.WHITE })
-    }
-
-    private fun createEnemiesPanel() = JPanel().apply {
-        background = Color(40, 44, 52)
-        add(JLabel("Enemies Panel").apply { foreground = Color.WHITE })
-    }
-
     private fun setupContentPanel() {
         contentPanel.apply {
             background = Color(40, 44, 52)
-            add(createObjectsPanel(), "Objects")
-            add(createPlayerPanel(), "Player")
-            add(createEnemiesPanel(), "Enemies")
-            alignmentX = Component.LEFT_ALIGNMENT
-            maximumSize = Dimension(250, getPreferredSize().height)
+            add(createContentSubPanel("Objects Panel"), "Objects")
+            add(createContentSubPanel("Player Panel"), "Player")
+            add(createContentSubPanel("Enemies Panel"), "Enemies")
         }
+    }
+
+    private fun createContentSubPanel(text: String): JPanel = JPanel().apply {
+        background = Color(40, 44, 52)
+        add(JLabel(text).apply { foreground = Color.WHITE })
+    }
+
+    private fun updateSizes() {
+        val parentWidth = width
+        val buttonWidth = (parentWidth - 20).coerceAtLeast(100)
+
+        // Update sizes for all buttons
+        fun updateComponentSizes(container: Container) {
+            container.components.forEach { component ->
+                when (component) {
+                    is JButton -> {
+                        component.maximumSize = Dimension(buttonWidth, 30)
+                        component.minimumSize = Dimension(100, 30)
+                        component.preferredSize = Dimension(buttonWidth, 30)
+                    }
+                    is Container -> updateComponentSizes(component)
+                }
+            }
+        }
+
+        updateComponentSizes(this)
+        revalidate()
     }
 }
