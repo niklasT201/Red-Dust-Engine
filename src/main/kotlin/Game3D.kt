@@ -15,12 +15,19 @@ class Game3D : JPanel() {
     private var isEditorMode = true
 
     private val renderPanel = RenderPanel()
+    private val gridEditor = GridEditor()
     private val editorPanel = EditorPanel { toggleEditorMode() }
 
-    // Create split pane with editor on the left
+    // Right panel with card layout to switch between grid editor and game view
+    private val rightPanel = JPanel(CardLayout()).apply {
+        add(gridEditor, "editor")
+        add(renderPanel, "game")
+    }
+
+    // Main split pane
     private val splitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT).apply {
         leftComponent = editorPanel
-        rightComponent = renderPanel
+        rightComponent = rightPanel
         dividerSize = 5
         isContinuousLayout = true
         resizeWeight = 0.0  // Editor panel keeps its size when resizing window
@@ -29,14 +36,7 @@ class Game3D : JPanel() {
     init {
         layout = BorderLayout()
 
-        addComponentListener(object : ComponentAdapter() {
-            override fun componentResized(e: ComponentEvent) {
-                renderPanel.preferredSize = Dimension(width - editorPanel.width, height)
-                revalidate()
-            }
-        })
-
-        // Initialize floor grid
+        // Initialize floor grid (keep your existing code)
         for (x in -1..1) {
             for (z in -1..1) {
                 floors.add(
@@ -60,7 +60,10 @@ class Game3D : JPanel() {
             isFocusable = true
         }
 
-        // Create menu bar (keep your existing menu code)
+        // Set initial size for editor panel
+        editorPanel.preferredSize = Dimension(250, height)
+
+        // Create menu bar
         val menuBar = JMenuBar()
         menuBar.add(createFileMenu())
         menuBar.add(createEditMenu())
@@ -71,7 +74,15 @@ class Game3D : JPanel() {
         // Add the split pane to the main panel
         add(splitPane, BorderLayout.CENTER)
 
+        // Set initial divider location after components are added
+        SwingUtilities.invokeLater {
+            splitPane.dividerLocation = 250
+        }
+
         setupKeyBindings()
+
+        // Show initial mode
+        updateMode()
     }
 
     private fun createFileMenu(): JMenu {
@@ -120,15 +131,24 @@ class Game3D : JPanel() {
                 toggleEditorMode()
             }
         })
+
+        // Also add binding for 'e' key (lowercase)
+        inputMap.put(KeyStroke.getKeyStroke('e'), "toggleEditor")
     }
 
     private fun toggleEditorMode() {
         isEditorMode = !isEditorMode
+        updateMode()
+    }
+
+    private fun updateMode() {
+        val cardLayout = rightPanel.layout as CardLayout
         if (isEditorMode) {
-            splitPane.rightComponent = editorPanel
-            splitPane.dividerLocation = splitPane.width - 300  // Show editor panel
+            cardLayout.show(rightPanel, "editor")
+            editorPanel.setModeButtonText("Editor Mode")
         } else {
-            splitPane.rightComponent = null  // Hide editor panel
+            cardLayout.show(rightPanel, "game")
+            editorPanel.setModeButtonText("Game Mode")
             renderPanel.requestFocus()
         }
     }
@@ -205,16 +225,47 @@ class Game3D : JPanel() {
             val cosYaw = cos(camera.yaw)
             val sinYaw = sin(camera.yaw)
 
-            // Forward/backward movement in camera direction
-            camera.position.x += (forward * sinYaw + right * cosYaw) * moveSpeed
-            camera.position.z += (forward * cosYaw - right * sinYaw) * moveSpeed
-            camera.position.y += up * moveSpeed
+            // Calculate new position
+            val newX = camera.position.x + (forward * sinYaw + right * cosYaw) * moveSpeed
+            val newZ = camera.position.z + (forward * cosYaw - right * sinYaw) * moveSpeed
+            val newY = camera.position.y + up * moveSpeed
 
-            // Apply position constraints
-            val margin = 0.5
-            camera.position.x = camera.position.x.coerceIn(-5.0 + margin, 5.0 - margin)
-            camera.position.z = camera.position.z.coerceIn(-5.0 + margin, 5.0 - margin)
-            camera.position.y = camera.position.y.coerceIn(0.5, 2.5)
+            // Check for collisions with walls
+            val playerRadius = 0.3 // Collision radius for the player
+            var canMoveX = true
+            var canMoveZ = true
+
+            // Check each wall for collision
+            for (wall in walls) {
+                // Simple box collision check
+                val wallMinX = minOf(wall.start.x, wall.end.x) - playerRadius
+                val wallMaxX = maxOf(wall.start.x, wall.end.x) + playerRadius
+                val wallMinZ = minOf(wall.start.z, wall.end.z) - playerRadius
+                val wallMaxZ = maxOf(wall.start.z, wall.end.z) + playerRadius
+
+                // Check X collision
+                if (newX in wallMinX..wallMaxX &&
+                    camera.position.z in wallMinZ..wallMaxZ) {
+                    canMoveX = false
+                }
+
+                // Check Z collision
+                if (camera.position.x in wallMinX..wallMaxX &&
+                    newZ in wallMinZ..wallMaxZ) {
+                    canMoveZ = false
+                }
+            }
+
+            // Apply movement with collision detection
+            if (canMoveX) {
+                camera.position.x = newX
+            }
+            if (canMoveZ) {
+                camera.position.z = newZ
+            }
+
+            // Apply Y movement (up/down) with bounds
+            camera.position.y = newY.coerceIn(0.5, 2.5)
         }
 
         renderPanel.repaint()

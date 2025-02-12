@@ -1,11 +1,8 @@
 import java.awt.*
 import javax.swing.*
 import javax.swing.border.TitledBorder
-import java.awt.event.ComponentAdapter
-import java.awt.event.ComponentEvent
 
 class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
-    private val gridEditor = GridEditor()
     private val modeButton = JButton("Editor Mode")
     private val mainPanel = JPanel()
 
@@ -43,6 +40,10 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
         add(JSeparator())
     }
 
+    fun setModeButtonText(text: String) {
+        modeButton.text = text
+    }
+
     private fun setupModeButton() {
         modeButton.apply {
             background = Color(60, 63, 65)
@@ -50,7 +51,6 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             isFocusPainted = false
             alignmentX = Component.LEFT_ALIGNMENT
             addActionListener {
-                text = if (text == "Editor Mode") "Game Mode" else "Editor Mode"
                 onModeSwitch()
             }
         }
