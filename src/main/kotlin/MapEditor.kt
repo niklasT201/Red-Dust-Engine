@@ -1,14 +1,20 @@
 import java.awt.*
 import java.awt.event.*
 import javax.swing.*
+import kotlin.math.floor
 
 class GridEditor : JPanel() {
-    private val gridSize = 20 // Number of cells in each direction
-    private val grid = Array(gridSize) { Array(gridSize) { CellType.EMPTY } }
+    private val grid = mutableMapOf<Pair<Int, Int>, CellType>()
     private var selectedCellType = CellType.WALL
     private var isDragging = false
     private var lastCell: Pair<Int, Int>? = null
-    var useBlockWalls = false // Toggle between simple walls and block walls
+    var useBlockWalls = false
+
+    // View properties
+    private var viewportX = 0.0 // Center of viewport in grid coordinates
+    private var viewportY = 0.0
+    private var cellSize = 20.0 // Initial cell size in pixels
+    private val visibleCellPadding = 2 // Extra cells to render beyond viewport
 
     enum class CellType {
         EMPTY, WALL, FLOOR
@@ -18,6 +24,7 @@ class GridEditor : JPanel() {
         background = Color(30, 33, 40)
         preferredSize = Dimension(400, 400)
 
+        // Add mouse listeners for painting
         addMouseListener(object : MouseAdapter() {
             override fun mousePressed(e: MouseEvent) {
                 handleMouseEvent(e)
@@ -37,16 +44,71 @@ class GridEditor : JPanel() {
                 }
             }
         })
+
+        // Add mouse wheel listener for zooming
+        addMouseWheelListener { e ->
+            val zoomFactor = if (e.wheelRotation < 0) 1.1 else 0.9
+            cellSize *= zoomFactor
+            cellSize = cellSize.coerceIn(5.0, 100.0) // Limit zoom levels
+            repaint()
+        }
+
+        // Add key bindings for panning
+        inputMap.put(KeyStroke.getKeyStroke("LEFT"), "pan_left")
+        inputMap.put(KeyStroke.getKeyStroke("RIGHT"), "pan_right")
+        inputMap.put(KeyStroke.getKeyStroke("UP"), "pan_up")
+        inputMap.put(KeyStroke.getKeyStroke("DOWN"), "pan_down")
+
+        actionMap.put("pan_left", object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent) {
+                viewportX -= 1
+                repaint()
+            }
+        })
+        actionMap.put("pan_right", object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent) {
+                viewportX += 1
+                repaint()
+            }
+        })
+        actionMap.put("pan_up", object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent) {
+                viewportY -= 1
+                repaint()
+            }
+        })
+        actionMap.put("pan_down", object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent) {
+                viewportY += 1
+                repaint()
+            }
+        })
+
+        isFocusable = true
+    }
+
+    private fun screenToGrid(screenX: Int, screenY: Int): Pair<Int, Int> {
+        val gridX = floor((screenX / cellSize + viewportX - width / (2 * cellSize))).toInt()
+        val gridY = floor((screenY / cellSize + viewportY - height / (2 * cellSize))).toInt()
+        return Pair(gridX, gridY)
+    }
+
+    private fun gridToScreen(gridX: Int, gridY: Int): Pair<Int, Int> {
+        val screenX = ((gridX - viewportX + width / (2 * cellSize)) * cellSize).toInt()
+        val screenY = ((gridY - viewportY + height / (2 * cellSize)) * cellSize).toInt()
+        return Pair(screenX, screenY)
     }
 
     private fun handleMouseEvent(e: MouseEvent) {
-        val cellSize = getCellSize()
-        val x = (e.x / cellSize).toInt().coerceIn(0, gridSize - 1)
-        val y = (e.y / cellSize).toInt().coerceIn(0, gridSize - 1)
+        val (gridX, gridY) = screenToGrid(e.x, e.y)
+        val currentCell = Pair(gridX, gridY)
 
-        val currentCell = Pair(x, y)
         if (currentCell != lastCell) {
-            grid[x][y] = selectedCellType
+            if (selectedCellType == CellType.EMPTY) {
+                grid.remove(currentCell)
+            } else {
+                grid[currentCell] = selectedCellType
+            }
             lastCell = currentCell
             repaint()
 
@@ -55,55 +117,44 @@ class GridEditor : JPanel() {
         }
     }
 
-    private fun getCellSize(): Double {
-        return minOf(width.toDouble(), height.toDouble()) / gridSize
-    }
-
     override fun paintComponent(g: Graphics) {
         super.paintComponent(g)
         val g2 = g as Graphics2D
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
 
-        val cellSize = getCellSize()
+        // Calculate visible grid bounds
+        val (minX, minY) = screenToGrid(0, 0)
+        val (maxX, maxY) = screenToGrid(width, height)
 
-        // Draw cells
-        for (x in 0 until gridSize) {
-            for (y in 0 until gridSize) {
-                val cellX = (x * cellSize).toInt()
-                val cellY = (y * cellSize).toInt()
+        // Draw grid and cells
+        for (x in (minX - visibleCellPadding)..(maxX + visibleCellPadding)) {
+            for (y in (minY - visibleCellPadding)..(maxY + visibleCellPadding)) {
+                val (screenX, screenY) = gridToScreen(x, y)
 
-                when (grid[x][y]) {
+                // Draw cell content if it exists
+                when (grid[Pair(x, y)]) {
                     CellType.WALL -> g2.color = Color(150, 0, 0)
                     CellType.FLOOR -> g2.color = Color(100, 100, 100)
-                    CellType.EMPTY -> g2.color = Color(40, 44, 52)
+                    else -> g2.color = Color(40, 44, 52)
                 }
 
-                g2.fillRect(cellX, cellY, cellSize.toInt(), cellSize.toInt())
+                g2.fillRect(
+                    screenX,
+                    screenY,
+                    cellSize.toInt(),
+                    cellSize.toInt()
+                )
 
                 // Draw grid lines
                 g2.color = Color(60, 63, 65)
-                g2.drawRect(cellX, cellY, cellSize.toInt(), cellSize.toInt())
+                g2.drawRect(
+                    screenX,
+                    screenY,
+                    cellSize.toInt(),
+                    cellSize.toInt()
+                )
             }
         }
-    }
-
-    fun setSelectedType(type: CellType) {
-        selectedCellType = type
-    }
-
-    fun clearGrid() {
-        for (x in 0 until gridSize) {
-            for (y in 0 until gridSize) {
-                grid[x][y] = CellType.EMPTY
-            }
-        }
-        repaint()
-    }
-
-    // Toggle between simple walls and block walls
-    fun toggleWallStyle() {
-        useBlockWalls = !useBlockWalls
-        firePropertyChange("gridChanged", null, grid)
     }
 
     // Convert grid to game walls
@@ -113,67 +164,72 @@ class GridEditor : JPanel() {
         val wallHeight = 3.0
 
         if (useBlockWalls) {
-            // Generate block-style walls (full cubes)
-            for (x in 0 until gridSize) {
-                for (y in 0 until gridSize) {
-                    if (grid[x][y] == CellType.WALL) {
-                        val gameX = (x - gridSize/2) * scale
-                        val gameZ = (y - gridSize/2) * scale
+            grid.forEach { (pos, type) ->
+                if (type == CellType.WALL) {
+                    val (x, y) = pos
+                    val gameX = x * scale
+                    val gameZ = y * scale
 
-                        walls.addAll(listOf(
-                            // North wall
-                            Wall(
-                                start = Vec3(gameX, 0.0, gameZ),
-                                end = Vec3(gameX + scale, 0.0, gameZ),
-                                height = wallHeight,
-                                color = Color(150, 0, 0)
-                            ),
-                            // East wall
-                            Wall(
-                                start = Vec3(gameX + scale, 0.0, gameZ),
-                                end = Vec3(gameX + scale, 0.0, gameZ + scale),
-                                height = wallHeight,
-                                color = Color(150, 0, 0)
-                            ),
-                            // South wall
-                            Wall(
-                                start = Vec3(gameX + scale, 0.0, gameZ + scale),
-                                end = Vec3(gameX, 0.0, gameZ + scale),
-                                height = wallHeight,
-                                color = Color(150, 0, 0)
-                            ),
-                            // West wall
-                            Wall(
-                                start = Vec3(gameX, 0.0, gameZ + scale),
-                                end = Vec3(gameX, 0.0, gameZ),
-                                height = wallHeight,
-                                color = Color(150, 0, 0)
-                            )
-                        ))
-                    }
+                    walls.addAll(listOf(
+                        // North wall
+                        Wall(
+                            start = Vec3(gameX, 0.0, gameZ),
+                            end = Vec3(gameX + scale, 0.0, gameZ),
+                            height = wallHeight,
+                            color = Color(150, 0, 0)
+                        ),
+                        // East wall
+                        Wall(
+                            start = Vec3(gameX + scale, 0.0, gameZ),
+                            end = Vec3(gameX + scale, 0.0, gameZ + scale),
+                            height = wallHeight,
+                            color = Color(150, 0, 0)
+                        ),
+                        // South wall
+                        Wall(
+                            start = Vec3(gameX + scale, 0.0, gameZ + scale),
+                            end = Vec3(gameX, 0.0, gameZ + scale),
+                            height = wallHeight,
+                            color = Color(150, 0, 0)
+                        ),
+                        // West wall
+                        Wall(
+                            start = Vec3(gameX, 0.0, gameZ + scale),
+                            end = Vec3(gameX, 0.0, gameZ),
+                            height = wallHeight,
+                            color = Color(150, 0, 0)
+                        )
+                    ))
                 }
             }
         } else {
-            // Generate classic DOOM-style single walls
-            for (x in 0 until gridSize) {
-                for (y in 0 until gridSize) {
-                    if (grid[x][y] == CellType.WALL) {
-                        val gameX = (x - gridSize/2) * scale
-                        val gameZ = (y - gridSize/2) * scale
+            grid.forEach { (pos, type) ->
+                if (type == CellType.WALL) {
+                    val (x, y) = pos
+                    val gameX = x * scale
+                    val gameZ = y * scale
 
-                        // Create a single wall with proper width (scale)
-                        walls.add(
-                            Wall(
-                                start = Vec3(gameX, 0.0, gameZ),
-                                end = Vec3(gameX + scale, 0.0, gameZ),
-                                height = wallHeight,
-                                color = Color(150, 0, 0)
-                            )
+                    // Create a single wall with proper width (scale)
+                    walls.add(
+                        Wall(
+                            start = Vec3(gameX, 0.0, gameZ),
+                            end = Vec3(gameX + scale, 0.0, gameZ),
+                            height = wallHeight,
+                            color = Color(150, 0, 0)
                         )
-                    }
+                    )
                 }
             }
         }
         return walls
+    }
+
+    fun clearGrid() {
+        grid.clear()
+        repaint()
+    }
+
+    fun setSelectedType(type: CellType) {
+        selectedCellType = type
     }
 }
