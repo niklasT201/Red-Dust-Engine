@@ -34,7 +34,6 @@ fun main() {
 // create own weapons
 // damage system
 // all objects in editor menu
-// mode button add a bit space
 // grid cell map infinite range
 
 // image support

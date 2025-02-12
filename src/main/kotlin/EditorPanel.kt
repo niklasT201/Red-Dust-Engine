@@ -5,6 +5,8 @@ import javax.swing.border.TitledBorder
 class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
     private val modeButton = JButton("Editor Mode")
     private val mainPanel = JPanel()
+    private val wallStyleGroup = ButtonGroup()
+    private var onWallStyleChange: ((Boolean) -> Unit)? = null
 
     init {
         layout = BorderLayout()
@@ -33,15 +35,20 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
     private fun createTopPanel(): JPanel = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         background = Color(40, 44, 52)
-        border = BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        border = BorderFactory.createEmptyBorder(15, 5, 2, 5)
 
         add(modeButton)
         add(Box.createVerticalStrut(5))
         add(JSeparator())
+        add(Box.createVerticalStrut(2))
     }
 
     fun setModeButtonText(text: String) {
         modeButton.text = text
+    }
+
+    fun setWallStyleChangeListener(listener: (Boolean) -> Unit) {
+        onWallStyleChange = listener
     }
 
     private fun setupModeButton() {
@@ -56,6 +63,48 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
         }
     }
 
+    private fun createWallStylePanel(): JPanel {
+        return JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            background = Color(40, 44, 52)
+            border = BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(Color(70, 73, 75)),
+                "Wall Style",
+                TitledBorder.LEFT,
+                TitledBorder.TOP,
+                null,
+                Color.WHITE
+            )
+
+            val flatWallRadio = JRadioButton("Flat Walls").apply {
+                isSelected = true
+                background = Color(40, 44, 52)
+                foreground = Color.WHITE
+                alignmentX = Component.LEFT_ALIGNMENT
+                addActionListener { onWallStyleChange?.invoke(false) }
+            }
+
+            val blockWallRadio = JRadioButton("Block Walls").apply {
+                background = Color(40, 44, 52)
+                foreground = Color.WHITE
+                alignmentX = Component.LEFT_ALIGNMENT
+                addActionListener { onWallStyleChange?.invoke(true) }
+            }
+
+            wallStyleGroup.add(flatWallRadio)
+            wallStyleGroup.add(blockWallRadio)
+
+            add(flatWallRadio)
+            add(Box.createVerticalStrut(2))
+            add(blockWallRadio)
+
+            border = BorderFactory.createCompoundBorder(
+                border,
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+            )
+        }
+    }
+
     private fun setupMainPanel() {
         mainPanel.apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -66,6 +115,10 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
                 createButton("Add Wall"),
                 createButton("Add Floor")
             )))
+
+            add(Box.createVerticalStrut(10))
+
+            add(createWallStylePanel())
 
             add(Box.createVerticalStrut(10))
 

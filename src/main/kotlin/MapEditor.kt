@@ -8,7 +8,7 @@ class GridEditor : JPanel() {
     private var selectedCellType = CellType.WALL
     private var isDragging = false
     private var lastCell: Pair<Int, Int>? = null
-    private var useBlockWalls = false // Toggle between simple walls and block walls
+    var useBlockWalls = false // Toggle between simple walls and block walls
 
     enum class CellType {
         EMPTY, WALL, FLOOR
