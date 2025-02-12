@@ -42,6 +42,15 @@ class Game3D : JPanel() {
             renderPanel.repaint()
         }
 
+        // Set up wall style change listener
+        editorPanel.setWallStyleChangeListener { useBlockWalls ->
+            gridEditor.useBlockWalls = useBlockWalls
+            // Regenerate walls with new style
+            val newWalls = gridEditor.generateWalls()
+            updateWalls(newWalls)
+            renderPanel.repaint()
+        }
+
         // Initialize floor grid
         for (x in -1..1) {
             for (z in -1..1) {

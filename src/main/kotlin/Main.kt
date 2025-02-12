@@ -34,6 +34,7 @@ fun main() {
 // create own weapons
 // damage system
 // all objects in editor menu
+// multiple wall add a xray effect fixing
 // grid cell map infinite range
 
 // image support
