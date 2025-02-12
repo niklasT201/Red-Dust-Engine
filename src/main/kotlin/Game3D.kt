@@ -36,7 +36,7 @@ class Game3D : JPanel() {
     init {
         layout = BorderLayout()
 
-        // Initialize floor grid (keep your existing code)
+        // Initialize floor grid
         for (x in -1..1) {
             for (z in -1..1) {
                 floors.add(
@@ -52,11 +52,10 @@ class Game3D : JPanel() {
             }
         }
 
+        // Setup render panel
         renderPanel.apply {
             preferredSize = Dimension(800, 600)
             background = Color(135, 206, 235)
-            addKeyListener(GameKeyListener())
-            addMouseMotionListener(GameMouseListener())
             isFocusable = true
         }
 
@@ -71,17 +70,15 @@ class Game3D : JPanel() {
         menuBar.add(createHelpMenu())
         add(menuBar, BorderLayout.NORTH)
 
-        // Add the split pane to the main panel
+        // split pane to the main panel
         add(splitPane, BorderLayout.CENTER)
 
-        // Set initial divider location after components are added
+        // Set initial divider location
         SwingUtilities.invokeLater {
             splitPane.dividerLocation = 250
         }
 
-        setupKeyBindings()
-
-        // Show initial mode
+        setupInputHandling()
         updateMode()
     }
 
@@ -124,16 +121,55 @@ class Game3D : JPanel() {
         }
     }
 
-    private fun setupKeyBindings() {
-        renderPanel.inputMap.put(KeyStroke.getKeyStroke('e'), "toggleEditor")
-        renderPanel.actionMap.put("toggleEditor", object : AbstractAction() {
-            override fun actionPerformed(e: ActionEvent) {
-                toggleEditorMode()
+    private fun setupInputHandling() {
+        // Remove the old key bindings
+        val inputMap = getInputMap(WHEN_IN_FOCUSED_WINDOW)
+        inputMap.clear()
+
+        // Add a single global key listener to the main panel
+        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher { e ->
+            when (e.id) {
+                KeyEvent.KEY_PRESSED -> {
+                    if (e.keyCode == KeyEvent.VK_E) {
+                        SwingUtilities.invokeLater { toggleEditorMode() }
+                    }
+                    if (!isEditorMode) {
+                        keysPressed.add(e.keyCode)
+                    }
+                }
+                KeyEvent.KEY_RELEASED -> {
+                    if (!isEditorMode) {
+                        keysPressed.remove(e.keyCode)
+                    }
+                }
+            }
+            false // Allow the event to be processed by other listeners
+        }
+
+        // Mouse handling for game mode
+        renderPanel.addMouseMotionListener(object : MouseMotionAdapter() {
+            override fun mouseMoved(e: MouseEvent) {
+                if (!isEditorMode) {
+                    handleMouseMovement(e)
+                }
             }
         })
+    }
 
-        // Also add binding for 'e' key (lowercase)
-        inputMap.put(KeyStroke.getKeyStroke('e'), "toggleEditor")
+    private fun handleMouseMovement(e: MouseEvent) {
+        val dx = e.x - renderPanel.width/2
+        val dy = e.y - renderPanel.height/2
+        camera.rotate(dx.toDouble(), dy.toDouble())
+
+        try {
+            val robot = Robot()
+            robot.mouseMove(
+                renderPanel.locationOnScreen.x + renderPanel.width/2,
+                renderPanel.locationOnScreen.y + renderPanel.height/2
+            )
+        } catch (e: Exception) {
+            // Handle potential security exceptions
+        }
     }
 
     private fun toggleEditorMode() {
@@ -146,10 +182,11 @@ class Game3D : JPanel() {
         if (isEditorMode) {
             cardLayout.show(rightPanel, "editor")
             editorPanel.setModeButtonText("Editor Mode")
+            gridEditor.requestFocusInWindow()
         } else {
             cardLayout.show(rightPanel, "game")
             editorPanel.setModeButtonText("Game Mode")
-            renderPanel.requestFocus()
+            renderPanel.requestFocusInWindow()
         }
     }
 
