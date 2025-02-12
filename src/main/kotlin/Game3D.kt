@@ -8,9 +8,7 @@ class Game3D : JPanel() {
     private val camera = Camera(Vec3(0.0, 1.7, -5.0))
     private val renderer = Renderer(800, 600)
     private val keysPressed = mutableSetOf<Int>()
-    private val walls = mutableListOf(
-        Wall(Vec3(-2.0, 0.0, 2.0), Vec3(2.0, 0.0, 2.0), 3.0, Color(150, 0, 0))
-    )
+    private val walls = mutableListOf<Wall>()
     private val floors = mutableListOf<Floor>()
     private var isEditorMode = true
 
@@ -35,6 +33,14 @@ class Game3D : JPanel() {
 
     init {
         layout = BorderLayout()
+
+        // Add property change listener to GridEditor
+        gridEditor.addPropertyChangeListener("gridChanged") { evt ->
+            // Convert grid to walls
+            val newWalls = gridEditor.generateWalls()
+            updateWalls(newWalls)
+            renderPanel.repaint()
+        }
 
         // Initialize floor grid
         for (x in -1..1) {
