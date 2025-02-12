@@ -17,12 +17,13 @@ class Game3D : JPanel() {
     private val renderPanel = RenderPanel()
     private val editorPanel = EditorPanel { toggleEditorMode() }
 
+    // Create split pane with editor on the left
     private val splitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT).apply {
-        leftComponent = renderPanel
-        rightComponent = editorPanel
-        dividerSize = 5  // Width of the divider
-        isContinuousLayout = true  // Continuous update while dragging
-        resizeWeight = 0.7  // Game view gets 70% of the space by default
+        leftComponent = editorPanel
+        rightComponent = renderPanel
+        dividerSize = 5
+        isContinuousLayout = true
+        resizeWeight = 0.0  // Editor panel keeps its size when resizing window
     }
 
     init {

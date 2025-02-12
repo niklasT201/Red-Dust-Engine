@@ -8,23 +8,13 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
     private val gridEditor = GridEditor()
     private val modeButton = JButton("Editor Mode")
     private val mainPanel = JPanel()
-    private val cardLayout = CardLayout()
-    private val contentPanel = JPanel(cardLayout)
 
     init {
         layout = BorderLayout()
         background = Color(40, 44, 52)
 
-        // Add component listener to handle resize events
-        addComponentListener(object : ComponentAdapter() {
-            override fun componentResized(e: ComponentEvent) {
-                updateSizes()
-            }
-        })
-
         setupModeButton()
         setupMainPanel()
-        setupContentPanel()
 
         val scrollPane = JScrollPane(mainPanel).apply {
             border = null
@@ -32,7 +22,7 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
         }
 
-        // Create wrapper panel with better layout
+        // Create wrapper panel
         val wrapperPanel = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             background = Color(40, 44, 52)
@@ -51,8 +41,6 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
         add(modeButton)
         add(Box.createVerticalStrut(5))
         add(JSeparator())
-
-        maximumSize = Dimension(Integer.MAX_VALUE, 50)
     }
 
     private fun setupModeButton() {
@@ -73,7 +61,6 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             background = Color(40, 44, 52)
             border = BorderFactory.createEmptyBorder(5, 10, 5, 10)
-            alignmentX = Component.LEFT_ALIGNMENT
 
             add(createSection("Quick Actions", listOf(
                 createButton("Add Wall"),
@@ -90,7 +77,12 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
 
             add(Box.createVerticalStrut(10))
 
-            add(createTabPanel())
+            add(createSection("Tools", listOf(
+                createButton("Select"),
+                createButton("Move"),
+                createButton("Rotate"),
+                createButton("Scale")
+            )))
         }
     }
 
@@ -98,7 +90,6 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
         return JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             background = Color(40, 44, 52)
-            alignmentX = Component.LEFT_ALIGNMENT
             border = BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color(70, 73, 75)),
                 title,
@@ -125,8 +116,7 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             background = Color(60, 63, 65)
             foreground = Color.WHITE
             isFocusPainted = false
-            alignmentX = Component.LEFT_ALIGNMENT
-            horizontalAlignment = SwingConstants.LEFT
+            maximumSize = Dimension(Int.MAX_VALUE, 30)
         }
     }
 
@@ -135,69 +125,7 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             background = initialColor
             foreground = Color.WHITE
             isFocusPainted = false
-            alignmentX = Component.LEFT_ALIGNMENT
-            horizontalAlignment = SwingConstants.LEFT
+            maximumSize = Dimension(Int.MAX_VALUE, 30)
         }
-    }
-
-    private fun createTabPanel(): JPanel {
-        val tabsPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0)).apply {
-            background = Color(40, 44, 52)
-            add(createTabButton("Objects", true))
-            add(createTabButton("Player", false))
-            add(createTabButton("Enemies", false))
-        }
-
-        return JPanel().apply {
-            layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            background = Color(40, 44, 52)
-            add(tabsPanel)
-            add(contentPanel)
-        }
-    }
-
-    private fun createTabButton(text: String, isSelected: Boolean): JButton {
-        return JButton(text).apply {
-            background = if (isSelected) Color(60, 63, 65) else Color(50, 53, 55)
-            foreground = Color.WHITE
-            isFocusPainted = false
-            addActionListener { cardLayout.show(contentPanel, text) }
-        }
-    }
-
-    private fun setupContentPanel() {
-        contentPanel.apply {
-            background = Color(40, 44, 52)
-            add(createContentSubPanel("Objects Panel"), "Objects")
-            add(createContentSubPanel("Player Panel"), "Player")
-            add(createContentSubPanel("Enemies Panel"), "Enemies")
-        }
-    }
-
-    private fun createContentSubPanel(text: String): JPanel = JPanel().apply {
-        background = Color(40, 44, 52)
-        add(JLabel(text).apply { foreground = Color.WHITE })
-    }
-
-    private fun updateSizes() {
-        val parentWidth = width
-        val buttonWidth = (parentWidth - 20).coerceAtLeast(100)
-
-        // Update sizes for all buttons
-        fun updateComponentSizes(container: Container) {
-            container.components.forEach { component ->
-                when (component) {
-                    is JButton -> {
-                        component.maximumSize = Dimension(buttonWidth, 30)
-                        component.minimumSize = Dimension(100, 30)
-                        component.preferredSize = Dimension(buttonWidth, 30)
-                    }
-                    is Container -> updateComponentSizes(component)
-                }
-            }
-        }
-
-        updateComponentSizes(this)
-        revalidate()
     }
 }
