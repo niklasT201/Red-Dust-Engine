@@ -78,12 +78,8 @@ class Game3D : JPanel() {
         editorPanel.preferredSize = Dimension(250, height)
 
         // Create menu bar
-        val menuBar = JMenuBar()
-        menuBar.add(createFileMenu())
-        menuBar.add(createEditMenu())
-        menuBar.add(createControlsMenu())
-        menuBar.add(createHelpMenu())
-        add(menuBar, BorderLayout.NORTH)
+        val menuSystem = MenuSystem()
+        add(menuSystem.createMenuBar(), BorderLayout.NORTH)
 
         // split pane to the main panel
         add(splitPane, BorderLayout.CENTER)
@@ -97,45 +93,6 @@ class Game3D : JPanel() {
 
         setupInputHandling()
         updateMode()
-    }
-
-    private fun createFileMenu(): JMenu {
-        return JMenu("File").apply {
-            add(JMenuItem("New Project"))
-            add(JMenuItem("Open Project"))
-            add(JMenuItem("Save"))
-            add(JMenuItem("Save As..."))
-            addSeparator()
-            add(JMenuItem("Exit"))
-        }
-    }
-
-    private fun createEditMenu(): JMenu {
-        return JMenu("Edit").apply {
-            add(JMenuItem("Undo"))
-            add(JMenuItem("Redo"))
-            addSeparator()
-            add(JMenuItem("Preferences"))
-        }
-    }
-
-    private fun createHelpMenu(): JMenu {
-        return JMenu("Help").apply {
-            add(JMenuItem("Documentation"))
-            add(JMenuItem("About"))
-        }
-    }
-
-    private fun createControlsMenu(): JMenu {
-        return JMenu("Controls").apply {
-            add(JMenuItem("WASD: Movement"))
-            add(JMenuItem("Mouse: Look around"))
-            add(JMenuItem("Space: Jump/Up"))
-            add(JMenuItem("Shift: Crouch/Down"))
-            add(JMenuItem("E: Toggle Editor Mode"))
-            addSeparator()
-            add(JMenuItem("Configure Controls..."))
-        }
     }
 
     private fun setupInputHandling() {

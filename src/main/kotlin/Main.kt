@@ -21,8 +21,6 @@ fun main() {
     }
 }
 
-// player movement rotated
-// move top bar code to gui class
 // walls rotation fixing
 // walls flickering fix
 
