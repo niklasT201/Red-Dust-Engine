@@ -93,6 +93,8 @@ class Game3D : JPanel() {
             splitPane.dividerLocation = 250
         }
 
+        gridEditor.setCamera(camera)
+
         setupInputHandling()
         updateMode()
     }
@@ -290,16 +292,20 @@ class Game3D : JPanel() {
 
             // Calculate movement based on camera direction
             val moveSpeed = 0.05
-            val cosYaw = cos(camera.yaw)
-            val sinYaw = sin(camera.yaw)
 
-            // Calculate new position
-            val newX = camera.position.x + (forward * sinYaw + right * cosYaw) * moveSpeed
-            val newZ = camera.position.z + (forward * cosYaw - right * sinYaw) * moveSpeed
+            // These vectors determine the direction of movement
+            val forwardX = sin(camera.yaw)    // Forward X component
+            val forwardZ = cos(camera.yaw)    // Forward Z component
+            val rightX = cos(camera.yaw)      // Right X component
+            val rightZ = -sin(camera.yaw)     // Right Z component
+
+            // Calculate new position using forward and right vectors
+            val newX = camera.position.x + (forward * forwardX + right * rightX) * moveSpeed
+            val newZ = camera.position.z + (forward * forwardZ + right * rightZ) * moveSpeed
             val newY = camera.position.y + up * moveSpeed
 
-            // Check for collisions with walls
-            val playerRadius = 0.3 // Collision radius for the player
+            // Collision detection code remains the same
+            val playerRadius = 0.3
             var canMoveX = true
             var canMoveZ = true
 
@@ -334,6 +340,7 @@ class Game3D : JPanel() {
 
             // Apply Y movement (up/down) with bounds
             camera.position.y = newY.coerceIn(0.5, 2.5)
+            gridEditor.repaint()  // Update the grid editor to show new player position
         }
 
         renderPanel.repaint()

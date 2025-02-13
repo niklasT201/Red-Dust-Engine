@@ -27,7 +27,6 @@ fun main() {
 // walls rotation fixing
 // walls flickering fix
 // add shortcuts for objects
-// visible player in editor
 // optional shadows
 // weapon system
 // create own weapons

@@ -1,7 +1,9 @@
 import java.awt.*
 import java.awt.event.*
 import javax.swing.*
+import kotlin.math.cos
 import kotlin.math.floor
+import kotlin.math.sin
 
 class GridEditor : JPanel() {
     private val grid = mutableMapOf<Pair<Int, Int>, CellType>()
@@ -9,6 +11,9 @@ class GridEditor : JPanel() {
     private var isDragging = false
     private var lastCell: Pair<Int, Int>? = null
     var useBlockWalls = false
+
+    // Camera reference for player position
+    private var cameraRef: Camera? = null
 
     // View properties
     private var viewportX = 0.0 // Center of viewport in grid coordinates
@@ -117,6 +122,16 @@ class GridEditor : JPanel() {
         }
     }
 
+    fun setCamera(camera: Camera) {
+        cameraRef = camera
+        repaint()
+    }
+
+    // Convert world coordinates to grid coordinates
+    private fun worldToGrid(x: Double, z: Double): Pair<Double, Double> {
+        return Pair(x / 2.0, z / 2.0)  // Divide by 2 because our grid scale is 2.0
+    }
+
     override fun paintComponent(g: Graphics) {
         super.paintComponent(g)
         val g2 = g as Graphics2D
@@ -154,6 +169,38 @@ class GridEditor : JPanel() {
                     cellSize.toInt()
                 )
             }
+        }
+
+        // Draw player if camera reference exists
+        cameraRef?.let { camera ->
+            // Convert world coordinates to grid coordinates
+            val (gridX, gridZ) = worldToGrid(camera.position.x, camera.position.z)
+            val (screenX, screenY) = gridToScreen(floor(gridX).toInt(), floor(gridZ).toInt())
+
+            // Calculate player position within the cell
+            val xOffset = ((gridX % 1) * cellSize).toInt()
+            val yOffset = ((gridZ % 1) * cellSize).toInt()
+
+            // Draw player body (green circle)
+            g2.color = Color(0, 255, 0)
+            val playerSize = (cellSize * 0.3).toInt()
+            g2.fillOval(
+                screenX + xOffset - playerSize/2,
+                screenY + yOffset - playerSize/2,
+                playerSize,
+                playerSize
+            )
+
+            // Draw direction indicator (line)
+            val lineLength = cellSize * 0.5
+            val dirX = sin(camera.yaw) * lineLength
+            val dirZ = cos(camera.yaw) * lineLength
+            g2.drawLine(
+                screenX + xOffset,
+                screenY + yOffset,
+                screenX + xOffset + dirX.toInt(),
+                screenY + yOffset + dirZ.toInt()
+            )
         }
     }
 
