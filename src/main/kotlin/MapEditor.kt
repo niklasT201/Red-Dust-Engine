@@ -129,7 +129,7 @@ class GridEditor : JPanel() {
 
     // Convert world coordinates to grid coordinates
     private fun worldToGrid(x: Double, z: Double): Pair<Double, Double> {
-        return Pair(x / 2.0, z / 2.0)  // Divide by 2 because our grid scale is 2.0
+        return Pair(-x / 2.0, z / 2.0)  // Negate x here as well
     }
 
     override fun paintComponent(g: Graphics) {
@@ -214,7 +214,8 @@ class GridEditor : JPanel() {
             grid.forEach { (pos, type) ->
                 if (type == CellType.WALL) {
                     val (x, y) = pos
-                    val gameX = x * scale
+                    // Flip the X coordinate by negating it
+                    val gameX = -x * scale
                     val gameZ = y * scale
 
                     walls.addAll(listOf(
@@ -253,7 +254,8 @@ class GridEditor : JPanel() {
             grid.forEach { (pos, type) ->
                 if (type == CellType.WALL) {
                     val (x, y) = pos
-                    val gameX = x * scale
+                    // Flip the X coordinate by negating it
+                    val gameX = -x * scale
                     val gameZ = y * scale
 
                     // Create a single wall with proper width (scale)
