@@ -26,13 +26,13 @@ fun main() {
 // rotated mouse movement for north and south
 // walls rotation fixing
 // walls flickering fix
+
 // add shortcuts for objects
 // optional shadows
 // weapon system
 // create own weapons
 // damage system
 // all objects in editor menu
-// multiple wall add a xray effect fixing
 
 // image support
 // FPS show

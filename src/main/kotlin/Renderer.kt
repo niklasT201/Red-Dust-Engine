@@ -9,6 +9,14 @@ class Renderer(private val width: Int, private val height: Int) {
     private val nearPlane = 0.1
     private val farPlane = 100.0
 
+    // Helper class to store wall drawing information
+    private data class WallRenderInfo(
+        val wall: Wall,
+        val screenPoints: List<Pair<Int, Int>>,
+        val distance: Double,
+        val color: Color
+    )
+
     fun drawFloor(g2: Graphics2D, floor: Floor, camera: Camera) {
         val corners = listOf(
             Vec3(floor.x1, floor.y, floor.z1),
@@ -59,57 +67,76 @@ class Renderer(private val width: Int, private val height: Int) {
         }
     }
 
-    fun drawWall(g2: Graphics2D, wall: Wall, camera: Camera) {
-        val startTransformed = transformPoint(wall.start, camera)
-        val endTransformed = transformPoint(wall.end, camera)
+    fun drawWall(g2: Graphics2D, walls: List<Wall>, camera: Camera) {
+        val wallsToRender = mutableListOf<WallRenderInfo>()
 
-        // Near plane clipping
-        if (startTransformed.z <= nearPlane && endTransformed.z <= nearPlane) return
+        for (wall in walls) {
+            val startTransformed = transformPoint(wall.start, camera)
+            val endTransformed = transformPoint(wall.end, camera)
 
-        // Calculate wall normal and do backface culling
-        val wallVector = Vec3(
-            wall.end.x - wall.start.x,
-            0.0,
-            wall.end.z - wall.start.z
-        )
-        val normal = Vec3(-wallVector.z, 0.0, wallVector.x)
-        val transformedNormal = transformNormal(normal, camera)
+            // Near plane clipping
+            if (startTransformed.z <= nearPlane && endTransformed.z <= nearPlane) continue
 
-        // Don't render if wall is facing away from camera
-        if (transformedNormal.z < 0) return
+            // Calculate wall normal and do backface culling
+            val wallVector = Vec3(
+                wall.end.x - wall.start.x,
+                0.0,
+                wall.end.z - wall.start.z
+            )
+            val normal = Vec3(-wallVector.z, 0.0, wallVector.x)
+            val transformedNormal = transformNormal(normal, camera)
 
-        val topStart = Vec3(wall.start.x, wall.start.y + wall.height, wall.start.z)
-        val topEnd = Vec3(wall.end.x, wall.end.y + wall.height, wall.end.z)
+            // Don't render if wall is facing away from camera
+            if (transformedNormal.z < 0) continue
 
-        val startTransformedTop = transformPoint(topStart, camera)
-        val endTransformedTop = transformPoint(topEnd, camera)
+            val topStart = Vec3(wall.start.x, wall.start.y + wall.height, wall.start.z)
+            val topEnd = Vec3(wall.end.x, wall.end.y + wall.height, wall.end.z)
 
-        // Project points
-        val (screenX1, screenY1Top) = projectPoint(startTransformedTop)
-        val (screenX2, screenY2Top) = projectPoint(endTransformedTop)
-        val (_, screenY1Bottom) = projectPoint(startTransformed)
-        val (_, screenY2Bottom) = projectPoint(endTransformed)
+            val startTransformedTop = transformPoint(topStart, camera)
+            val endTransformedTop = transformPoint(topEnd, camera)
 
-        // Check if wall is in view frustum
-        val inView = screenX1 <= width*1.5 && screenX2 >= -width/2 &&
-                minOf(screenY1Top, screenY2Top) <= height*1.5 &&
-                maxOf(screenY1Bottom, screenY2Bottom) >= -height/2
+            // Calculate center point of wall for depth sorting
+            val centerX = (wall.start.x + wall.end.x) / 2 - camera.position.x
+            val centerZ = (wall.start.z + wall.end.z) / 2 - camera.position.z
+            val distance = sqrt(centerX * centerX + centerZ * centerZ)
 
-        if (inView) {
-            val distance = sqrt(startTransformed.z * startTransformed.z + endTransformed.z * endTransformed.z)
-            val shade = (1.0 / (1.0 + distance * 0.1)).coerceIn(0.3, 1.0)
-            g2.color = Color(
-                (wall.color.red * shade).toInt(),
-                (wall.color.green * shade).toInt(),
-                (wall.color.blue * shade).toInt()
+            // Project points
+            val screenPoints = listOf(
+                projectPoint(startTransformedTop),
+                projectPoint(endTransformedTop),
+                projectPoint(endTransformed),
+                projectPoint(startTransformed)
             )
 
-            val wallShape = Polygon(
-                intArrayOf(screenX1, screenX2, screenX2, screenX1),
-                intArrayOf(screenY1Top, screenY2Top, screenY2Bottom, screenY1Bottom),
+            // Check if wall is in view frustum
+            val inView = screenPoints.any { (x, y) ->
+                x <= width*1.5 && x >= -width/2 && y <= height*1.5 && y >= -height/2
+            }
+
+            if (inView) {
+                val shade = (1.0 / (1.0 + distance * 0.1)).coerceIn(0.3, 1.0)
+                val shadedColor = Color(
+                    (wall.color.red * shade).toInt(),
+                    (wall.color.green * shade).toInt(),
+                    (wall.color.blue * shade).toInt()
+                )
+
+                wallsToRender.add(WallRenderInfo(wall, screenPoints, distance, shadedColor))
+            }
+        }
+
+        // Sort walls by distance (furthest first)
+        wallsToRender.sortByDescending { it.distance }
+
+        // Draw walls in sorted order
+        for (wallInfo in wallsToRender) {
+            val polygon = Polygon(
+                wallInfo.screenPoints.map { it.first }.toIntArray(),
+                wallInfo.screenPoints.map { it.second }.toIntArray(),
                 4
             )
-            g2.fill(wallShape)
+            g2.color = wallInfo.color
+            g2.fill(polygon)
         }
     }
 

@@ -15,7 +15,7 @@ class Camera(
         yaw = normalizeAngle(yaw)
 
         // Update and clamp pitch (vertical rotation)
-        pitch = (pitch + dy * rotationSpeed).coerceIn(-PI/3, PI/3)
+        pitch = (pitch - dy * rotationSpeed).coerceIn(-PI/3, PI/3)
     }
 
     private fun normalizeAngle(angle: Double): Double {
