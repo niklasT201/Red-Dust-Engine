@@ -26,7 +26,6 @@ fun main() {
 // rotated mouse movement for north and south
 // walls rotation fixing
 // walls flickering fix
-// add cube walls optional button
 // add shortcuts for objects
 // visible player in editor
 // optional shadows

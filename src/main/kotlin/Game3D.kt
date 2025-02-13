@@ -218,9 +218,25 @@ class Game3D : JPanel() {
             walls.forEach { wall -> renderer.drawWall(g2, wall, camera) }
 
             if (!isEditorMode) {
+                // Draw crosshair
                 g2.color = Color.WHITE
                 g2.drawLine(width/2 - 10, height/2, width/2 + 10, height/2)
                 g2.drawLine(width/2, height/2 - 10, width/2, height/2 + 10)
+
+                // Draw direction indicator
+                g2.font = Font("Monospace", Font.BOLD, 14)
+
+                // Get cardinal direction from camera
+                val direction = camera.getCardinalDirection()
+
+                // Convert angles to degrees for display
+                val yawDegrees = Math.toDegrees(camera.yaw).toInt()
+                val pitchDegrees = Math.toDegrees(camera.pitch).toInt()
+
+                // Draw debug information
+                g2.color = Color.WHITE
+                g2.drawString("Direction: $direction (${yawDegrees}°)", 10, 20)
+                g2.drawString("Position: (${String.format("%.1f", camera.position.x)}, ${String.format("%.1f", camera.position.y)}, ${String.format("%.1f", camera.position.z)})", 10, 40)
             }
         }
     }
