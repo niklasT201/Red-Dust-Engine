@@ -23,7 +23,6 @@ fun main() {
 
 // player movement rotated
 // move top bar code to gui class
-// rotated mouse movement for north and south
 // walls rotation fixing
 // walls flickering fix
 

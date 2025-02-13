@@ -294,10 +294,10 @@ class Game3D : JPanel() {
             val moveSpeed = 0.05
 
             // These vectors determine the direction of movement
-            val forwardX = sin(camera.yaw)    // Forward X component
+            val forwardX = -sin(camera.yaw)    // Forward X component
             val forwardZ = cos(camera.yaw)    // Forward Z component
             val rightX = cos(camera.yaw)      // Right X component
-            val rightZ = -sin(camera.yaw)     // Right Z component
+            val rightZ = sin(camera.yaw)     // Right Z component
 
             // Calculate new position using forward and right vectors
             val newX = camera.position.x + (forward * forwardX + right * rightX) * moveSpeed

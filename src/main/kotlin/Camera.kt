@@ -36,9 +36,9 @@ class Camera(
 
         return when {
             normalized >= 315 || normalized < 45 -> "South"
-            normalized >= 45 && normalized < 135 -> "East"   // Correct position - right of South
-            normalized >= 135 && normalized < 225 -> "North" // Top of compass
-            else -> "West"  // Correct position - left of South
+            normalized >= 45 && normalized < 135 -> "East"
+            normalized >= 135 && normalized < 225 -> "North"
+            else -> "West"
         }
     }
 }
