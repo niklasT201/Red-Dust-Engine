@@ -5,8 +5,13 @@ import kotlin.math.cos
 import kotlin.math.floor
 import kotlin.math.sin
 
+data class CellData(
+    val type: GridEditor.CellType,
+    var color: Color = Color(150, 0, 0)
+)
+
 class GridEditor : JPanel() {
-    private val grid = mutableMapOf<Pair<Int, Int>, CellType>()
+    private val grid = mutableMapOf<Pair<Int, Int>, CellData>()
     private var selectedCellType = CellType.WALL
     private var isDragging = false
     private var lastCell: Pair<Int, Int>? = null
@@ -14,6 +19,8 @@ class GridEditor : JPanel() {
 
     // Camera reference for player position
     private var cameraRef: Camera? = null
+    private val scale = 2.0
+    private var currentWallColor = Color(150, 0, 0)
 
     // View properties
     private var viewportX = 0.0 // Center of viewport in grid coordinates
@@ -104,6 +111,11 @@ class GridEditor : JPanel() {
         return Pair(screenX, screenY)
     }
 
+    fun setWallColor(color: Color) {
+        currentWallColor = color
+        repaint()
+    }
+
     private fun handleMouseEvent(e: MouseEvent) {
         val (gridX, gridY) = screenToGrid(e.x, e.y)
         val currentCell = Pair(gridX, gridY)
@@ -112,7 +124,7 @@ class GridEditor : JPanel() {
             if (selectedCellType == CellType.EMPTY) {
                 grid.remove(currentCell)
             } else {
-                grid[currentCell] = selectedCellType
+                grid[currentCell] = CellData(selectedCellType, currentWallColor)
             }
             lastCell = currentCell
             repaint()
@@ -147,8 +159,9 @@ class GridEditor : JPanel() {
                 val (screenX, screenY) = gridToScreen(x, y)
 
                 // Draw cell content if it exists
-                when (grid[Pair(x, y)]) {
-                    CellType.WALL -> g2.color = Color(150, 0, 0)
+                val cellData = grid[Pair(x, y)]
+                when (cellData?.type) {
+                    CellType.WALL -> g2.color = cellData.color
                     CellType.FLOOR -> g2.color = Color(100, 100, 100)
                     else -> g2.color = Color(40, 44, 52)
                 }
@@ -207,12 +220,11 @@ class GridEditor : JPanel() {
     // Convert grid to game walls
     fun generateWalls(): List<Wall> {
         val walls = mutableListOf<Wall>()
-        val scale = 2.0 // Each cell represents a 2x2 unit area in the game world
         val wallHeight = 3.0
 
         if (useBlockWalls) {
-            grid.forEach { (pos, type) ->
-                if (type == CellType.WALL) {
+            grid.forEach { (pos, cellData) ->
+                if (cellData.type == CellType.WALL) {
                     val (x, y) = pos
                     // Flip the X coordinate by negating it
                     val gameX = -x * scale
@@ -224,35 +236,35 @@ class GridEditor : JPanel() {
                             start = Vec3(gameX, 0.0, gameZ),
                             end = Vec3(gameX + scale, 0.0, gameZ),
                             height = wallHeight,
-                            color = Color(150, 0, 0)
+                            color = cellData.color
                         ),
                         // East wall
                         Wall(
                             start = Vec3(gameX + scale, 0.0, gameZ),
                             end = Vec3(gameX + scale, 0.0, gameZ + scale),
                             height = wallHeight,
-                            color = Color(150, 0, 0)
+                            color = cellData.color
                         ),
                         // South wall
                         Wall(
                             start = Vec3(gameX + scale, 0.0, gameZ + scale),
                             end = Vec3(gameX, 0.0, gameZ + scale),
                             height = wallHeight,
-                            color = Color(150, 0, 0)
+                            color = cellData.color
                         ),
                         // West wall
                         Wall(
                             start = Vec3(gameX, 0.0, gameZ + scale),
                             end = Vec3(gameX, 0.0, gameZ),
                             height = wallHeight,
-                            color = Color(150, 0, 0)
+                            color = cellData.color
                         )
                     ))
                 }
             }
         } else {
-            grid.forEach { (pos, type) ->
-                if (type == CellType.WALL) {
+            grid.forEach { (pos, cellData) ->
+                if (cellData.type == CellType.WALL) {
                     val (x, y) = pos
                     // Flip the X coordinate by negating it
                     val gameX = -x * scale
@@ -264,7 +276,7 @@ class GridEditor : JPanel() {
                             start = Vec3(gameX, 0.0, gameZ),
                             end = Vec3(gameX + scale, 0.0, gameZ),
                             height = wallHeight,
-                            color = Color(150, 0, 0)
+                            color = cellData.color
                         )
                     )
                 }
@@ -276,9 +288,7 @@ class GridEditor : JPanel() {
     fun clearGrid() {
         grid.clear()
         repaint()
-    }
-
-    fun setSelectedType(type: CellType) {
-        selectedCellType = type
+        // Notify listeners that the grid has changed
+        firePropertyChange("gridChanged", null, grid)
     }
 }

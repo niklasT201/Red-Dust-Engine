@@ -3,10 +3,13 @@ import javax.swing.*
 import javax.swing.border.TitledBorder
 
 class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
+    var gridEditor = GridEditor()
     private val modeButton = JButton("Editor Mode")
     private val mainPanel = JPanel()
     private val wallStyleGroup = ButtonGroup()
     private var onWallStyleChange: ((Boolean) -> Unit)? = null
+    private var currentWallColor = Color(150, 0, 0)  // Default wall color
+    private var onColorChange: ((Color) -> Unit)? = null
 
     init {
         layout = BorderLayout()
@@ -71,6 +74,10 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
         onWallStyleChange = listener
     }
 
+    fun setColorChangeListener(listener: (Color) -> Unit) {
+        onColorChange = listener
+    }
+
     private fun setupModeButton() {
         modeButton.apply {
             background = Color(60, 63, 65)
@@ -133,7 +140,12 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
 
             add(createSection("Quick Actions", listOf(
                 createButton("Add Wall"),
-                createButton("Add Floor")
+                createButton("Add Floor"),
+                createButton("Clear All").apply {
+                    addActionListener {
+                        gridEditor?.clearGrid()  // We'll need to add this reference
+                    }
+                }
             )))
 
             add(Box.createVerticalStrut(10))
@@ -199,6 +211,18 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             foreground = Color.WHITE
             isFocusPainted = false
             maximumSize = Dimension(Int.MAX_VALUE, 30)
+            addActionListener {
+                val newColor = JColorChooser.showDialog(
+                    this,
+                    "Choose Wall Color",
+                    background
+                )
+                if (newColor != null) {
+                    background = newColor
+                    currentWallColor = newColor
+                    onColorChange?.invoke(newColor)
+                }
+            }
         }
     }
 }
