@@ -109,6 +109,9 @@ class Renderer(private val width: Int, private val height: Int) {
             val toCameraX = camera.position.x - wallCenterX
             val toCameraZ = camera.position.z - wallCenterZ
 
+            // Calculate distance for depth sorting
+            val distance = sqrt(toCameraX * toCameraX + toCameraZ * toCameraZ)
+
             // Normalize the view direction vector
             val viewLength = sqrt(toCameraX * toCameraX + toCameraZ * toCameraZ)
             val normalizedToCameraX = toCameraX / viewLength
@@ -116,9 +119,6 @@ class Renderer(private val width: Int, private val height: Int) {
 
             // Calculate dot product between normal and view direction
             val dotProduct = normal.x * normalizedToCameraX + normal.z * normalizedToCameraZ
-
-            // Only cull if the wall is clearly facing away from the camera
-            if (dotProduct < -0.1) continue
 
             // Project points to screen space
             val screenPoints = listOf(
@@ -135,21 +135,18 @@ class Renderer(private val width: Int, private val height: Int) {
 
             // Check if wall crosses the view frustum
             val crossesFrustum = screenPoints.zipWithNext { a, b ->
-                val lineIntersectsFrustum = lineIntersectsFrustum(
+                lineIntersectsFrustum(
                     a.first, a.second,
                     b.first, b.second,
                     frustumLeft, frustumTop,
                     frustumRight, frustumBottom
                 )
-                lineIntersectsFrustum
             }.any { it }
 
             if (anyPointInFrustum || crossesFrustum) {
-                // Calculate distance for depth sorting
-                val distance = sqrt(toCameraX * toCameraX + toCameraZ * toCameraZ)
-
                 // Calculate shading based on angle to camera and distance
-                val angleFactor = (dotProduct + 1) / 2 // Convert from [-1,1] to [0,1]
+                // Use absolute value of dot product to shade both sides
+                val angleFactor = abs(dotProduct)
                 val distanceFactor = (1.0 / (1.0 + distance * 0.1)).coerceIn(0.3, 1.0)
                 val shade = (angleFactor * distanceFactor).coerceIn(0.3, 1.0)
 

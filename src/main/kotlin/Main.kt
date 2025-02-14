@@ -22,7 +22,6 @@ fun main() {
 }
 
 // walls rotation fixing
-// walls flickering fix
 
 // add shortcuts for objects
 // optional shadows
