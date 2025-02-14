@@ -10,6 +10,8 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
     private var onWallStyleChange: ((Boolean) -> Unit)? = null
     private var currentWallColor = Color(150, 0, 0)  // Default wall color
     private var onColorChange: ((Color) -> Unit)? = null
+    private var currentWallHeight = 3.0
+    private var currentWallWidth = 2.0
 
     init {
         layout = BorderLayout()
@@ -143,7 +145,7 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
                 createButton("Add Floor"),
                 createButton("Clear All").apply {
                     addActionListener {
-                        gridEditor?.clearGrid()  // We'll need to add this reference
+                        gridEditor.clearGrid()
                     }
                 }
             )))
@@ -154,10 +156,11 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
 
             add(Box.createVerticalStrut(10))
 
+            // Updated Wall Properties section
             add(createSection("Wall Properties", listOf(
                 createColorButton("Wall Color", Color.RED),
-                createButton("Wall Height: 3.0"),
-                createButton("Wall Width: 2.0")
+                createHeightButton(),
+                createWidthButton()
             )))
 
             add(Box.createVerticalStrut(10))
@@ -221,6 +224,68 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
                     background = newColor
                     currentWallColor = newColor
                     onColorChange?.invoke(newColor)
+                }
+            }
+        }
+    }
+
+    private fun createHeightButton(): JButton {
+        return JButton("Wall Height: $currentWallHeight").apply {
+            background = Color(60, 63, 65)
+            foreground = Color.WHITE
+            isFocusPainted = false
+            maximumSize = Dimension(Int.MAX_VALUE, 30)
+            addActionListener {
+                val input = JOptionPane.showInputDialog(
+                    this,
+                    "Enter wall height (0.5 - 10.0):",
+                    currentWallHeight
+                )
+                try {
+                    val newHeight = input?.toDoubleOrNull()
+                    if (newHeight != null && newHeight in 0.5..10.0) {
+                        currentWallHeight = newHeight
+                        text = "Wall Height: $currentWallHeight"
+                        gridEditor.setWallHeight(currentWallHeight)
+                    }
+                } catch (e: NumberFormatException) {
+                    JOptionPane.showMessageDialog(
+                        this,
+                        "Please enter a valid number between 0.5 and 10.0",
+                        "Invalid Input",
+                        JOptionPane.ERROR_MESSAGE
+                    )
+                }
+            }
+        }
+    }
+
+    private fun createWidthButton(): JButton {
+        return JButton("Wall Width: $currentWallWidth").apply {
+            background = Color(60, 63, 65)
+            foreground = Color.WHITE
+            isFocusPainted = false
+            maximumSize = Dimension(Int.MAX_VALUE, 30)
+            addActionListener {
+                val input = JOptionPane.showInputDialog(
+                    this,
+                    "Enter wall width (0.5 - 5.0):",
+                    currentWallWidth
+                )
+                try {
+                    val newWidth = input?.toDoubleOrNull()
+                    if (newWidth != null && newWidth in 0.5..5.0) {
+                        currentWallWidth = newWidth
+                        text = "Wall Width: $currentWallWidth"
+                        gridEditor.setWallWidth(currentWallWidth)
+                    }
+                } catch (e: NumberFormatException) {
+                    JOptionPane.showMessageDialog(
+                        this,
+                        "Please enter a valid number between 0.5 and 5.0",
+                        "Invalid Input",
+                        JOptionPane.ERROR_MESSAGE
+                    )
                 }
             }
         }

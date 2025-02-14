@@ -23,6 +23,7 @@ fun main() {
 
 // walls rotation fixing
 // wall clipping issue
+// heights not updating for all walls
 
 // add shortcuts for objects
 // optional shadows

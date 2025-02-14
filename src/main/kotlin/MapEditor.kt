@@ -8,7 +8,9 @@ import kotlin.math.sin
 data class CellData(
     val type: GridEditor.CellType,
     var color: Color = Color(150, 0, 0),
-    var isBlockWall: Boolean = false
+    var isBlockWall: Boolean = false,
+    var height: Double = 3.0,
+    var width: Double = 2.0
 )
 
 class GridEditor : JPanel() {
@@ -20,8 +22,10 @@ class GridEditor : JPanel() {
 
     // Camera reference for player position
     private var cameraRef: Camera? = null
-    private val scale = 2.0
+    private var scale = 2.0
     private var currentWallColor = Color(150, 0, 0)
+    private var currentWallHeight = 3.0
+    private var currentWallWidth = 2.0
 
     // View properties
     private var viewportX = 0.0 // Center of viewport in grid coordinates
@@ -117,6 +121,30 @@ class GridEditor : JPanel() {
         repaint()
     }
 
+    fun setWallHeight(height: Double) {
+        currentWallHeight = height
+        // Update existing walls if needed
+        val updatedGrid = grid.mapValues { (_, cellData) ->
+            if (cellData.type == CellType.WALL) {
+                cellData.copy(height = currentWallHeight)
+            } else {
+                cellData
+            }
+        }
+        grid.clear()
+        grid.putAll(updatedGrid)
+        repaint()
+        firePropertyChange("gridChanged", null, grid)
+    }
+
+    fun setWallWidth(width: Double) {
+        currentWallWidth = width
+        scale = currentWallWidth  // Update the scale for new walls
+        // Update existing walls
+        repaint()
+        firePropertyChange("gridChanged", null, grid)
+    }
+
     private fun handleMouseEvent(e: MouseEvent) {
         val (gridX, gridY) = screenToGrid(e.x, e.y)
         val currentCell = Pair(gridX, gridY)
@@ -128,7 +156,9 @@ class GridEditor : JPanel() {
                 grid[currentCell] = CellData(
                     selectedCellType,
                     currentWallColor,
-                    useBlockWalls  // Store the current wall style
+                    useBlockWalls,
+                    currentWallHeight,
+                    currentWallWidth
                 )
             }
             lastCell = currentCell
@@ -225,43 +255,42 @@ class GridEditor : JPanel() {
     // Convert grid to game walls
     fun generateWalls(): List<Wall> {
         val walls = mutableListOf<Wall>()
-        val wallHeight = 3.0
 
         grid.forEach { (pos, cellData) ->
             if (cellData.type == CellType.WALL) {
                 val (x, y) = pos
-                val gameX = -x * scale
-                val gameZ = y * scale
+                val gameX = -x * cellData.width
+                val gameZ = y * cellData.width
 
-                if (cellData.isBlockWall) {  // Use the stored wall style
+                if (cellData.isBlockWall) {
                     // Add block walls (four walls)
                     walls.addAll(listOf(
                         // North wall
                         Wall(
                             start = Vec3(gameX, 0.0, gameZ),
-                            end = Vec3(gameX + scale, 0.0, gameZ),
-                            height = wallHeight,
+                            end = Vec3(gameX + cellData.width, 0.0, gameZ),
+                            height = cellData.height,
                             color = cellData.color
                         ),
                         // East wall
                         Wall(
-                            start = Vec3(gameX + scale, 0.0, gameZ),
-                            end = Vec3(gameX + scale, 0.0, gameZ + scale),
-                            height = wallHeight,
+                            start = Vec3(gameX + cellData.width, 0.0, gameZ),
+                            end = Vec3(gameX + cellData.width, 0.0, gameZ + cellData.width),
+                            height = cellData.height,
                             color = cellData.color
                         ),
                         // South wall
                         Wall(
-                            start = Vec3(gameX + scale, 0.0, gameZ + scale),
-                            end = Vec3(gameX, 0.0, gameZ + scale),
-                            height = wallHeight,
+                            start = Vec3(gameX + cellData.width, 0.0, gameZ + cellData.width),
+                            end = Vec3(gameX, 0.0, gameZ + cellData.width),
+                            height = cellData.height,
                             color = cellData.color
                         ),
                         // West wall
                         Wall(
-                            start = Vec3(gameX, 0.0, gameZ + scale),
+                            start = Vec3(gameX, 0.0, gameZ + cellData.width),
                             end = Vec3(gameX, 0.0, gameZ),
-                            height = wallHeight,
+                            height = cellData.height,
                             color = cellData.color
                         )
                     ))
@@ -270,8 +299,8 @@ class GridEditor : JPanel() {
                     walls.add(
                         Wall(
                             start = Vec3(gameX, 0.0, gameZ),
-                            end = Vec3(gameX + scale, 0.0, gameZ),
-                            height = wallHeight,
+                            end = Vec3(gameX + cellData.width, 0.0, gameZ),
+                            height = cellData.height,
                             color = cellData.color
                         )
                     )
