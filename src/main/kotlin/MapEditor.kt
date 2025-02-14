@@ -7,7 +7,8 @@ import kotlin.math.sin
 
 data class CellData(
     val type: GridEditor.CellType,
-    var color: Color = Color(150, 0, 0)
+    var color: Color = Color(150, 0, 0),
+    var isBlockWall: Boolean = false
 )
 
 class GridEditor : JPanel() {
@@ -124,7 +125,11 @@ class GridEditor : JPanel() {
             if (selectedCellType == CellType.EMPTY) {
                 grid.remove(currentCell)
             } else {
-                grid[currentCell] = CellData(selectedCellType, currentWallColor)
+                grid[currentCell] = CellData(
+                    selectedCellType,
+                    currentWallColor,
+                    useBlockWalls  // Store the current wall style
+                )
             }
             lastCell = currentCell
             repaint()
@@ -222,14 +227,14 @@ class GridEditor : JPanel() {
         val walls = mutableListOf<Wall>()
         val wallHeight = 3.0
 
-        if (useBlockWalls) {
-            grid.forEach { (pos, cellData) ->
-                if (cellData.type == CellType.WALL) {
-                    val (x, y) = pos
-                    // Flip the X coordinate by negating it
-                    val gameX = -x * scale
-                    val gameZ = y * scale
+        grid.forEach { (pos, cellData) ->
+            if (cellData.type == CellType.WALL) {
+                val (x, y) = pos
+                val gameX = -x * scale
+                val gameZ = y * scale
 
+                if (cellData.isBlockWall) {  // Use the stored wall style
+                    // Add block walls (four walls)
                     walls.addAll(listOf(
                         // North wall
                         Wall(
@@ -260,17 +265,8 @@ class GridEditor : JPanel() {
                             color = cellData.color
                         )
                     ))
-                }
-            }
-        } else {
-            grid.forEach { (pos, cellData) ->
-                if (cellData.type == CellType.WALL) {
-                    val (x, y) = pos
-                    // Flip the X coordinate by negating it
-                    val gameX = -x * scale
-                    val gameZ = y * scale
-
-                    // Create a single wall with proper width (scale)
+                } else {
+                    // Add flat wall
                     walls.add(
                         Wall(
                             start = Vec3(gameX, 0.0, gameZ),
