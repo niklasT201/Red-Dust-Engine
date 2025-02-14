@@ -23,7 +23,6 @@ fun main() {
 
 // walls rotation fixing
 // wall clipping issue
-// heights not updating for all walls
 
 // add shortcuts for objects
 // optional shadows
@@ -33,6 +32,7 @@ fun main() {
 // all objects in editor menu
 
 // image support
+// direction label optional
 // FPS show
 // remove tiles dragging adding
 
@@ -40,6 +40,7 @@ fun main() {
 // Sectiom seperation
 // physics optional
 // blood options
+// wall values optional for all walls in the world
 // player spawnpoint optional
 // open world or level based
 // floor sections

@@ -22,10 +22,10 @@ class GridEditor : JPanel() {
 
     // Camera reference for player position
     private var cameraRef: Camera? = null
-    private var scale = 2.0
-    private var currentWallColor = Color(150, 0, 0)
+    private val baseScale = 2.0  // Keep this constant for grid calculations
     private var currentWallHeight = 3.0
     private var currentWallWidth = 2.0
+    private var currentWallColor = Color(150, 0, 0)
 
     // View properties
     private var viewportX = 0.0 // Center of viewport in grid coordinates
@@ -123,26 +123,14 @@ class GridEditor : JPanel() {
 
     fun setWallHeight(height: Double) {
         currentWallHeight = height
-        // Update existing walls if needed
-        val updatedGrid = grid.mapValues { (_, cellData) ->
-            if (cellData.type == CellType.WALL) {
-                cellData.copy(height = currentWallHeight)
-            } else {
-                cellData
-            }
-        }
-        grid.clear()
-        grid.putAll(updatedGrid)
+        // Don't modify existing walls, only affect new ones
         repaint()
-        firePropertyChange("gridChanged", null, grid)
     }
 
     fun setWallWidth(width: Double) {
         currentWallWidth = width
-        scale = currentWallWidth  // Update the scale for new walls
-        // Update existing walls
+        // Don't modify existing walls, only affect new ones
         repaint()
-        firePropertyChange("gridChanged", null, grid)
     }
 
     private fun handleMouseEvent(e: MouseEvent) {
@@ -176,7 +164,7 @@ class GridEditor : JPanel() {
 
     // Convert world coordinates to grid coordinates
     private fun worldToGrid(x: Double, z: Double): Pair<Double, Double> {
-        return Pair(-x / 2.0, z / 2.0)  // Negate x here as well
+        return Pair(-x / baseScale, z / baseScale)  // Use baseScale instead of dynamic scale
     }
 
     override fun paintComponent(g: Graphics) {
@@ -259,8 +247,9 @@ class GridEditor : JPanel() {
         grid.forEach { (pos, cellData) ->
             if (cellData.type == CellType.WALL) {
                 val (x, y) = pos
-                val gameX = -x * cellData.width
-                val gameZ = y * cellData.width
+                // Use baseScale for position calculation, but cell's width for wall size
+                val gameX = -x * baseScale
+                val gameZ = y * baseScale
 
                 if (cellData.isBlockWall) {
                     // Add block walls (four walls)
