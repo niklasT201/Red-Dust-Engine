@@ -70,37 +70,57 @@ class Renderer(private val width: Int, private val height: Int) {
     fun drawWall(g2: Graphics2D, walls: List<Wall>, camera: Camera) {
         val wallsToRender = mutableListOf<WallRenderInfo>()
 
+        // Calculate view frustum bounds
+        val frustumLeft = -width/2
+        val frustumRight = (width * 1.5).toInt()
+        val frustumTop = -height/2
+        val frustumBottom = (height * 1.5).toInt()
+
         for (wall in walls) {
             val startTransformed = transformPoint(wall.start, camera)
             val endTransformed = transformPoint(wall.end, camera)
 
-            // Near plane clipping
-            if (startTransformed.z <= nearPlane && endTransformed.z <= nearPlane) continue
-
-            // Calculate wall normal and do backface culling
-            val wallVector = Vec3(
-                wall.end.x - wall.start.x,
-                0.0,
-                wall.end.z - wall.start.z
-            )
-            val normal = Vec3(-wallVector.z, 0.0, wallVector.x)
-            val transformedNormal = transformNormal(normal, camera)
-
-            // Don't render if wall is facing away from camera
-            if (transformedNormal.z < 0) continue
-
+            // Get the wall corners in view space
             val topStart = Vec3(wall.start.x, wall.start.y + wall.height, wall.start.z)
             val topEnd = Vec3(wall.end.x, wall.end.y + wall.height, wall.end.z)
 
             val startTransformedTop = transformPoint(topStart, camera)
             val endTransformedTop = transformPoint(topEnd, camera)
 
-            // Calculate center point of wall for depth sorting
-            val centerX = (wall.start.x + wall.end.x) / 2 - camera.position.x
-            val centerZ = (wall.start.z + wall.end.z) / 2 - camera.position.z
-            val distance = sqrt(centerX * centerX + centerZ * centerZ)
+            // Improved near plane clipping check
+            val allPoints = listOf(startTransformed, endTransformed, startTransformedTop, endTransformedTop)
+            if (allPoints.all { it.z <= nearPlane }) continue
 
-            // Project points
+            // Calculate wall normal
+            val wallVector = Vec3(
+                wall.end.x - wall.start.x,
+                0.0,
+                wall.end.z - wall.start.z
+            )
+            val normal = Vec3(-wallVector.z, 0.0, wallVector.x).let {
+                // Normalize the normal vector
+                val length = sqrt(it.x * it.x + it.z * it.z)
+                Vec3(it.x / length, 0.0, it.z / length)
+            }
+
+            // Calculate view direction vector (from wall center to camera)
+            val wallCenterX = (wall.start.x + wall.end.x) / 2
+            val wallCenterZ = (wall.start.z + wall.end.z) / 2
+            val toCameraX = camera.position.x - wallCenterX
+            val toCameraZ = camera.position.z - wallCenterZ
+
+            // Normalize the view direction vector
+            val viewLength = sqrt(toCameraX * toCameraX + toCameraZ * toCameraZ)
+            val normalizedToCameraX = toCameraX / viewLength
+            val normalizedToCameraZ = toCameraZ / viewLength
+
+            // Calculate dot product between normal and view direction
+            val dotProduct = normal.x * normalizedToCameraX + normal.z * normalizedToCameraZ
+
+            // Only cull if the wall is clearly facing away from the camera
+            if (dotProduct < -0.1) continue
+
+            // Project points to screen space
             val screenPoints = listOf(
                 projectPoint(startTransformedTop),
                 projectPoint(endTransformedTop),
@@ -108,13 +128,31 @@ class Renderer(private val width: Int, private val height: Int) {
                 projectPoint(startTransformed)
             )
 
-            // Check if wall is in view frustum
-            val inView = screenPoints.any { (x, y) ->
-                x <= width*1.5 && x >= -width/2 && y <= height*1.5 && y >= -height/2
+            // Improved view frustum check
+            val anyPointInFrustum = screenPoints.any { (x, y) ->
+                x >= frustumLeft && x <= frustumRight && y >= frustumTop && y <= frustumBottom
             }
 
-            if (inView) {
-                val shade = (1.0 / (1.0 + distance * 0.1)).coerceIn(0.3, 1.0)
+            // Check if wall crosses the view frustum
+            val crossesFrustum = screenPoints.zipWithNext { a, b ->
+                val lineIntersectsFrustum = lineIntersectsFrustum(
+                    a.first, a.second,
+                    b.first, b.second,
+                    frustumLeft, frustumTop,
+                    frustumRight, frustumBottom
+                )
+                lineIntersectsFrustum
+            }.any { it }
+
+            if (anyPointInFrustum || crossesFrustum) {
+                // Calculate distance for depth sorting
+                val distance = sqrt(toCameraX * toCameraX + toCameraZ * toCameraZ)
+
+                // Calculate shading based on angle to camera and distance
+                val angleFactor = (dotProduct + 1) / 2 // Convert from [-1,1] to [0,1]
+                val distanceFactor = (1.0 / (1.0 + distance * 0.1)).coerceIn(0.3, 1.0)
+                val shade = (angleFactor * distanceFactor).coerceIn(0.3, 1.0)
+
                 val shadedColor = Color(
                     (wall.color.red * shade).toInt(),
                     (wall.color.green * shade).toInt(),
@@ -138,6 +176,36 @@ class Renderer(private val width: Int, private val height: Int) {
             g2.color = wallInfo.color
             g2.fill(polygon)
         }
+    }
+
+    // Helper function to check if a line segment intersects with the view frustum
+    private fun lineIntersectsFrustum(
+        x1: Int, y1: Int,
+        x2: Int, y2: Int,
+        frustumLeft: Int, frustumTop: Int,
+        frustumRight: Int, frustumBottom: Int
+    ): Boolean {
+        // Check if line segment intersects with any of the frustum edges
+        return lineIntersectsLine(x1, y1, x2, y2, frustumLeft, frustumTop, frustumRight, frustumTop) ||
+                lineIntersectsLine(x1, y1, x2, y2, frustumRight, frustumTop, frustumRight, frustumBottom) ||
+                lineIntersectsLine(x1, y1, x2, y2, frustumRight, frustumBottom, frustumLeft, frustumBottom) ||
+                lineIntersectsLine(x1, y1, x2, y2, frustumLeft, frustumBottom, frustumLeft, frustumTop)
+    }
+
+    // Helper function to check if two line segments intersect
+    private fun lineIntersectsLine(
+        x1: Int, y1: Int,
+        x2: Int, y2: Int,
+        x3: Int, y3: Int,
+        x4: Int, y4: Int
+    ): Boolean {
+        val denominator = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+        if (denominator == 0) return false
+
+        val t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denominator.toDouble()
+        val u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denominator.toDouble()
+
+        return t in 0.0..1.0 && u in 0.0..1.0
     }
 
     private fun transformPoint(point: Vec3, camera: Camera): Vec3 {
