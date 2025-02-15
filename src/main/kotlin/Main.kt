@@ -34,7 +34,6 @@ fun main() {
 // image support
 // direction label optional
 // FPS show
-// remove tiles dragging adding
 
 // UI:
 // Sectiom seperation

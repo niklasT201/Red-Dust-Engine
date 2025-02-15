@@ -18,6 +18,7 @@ class GridEditor : JPanel() {
     private var selectedCellType = CellType.WALL
     private var isDragging = false
     private var lastCell: Pair<Int, Int>? = null
+    private var isRightMouseButton = false
     var useBlockWalls = false
 
     // Camera reference for player position
@@ -44,6 +45,7 @@ class GridEditor : JPanel() {
         // Add mouse listeners for painting
         addMouseListener(object : MouseAdapter() {
             override fun mousePressed(e: MouseEvent) {
+                isRightMouseButton = SwingUtilities.isRightMouseButton(e)
                 handleMouseEvent(e)
                 isDragging = true
             }
@@ -51,6 +53,7 @@ class GridEditor : JPanel() {
             override fun mouseReleased(e: MouseEvent) {
                 isDragging = false
                 lastCell = null
+                isRightMouseButton = false
             }
         })
 
@@ -138,9 +141,11 @@ class GridEditor : JPanel() {
         val currentCell = Pair(gridX, gridY)
 
         if (currentCell != lastCell) {
-            if (selectedCellType == CellType.EMPTY) {
+            if (isRightMouseButton) {
+                // Remove cell when right mouse button is pressed
                 grid.remove(currentCell)
             } else {
+                // Add cell when left mouse button is pressed
                 grid[currentCell] = CellData(
                     selectedCellType,
                     currentWallColor,
