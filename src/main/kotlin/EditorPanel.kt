@@ -13,12 +13,19 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
     private var currentWallHeight = 3.0
     private var currentWallWidth = 2.0
 
+    // Reference to wall property buttons for updating
+    private lateinit var colorButton: JButton
+    private lateinit var heightButton: JButton
+    private lateinit var widthButton: JButton
+    private lateinit var selectButton: JButton
+
     init {
         layout = BorderLayout()
         background = Color(40, 44, 52)
 
         setupModeButton()
         setupMainPanel()
+        setupSelectionHandling()
 
         val scrollPane = JScrollPane(mainPanel).apply {
             border = null
@@ -80,6 +87,21 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
         onColorChange = listener
     }
 
+    private fun setupSelectionHandling() {
+        gridEditor.setOnCellSelectedListener { cellData ->
+            // Update the property buttons with selected cell's values
+            cellData?.let {
+                colorButton.background = it.color
+                heightButton.text = "Wall Height: ${it.height}"
+                widthButton.text = "Wall Width: ${it.width}"
+                currentWallColor = it.color
+                currentWallHeight = it.height
+                currentWallWidth = it.width
+            }
+        }
+    }
+
+
     private fun setupModeButton() {
         modeButton.apply {
             background = Color(60, 63, 65)
@@ -140,6 +162,7 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             background = Color(40, 44, 52)
             border = BorderFactory.createEmptyBorder(5, 10, 5, 10)
 
+            // Quick Actions section
             add(createSection("Quick Actions", listOf(
                 createButton("Add Wall"),
                 createButton("Add Floor"),
@@ -156,17 +179,32 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
 
             add(Box.createVerticalStrut(10))
 
-            // Updated Wall Properties section
-            add(createSection("Wall Properties", listOf(
-                createColorButton("Wall Color", Color.RED),
-                createHeightButton(),
-                createWidthButton()
-            )))
+            // Updated Wall Properties section with stored references
+            val (propPanel, buttons) = createWallPropertiesPanel()
+            add(propPanel)
+            colorButton = buttons.first
+            heightButton = buttons.second
+            widthButton = buttons.third
 
             add(Box.createVerticalStrut(10))
 
+            // Updated Tools section with Select button
+            selectButton = createButton("Select").apply {
+                addActionListener {
+                    if (background == Color(60, 63, 65)) {
+                        // Activate selection mode
+                        background = Color(100, 100, 255)
+                        gridEditor.setEditMode(GridEditor.EditMode.SELECT)
+                    } else {
+                        // Deactivate selection mode
+                        background = Color(60, 63, 65)
+                        gridEditor.setEditMode(GridEditor.EditMode.DRAW)
+                    }
+                }
+            }
+
             add(createSection("Tools", listOf(
-                createButton("Select"),
+                selectButton,
                 createButton("Move"),
                 createButton("Rotate"),
                 createButton("Scale")
@@ -208,6 +246,21 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
         }
     }
 
+    private fun createWallPropertiesPanel(): Pair<JPanel, Triple<JButton, JButton, JButton>> {
+        val colorBtn = createColorButton("Wall Color", currentWallColor)
+        val heightBtn = createHeightButton()
+        val widthBtn = createWidthButton()
+
+        val panel = createSection("Wall Properties", listOf(
+            colorBtn,
+            heightBtn,
+            widthBtn
+        ))
+
+        return Pair(panel, Triple(colorBtn, heightBtn, widthBtn))
+    }
+
+
     private fun createColorButton(text: String, initialColor: Color): JButton {
         return JButton(text).apply {
             background = initialColor
@@ -224,6 +277,8 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
                     background = newColor
                     currentWallColor = newColor
                     onColorChange?.invoke(newColor)
+                    // Update selected cell if in select mode
+                    gridEditor.updateSelectedCell(color = newColor)
                 }
             }
         }
@@ -247,6 +302,8 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
                         currentWallHeight = newHeight
                         text = "Wall Height: $currentWallHeight"
                         gridEditor.setWallHeight(currentWallHeight)
+                        // Update selected cell if in select mode
+                        gridEditor.updateSelectedCell(height = newHeight)
                     }
                 } catch (e: NumberFormatException) {
                     JOptionPane.showMessageDialog(
@@ -278,6 +335,8 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
                         currentWallWidth = newWidth
                         text = "Wall Width: $currentWallWidth"
                         gridEditor.setWallWidth(currentWallWidth)
+                        // Update selected cell if in select mode
+                        gridEditor.updateSelectedCell(width = newWidth)
                     }
                 } catch (e: NumberFormatException) {
                     JOptionPane.showMessageDialog(

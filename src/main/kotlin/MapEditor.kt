@@ -5,14 +5,6 @@ import kotlin.math.cos
 import kotlin.math.floor
 import kotlin.math.sin
 
-data class CellData(
-    val type: GridEditor.CellType,
-    var color: Color = Color(150, 0, 0),
-    var isBlockWall: Boolean = false,
-    var height: Double = 3.0,
-    var width: Double = 2.0
-)
-
 class GridEditor : JPanel() {
     private val grid = mutableMapOf<Pair<Int, Int>, CellData>()
     private var selectedCellType = CellType.WALL
@@ -20,6 +12,10 @@ class GridEditor : JPanel() {
     private var lastCell: Pair<Int, Int>? = null
     private var isRightMouseButton = false
     var useBlockWalls = false
+
+    enum class EditMode {
+        DRAW, SELECT
+    }
 
     // Camera reference for player position
     private var cameraRef: Camera? = null
@@ -34,6 +30,10 @@ class GridEditor : JPanel() {
     private var cellSize = 20.0 // Initial cell size in pixels
     private val visibleCellPadding = 2 // Extra cells to render beyond viewport
 
+    private var currentMode = EditMode.DRAW
+    private var selectedCell: Pair<Int, Int>? = null
+    private var onCellSelected: ((CellData?) -> Unit)? = null
+
     enum class CellType {
         EMPTY, WALL, FLOOR
     }
@@ -42,12 +42,30 @@ class GridEditor : JPanel() {
         background = Color(30, 33, 40)
         preferredSize = Dimension(400, 400)
 
-        // Add mouse listeners for painting
+        // Updated mouse listeners for painting and selection
         addMouseListener(object : MouseAdapter() {
             override fun mousePressed(e: MouseEvent) {
-                isRightMouseButton = SwingUtilities.isRightMouseButton(e)
-                handleMouseEvent(e)
-                isDragging = true
+                when (currentMode) {
+                    EditMode.DRAW -> {
+                        isRightMouseButton = SwingUtilities.isRightMouseButton(e)
+                        handleMouseEvent(e)
+                        isDragging = true
+                    }
+                    EditMode.SELECT -> {
+                        val (gridX, gridY) = screenToGrid(e.x, e.y)
+                        val clickedCell = Pair(gridX, gridY)
+
+                        // Update selection and notify listeners
+                        if (grid.containsKey(clickedCell)) {
+                            selectedCell = clickedCell
+                            onCellSelected?.invoke(grid[clickedCell])
+                        } else {
+                            selectedCell = null
+                            onCellSelected?.invoke(null)
+                        }
+                        repaint()
+                    }
+                }
             }
 
             override fun mouseReleased(e: MouseEvent) {
@@ -59,7 +77,7 @@ class GridEditor : JPanel() {
 
         addMouseMotionListener(object : MouseMotionAdapter() {
             override fun mouseDragged(e: MouseEvent) {
-                if (isDragging) {
+                if (isDragging && currentMode == EditMode.DRAW) {
                     handleMouseEvent(e)
                 }
             }
@@ -172,6 +190,37 @@ class GridEditor : JPanel() {
         return Pair(-x / baseScale, z / baseScale)  // Use baseScale instead of dynamic scale
     }
 
+    fun setEditMode(mode: EditMode) {
+        currentMode = mode
+        // Clear selection when switching modes
+        if (mode == EditMode.DRAW) {
+            selectedCell = null
+            onCellSelected?.invoke(null)
+            repaint()
+        }
+    }
+
+    // Function to set selection callback
+    fun setOnCellSelectedListener(listener: (CellData?) -> Unit) {
+        onCellSelected = listener
+    }
+
+    // Function to update selected cell properties
+    fun updateSelectedCell(color: Color? = null, height: Double? = null, width: Double? = null) {
+        selectedCell?.let { cell ->
+            grid[cell]?.let { cellData ->
+                grid[cell] = cellData.copy(
+                    color = color ?: cellData.color,
+                    height = height ?: cellData.height,
+                    width = width ?: cellData.width
+                )
+                repaint()
+                // Notify that grid has changed
+                firePropertyChange("gridChanged", null, grid)
+            }
+        }
+    }
+
     override fun paintComponent(g: Graphics) {
         super.paintComponent(g)
         val g2 = g as Graphics2D
@@ -210,6 +259,19 @@ class GridEditor : JPanel() {
                     cellSize.toInt()
                 )
             }
+        }
+
+        // Draw selection highlight
+        selectedCell?.let { (x, y) ->
+            val (screenX, screenY) = gridToScreen(x, y)
+            g2.color = Color(255, 255, 0, 100) // Semi-transparent yellow
+            g2.stroke = BasicStroke(2f)
+            g2.drawRect(
+                screenX,
+                screenY,
+                cellSize.toInt(),
+                cellSize.toInt()
+            )
         }
 
         // Draw player if camera reference exists
