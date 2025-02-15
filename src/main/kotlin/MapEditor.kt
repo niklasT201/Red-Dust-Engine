@@ -8,6 +8,7 @@ import kotlin.math.sin
 class GridEditor : JPanel() {
     private val grid = mutableMapOf<Pair<Int, Int>, CellData>()
     private var selectedCellType = CellType.WALL
+    private var currentCellType = CellType.WALL
     private var isDragging = false
     private var lastCell: Pair<Int, Int>? = null
     private var isRightMouseButton = false
@@ -227,6 +228,10 @@ class GridEditor : JPanel() {
         return Pair(screenX, screenY)
     }
 
+    fun setCellType(type: CellType) {
+        currentCellType = type
+    }
+
     fun setWallColor(color: Color) {
         currentWallColor = color
         repaint()
@@ -266,14 +271,25 @@ class GridEditor : JPanel() {
                 grid.remove(currentCell)
             } else {
                 // Add cell when left mouse button is pressed
-                grid[currentCell] = CellData(
-                    selectedCellType,
-                    currentWallColor,
-                    useBlockWalls,
-                    currentWallHeight,
-                    currentWallWidth,
-                    currentDirection
-                )
+                val cellData = when (currentCellType) {
+                    CellType.WALL -> CellData(
+                        CellType.WALL,
+                        currentWallColor,
+                        useBlockWalls,
+                        currentWallHeight,
+                        currentWallWidth,
+                        currentDirection
+                    )
+                    CellType.FLOOR -> CellData(
+                        CellType.FLOOR,
+                        Color(100, 100, 100),  // Default floor color
+                        false,
+                        0.0,  // Height for floor is always 0
+                        2.0,  // Standard floor tile width
+                        Direction.NORTH  // Direction doesn't matter for floors
+                    )
+                }
+                grid[currentCell] = cellData
             }
             lastCell = currentCell
             repaint()
@@ -526,6 +542,30 @@ class GridEditor : JPanel() {
             }
         }
         return walls
+    }
+
+    fun generateFloors(): List<Floor> {
+        val floors = mutableListOf<Floor>()
+
+        grid.forEach { (pos, cellData) ->
+            if (cellData.type == CellType.FLOOR) {
+                val (x, y) = pos
+                val gameX = -x * baseScale
+                val gameZ = y * baseScale
+
+                floors.add(
+                    Floor(
+                        x1 = gameX,
+                        z1 = gameZ,
+                        x2 = gameX + baseScale,
+                        z2 = gameZ + baseScale,
+                        y = 0.0,
+                        color = cellData.color
+                    )
+                )
+            }
+        }
+        return floors
     }
 
     fun clearGrid() {

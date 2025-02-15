@@ -24,6 +24,10 @@ fun main() {
 // wall clipping issue
 // maybe fix player map offset 1
 // update wall direction directly
+// fix floor tiles flickering
+// add optinal wall line design (menu bar)
+// add wall placement on floor tiles
+// improve code for multiple objects on map
 
 // add shortcuts for objects
 // optional shadows

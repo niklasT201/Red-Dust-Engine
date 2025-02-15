@@ -278,8 +278,11 @@ class Game3D : JPanel() {
         renderPanel.repaint()
     }
 
-    fun updateWalls(newWalls: List<Wall>) {
+    private fun updateWalls(newWalls: List<Wall>) {
         walls.clear()
         walls.addAll(newWalls)
+
+        floors.clear()
+        floors.addAll(gridEditor.generateFloors())
     }
 }

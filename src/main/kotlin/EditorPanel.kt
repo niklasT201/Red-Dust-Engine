@@ -166,8 +166,16 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
 
             // Quick Actions section
             add(createSection("Quick Actions", listOf(
-                createButton("Add Wall"),
-                createButton("Add Floor"),
+                createButton("Add Wall").apply {
+                    addActionListener {
+                        gridEditor.setCellType(GridEditor.CellType.WALL)
+                    }
+                },
+                createButton("Add Floor").apply {
+                    addActionListener {
+                        gridEditor.setCellType(GridEditor.CellType.FLOOR)
+                    }
+                },
                 createButton("Clear All").apply {
                     addActionListener {
                         gridEditor.clearGrid()
