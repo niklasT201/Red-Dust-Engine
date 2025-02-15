@@ -154,7 +154,7 @@ class GridEditor : JPanel() {
         addKeyListener(object : KeyAdapter() {
             override fun keyPressed(e: KeyEvent) {
                 when (e.keyCode) {
-                    KeyEvent.VK_R -> {
+                    KeyBindings.ROTATE_WALL -> {
                         if (currentMode == EditMode.ROTATE && selectedCell != null) {
                             grid[selectedCell]?.let { cellData ->
                                 grid[selectedCell!!] = cellData.copy(
@@ -165,10 +165,10 @@ class GridEditor : JPanel() {
                             }
                         }
                     }
-                    KeyEvent.VK_N -> setWallDirection(Direction.NORTH)
-                    KeyEvent.VK_O -> setWallDirection(Direction.WEST)
-                    KeyEvent.VK_S -> setWallDirection(Direction.SOUTH)
-                    KeyEvent.VK_W -> setWallDirection(Direction.EAST)
+                    KeyBindings.ROTATE_NORTH -> setWallDirection(Direction.NORTH)
+                    KeyBindings.ROTATE_WEST -> setWallDirection(Direction.WEST)
+                    KeyBindings.ROTATE_SOUTH -> setWallDirection(Direction.SOUTH)
+                    KeyBindings.ROTATE_EAST -> setWallDirection(Direction.EAST)
                 }
             }
         })
@@ -384,18 +384,13 @@ class GridEditor : JPanel() {
             )
         }
 
-        val indicatorSize = cellSize.toInt()
-        val padding = 10
-        g2.color = Color(60, 63, 65)
-        g2.fillRect(padding, padding, indicatorSize, indicatorSize)
-        g2.color = Color(100, 100, 100)
-        g2.drawRect(padding, padding, indicatorSize, indicatorSize)
-
-        // Draw direction text below indicator
+        // Draw direction text
+        g2.color = Color.WHITE // Set text color to white
         g2.font = Font("Monospace", Font.BOLD, 12)
-        g2.drawString(currentDirection.name.first().toString(),
-            padding + indicatorSize/2 - 5,
-            padding + indicatorSize + 15)
+        g2.drawString(currentDirection.name,
+            10, // X position for the text
+            25 // Y position for the text
+        )
 
         // Draw direction letters on wall tiles
         grid.forEach { (pos, cellData) ->
@@ -497,7 +492,7 @@ class GridEditor : JPanel() {
                             gameX, gameZ,
                             gameX + cellData.width, gameZ
                         )
-                        Direction.EAST -> WallCoords(
+                        Direction.WEST -> WallCoords(
                             gameX + cellData.width, gameZ,
                             gameX + cellData.width, gameZ + cellData.width
                         )
@@ -505,7 +500,7 @@ class GridEditor : JPanel() {
                             gameX + cellData.width, gameZ + cellData.width,
                             gameX, gameZ + cellData.width
                         )
-                        Direction.WEST -> WallCoords(
+                        Direction.EAST -> WallCoords(
                             gameX, gameZ + cellData.width,
                             gameX, gameZ
                         )

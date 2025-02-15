@@ -208,39 +208,6 @@ class Game3D : JPanel() {
         }
     }
 
-    inner class GameKeyListener : KeyListener {
-        override fun keyPressed(e: KeyEvent) {
-            if (!isEditorMode) {
-                keysPressed.add(e.keyCode)
-            }
-        }
-        override fun keyReleased(e: KeyEvent) {
-            keysPressed.remove(e.keyCode)
-        }
-        override fun keyTyped(e: KeyEvent) {}
-    }
-
-    inner class GameMouseListener : MouseMotionListener {
-        override fun mouseMoved(e: MouseEvent) {
-            if (!isEditorMode) {
-                val dx = e.x - renderPanel.width/2
-                val dy = e.y - renderPanel.height/2
-                camera.rotate(dx.toDouble(), dy.toDouble())
-
-                try {
-                    val robot = Robot()
-                    robot.mouseMove(
-                        renderPanel.locationOnScreen.x + renderPanel.width/2,
-                        renderPanel.locationOnScreen.y + renderPanel.height/2
-                    )
-                } catch (e: Exception) {
-                    // Handle potential security exceptions
-                }
-            }
-        }
-        override fun mouseDragged(e: MouseEvent) {}
-    }
-
     fun update() {
         if (!isEditorMode) {
             var forward = 0.0
@@ -248,12 +215,12 @@ class Game3D : JPanel() {
             var up = 0.0
 
             // Get movement input
-            if (KeyEvent.VK_W in keysPressed) forward += 1.0
-            if (KeyEvent.VK_S in keysPressed) forward -= 1.0
-            if (KeyEvent.VK_A in keysPressed) right -= 1.0
-            if (KeyEvent.VK_D in keysPressed) right += 1.0
-            if (KeyEvent.VK_SPACE in keysPressed) up += 1.0
-            if (KeyEvent.VK_SHIFT in keysPressed) up -= 1.0
+            if (KeyBindings.MOVE_FORWARD in keysPressed) forward += 1.0
+            if (KeyBindings.MOVE_BACKWARD in keysPressed) forward -= 1.0
+            if (KeyBindings.MOVE_LEFT in keysPressed) right -= 1.0
+            if (KeyBindings.MOVE_RIGHT in keysPressed) right += 1.0
+            if (KeyBindings.MOVE_UP in keysPressed) up += 1.0
+            if (KeyBindings.MOVE_DOWN in keysPressed) up -= 1.0
 
             // Calculate movement based on camera direction
             val moveSpeed = 0.05

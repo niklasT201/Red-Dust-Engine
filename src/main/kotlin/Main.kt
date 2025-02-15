@@ -23,7 +23,6 @@ fun main() {
 
 // wall clipping issue
 // maybe fix player map offset 1
-// east and west wrong letters
 // update wall direction directly
 
 // add shortcuts for objects
@@ -58,7 +57,6 @@ fun main() {
 // Cache calculations
 // spatial partitioning system (like BSP or quadtree)
 
-// support for different wall heights
 // basic lighting system
 // support for ceiling textures
 // sprite rendering for 2D objects
