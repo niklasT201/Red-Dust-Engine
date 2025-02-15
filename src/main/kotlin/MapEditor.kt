@@ -14,7 +14,7 @@ class GridEditor : JPanel() {
     var useBlockWalls = false
 
     enum class EditMode {
-        DRAW, SELECT, MOVE
+        DRAW, SELECT, MOVE, ROTATE
     }
 
     // Camera reference for player position
@@ -23,6 +23,7 @@ class GridEditor : JPanel() {
     private var currentWallHeight = 3.0
     private var currentWallWidth = 2.0
     private var currentWallColor = Color(150, 0, 0)
+    private var currentDirection = Direction.NORTH
 
     // View properties
     private var viewportX = 0.0 // Center of viewport in grid coordinates
@@ -110,6 +111,20 @@ class GridEditor : JPanel() {
                         }
                         repaint()
                     }
+                    EditMode.ROTATE -> {
+                        val (gridX, gridY) = screenToGrid(e.x, e.y)
+                        val clickedCell = Pair(gridX, gridY)
+
+                        if (grid.containsKey(clickedCell)) {
+                            grid[clickedCell]?.let { cellData ->
+                                grid[clickedCell] = cellData.copy(
+                                    direction = cellData.direction.rotate()
+                                )
+                                repaint()
+                                firePropertyChange("gridChanged", null, grid)
+                            }
+                        }
+                    }
                 }
             }
 
@@ -135,6 +150,28 @@ class GridEditor : JPanel() {
             cellSize = cellSize.coerceIn(5.0, 100.0) // Limit zoom levels
             repaint()
         }
+
+        addKeyListener(object : KeyAdapter() {
+            override fun keyPressed(e: KeyEvent) {
+                when (e.keyCode) {
+                    KeyEvent.VK_R -> {
+                        if (currentMode == EditMode.ROTATE && selectedCell != null) {
+                            grid[selectedCell]?.let { cellData ->
+                                grid[selectedCell!!] = cellData.copy(
+                                    direction = cellData.direction.rotate()
+                                )
+                                repaint()
+                                firePropertyChange("gridChanged", null, grid)
+                            }
+                        }
+                    }
+                    KeyEvent.VK_N -> setWallDirection(Direction.NORTH)
+                    KeyEvent.VK_E -> setWallDirection(Direction.EAST)
+                    KeyEvent.VK_S -> setWallDirection(Direction.SOUTH)
+                    KeyEvent.VK_W -> setWallDirection(Direction.WEST)
+                }
+            }
+        })
 
         // Add key bindings for panning
         inputMap.put(KeyStroke.getKeyStroke("LEFT"), "pan_left")
@@ -199,6 +236,18 @@ class GridEditor : JPanel() {
         repaint()
     }
 
+    private fun setWallDirection(direction: Direction) {
+        if (currentMode == EditMode.DRAW) {
+            currentDirection = direction
+        } else if (currentMode == EditMode.SELECT && selectedCell != null) {
+            grid[selectedCell]?.let { cellData ->
+                grid[selectedCell!!] = cellData.copy(direction = direction)
+                repaint()
+                firePropertyChange("gridChanged", null, grid)
+            }
+        }
+    }
+
     private fun handleMouseEvent(e: MouseEvent) {
         val (gridX, gridY) = screenToGrid(e.x, e.y)
         val currentCell = Pair(gridX, gridY)
@@ -214,7 +263,8 @@ class GridEditor : JPanel() {
                     currentWallColor,
                     useBlockWalls,
                     currentWallHeight,
-                    currentWallWidth
+                    currentWallWidth,
+                    currentDirection
                 )
             }
             lastCell = currentCell
@@ -379,7 +429,7 @@ class GridEditor : JPanel() {
                 val gameZ = y * baseScale
 
                 if (cellData.isBlockWall) {
-                    // Add block walls (four walls)
+                    // Block walls
                     walls.addAll(listOf(
                         // North wall
                         Wall(
@@ -411,11 +461,30 @@ class GridEditor : JPanel() {
                         )
                     ))
                 } else {
-                    // Add flat wall
+                    // Flat walls with rotation support
+                    val coords = when (cellData.direction) {
+                        Direction.NORTH -> WallCoords(
+                            gameX, gameZ,
+                            gameX + cellData.width, gameZ
+                        )
+                        Direction.EAST -> WallCoords(
+                            gameX + cellData.width, gameZ,
+                            gameX + cellData.width, gameZ + cellData.width
+                        )
+                        Direction.SOUTH -> WallCoords(
+                            gameX + cellData.width, gameZ + cellData.width,
+                            gameX, gameZ + cellData.width
+                        )
+                        Direction.WEST -> WallCoords(
+                            gameX, gameZ + cellData.width,
+                            gameX, gameZ
+                        )
+                    }
+
                     walls.add(
                         Wall(
-                            start = Vec3(gameX, 0.0, gameZ),
-                            end = Vec3(gameX + cellData.width, 0.0, gameZ),
+                            start = Vec3(coords.startX, 0.0, coords.startZ),
+                            end = Vec3(coords.endX, 0.0, coords.endZ),
                             height = cellData.height,
                             color = cellData.color
                         )
