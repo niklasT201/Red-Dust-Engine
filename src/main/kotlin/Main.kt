@@ -23,6 +23,7 @@ fun main() {
 
 // walls rotation fixing
 // wall clipping issue
+// maybe fix player map offset 1
 
 // add shortcuts for objects
 // optional shadows
