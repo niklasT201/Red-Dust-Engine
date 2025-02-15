@@ -35,7 +35,7 @@ class GridEditor : JPanel() {
     private var onCellSelected: ((CellData?) -> Unit)? = null
 
     enum class CellType {
-        EMPTY, WALL, FLOOR
+        WALL, FLOOR
     }
 
     init {
