@@ -151,25 +151,33 @@ class GridEditor : JPanel() {
             repaint()
         }
 
-        addKeyListener(object : KeyAdapter() {
-            override fun keyPressed(e: KeyEvent) {
-                when (e.keyCode) {
-                    KeyBindings.ROTATE_WALL -> {
-                        if (currentMode == EditMode.ROTATE && selectedCell != null) {
-                            grid[selectedCell]?.let { cellData ->
-                                grid[selectedCell!!] = cellData.copy(
-                                    direction = cellData.direction.rotate()
-                                )
-                                repaint()
-                                firePropertyChange("gridChanged", null, grid)
-                            }
-                        }
-                    }
-                    KeyBindings.ROTATE_NORTH -> setWallDirection(Direction.NORTH)
-                    KeyBindings.ROTATE_WEST -> setWallDirection(Direction.WEST)
-                    KeyBindings.ROTATE_SOUTH -> setWallDirection(Direction.SOUTH)
-                    KeyBindings.ROTATE_EAST -> setWallDirection(Direction.EAST)
-                }
+        inputMap.put(KeyStroke.getKeyStroke(KeyBindings.ROTATE_NORTH, 0), "rotate_north")
+        inputMap.put(KeyStroke.getKeyStroke(KeyBindings.ROTATE_WEST, 0), "rotate_west")
+        inputMap.put(KeyStroke.getKeyStroke(KeyBindings.ROTATE_SOUTH, 0), "rotate_south")
+        inputMap.put(KeyStroke.getKeyStroke(KeyBindings.ROTATE_EAST, 0), "rotate_east")
+
+        actionMap.put("rotate_north", object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent) {
+                setWallDirection(Direction.NORTH)
+                repaint()
+            }
+        })
+        actionMap.put("rotate_west", object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent) {
+                setWallDirection(Direction.WEST)
+                repaint()
+            }
+        })
+        actionMap.put("rotate_south", object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent) {
+                setWallDirection(Direction.SOUTH)
+                repaint()
+            }
+        })
+        actionMap.put("rotate_east", object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent) {
+                setWallDirection(Direction.EAST)
+                repaint()
             }
         })
 
