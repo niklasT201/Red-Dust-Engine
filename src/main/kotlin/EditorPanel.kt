@@ -18,6 +18,7 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
     private lateinit var heightButton: JButton
     private lateinit var widthButton: JButton
     private lateinit var selectButton: JButton
+    private lateinit var moveButton: JButton
 
     init {
         layout = BorderLayout()
@@ -203,9 +204,23 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
                 }
             }
 
+            moveButton = createButton("Move").apply {
+                addActionListener {
+                    if (background == Color(60, 63, 65)) {
+                        // Activate move mode
+                        background = Color(100, 100, 255)
+                        gridEditor.setEditMode(GridEditor.EditMode.MOVE)
+                    } else {
+                        // Deactivate move mode
+                        background = Color(60, 63, 65)
+                        gridEditor.setEditMode(GridEditor.EditMode.DRAW)
+                    }
+                }
+            }
+
             add(createSection("Tools", listOf(
                 selectButton,
-                createButton("Move"),
+                moveButton,
                 createButton("Rotate"),
                 createButton("Scale")
             )))

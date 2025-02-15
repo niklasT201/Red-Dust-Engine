@@ -14,7 +14,7 @@ class GridEditor : JPanel() {
     var useBlockWalls = false
 
     enum class EditMode {
-        DRAW, SELECT
+        DRAW, SELECT, MOVE
     }
 
     // Camera reference for player position
@@ -33,6 +33,9 @@ class GridEditor : JPanel() {
     private var currentMode = EditMode.DRAW
     private var selectedCell: Pair<Int, Int>? = null
     private var onCellSelected: ((CellData?) -> Unit)? = null
+    private val selectedCells = mutableSetOf<Pair<Int, Int>>()
+    private var moveStartPosition: Pair<Int, Int>? = null
+    private var isMultiSelectEnabled = false
 
     enum class CellType {
         WALL, FLOOR
@@ -62,6 +65,48 @@ class GridEditor : JPanel() {
                         } else {
                             selectedCell = null
                             onCellSelected?.invoke(null)
+                        }
+                        repaint()
+                    }
+                    EditMode.MOVE -> {
+                        val (gridX, gridY) = screenToGrid(e.x, e.y)
+                        val clickedCell = Pair(gridX, gridY)
+
+                        // Check if Control key is pressed for multi-select
+                        isMultiSelectEnabled = e.isControlDown
+
+                        if (grid.containsKey(clickedCell)) {
+                            if (!isMultiSelectEnabled) {
+                                selectedCells.clear()
+                            }
+                            selectedCells.add(clickedCell)
+                            moveStartPosition = clickedCell
+                        } else if (selectedCells.isNotEmpty()) {
+                            // Move selected cells to new position
+                            val deltaX = gridX - moveStartPosition!!.first
+                            val deltaY = gridY - moveStartPosition!!.second
+
+                            // Create new cells at target positions
+                            val movedCells = mutableMapOf<Pair<Int, Int>, CellData>()
+                            selectedCells.forEach { cell ->
+                                val newPos = Pair(cell.first + deltaX, cell.second + deltaY)
+                                grid[cell]?.let { cellData ->
+                                    movedCells[newPos] = cellData
+                                }
+                            }
+
+                            // Remove old cells
+                            selectedCells.forEach { grid.remove(it) }
+
+                            // Add new cells
+                            grid.putAll(movedCells)
+
+                            // Clear selection after move
+                            selectedCells.clear()
+                            moveStartPosition = null
+
+                            // Notify listeners that the grid has changed
+                            firePropertyChange("gridChanged", null, grid)
                         }
                         repaint()
                     }
@@ -253,6 +298,20 @@ class GridEditor : JPanel() {
 
                 // Draw grid lines
                 g2.color = Color(60, 63, 65)
+                g2.drawRect(
+                    screenX,
+                    screenY,
+                    cellSize.toInt(),
+                    cellSize.toInt()
+                )
+            }
+        }
+
+        if (currentMode == EditMode.MOVE) {
+            selectedCells.forEach { (x, y) ->
+                val (screenX, screenY) = gridToScreen(x, y)
+                g2.color = Color(0, 255, 255, 100) // Semi-transparent cyan
+                g2.stroke = BasicStroke(2f)
                 g2.drawRect(
                     screenX,
                     screenY,
