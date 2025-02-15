@@ -187,7 +187,8 @@ class GridEditor : JPanel() {
 
     // Convert world coordinates to grid coordinates
     private fun worldToGrid(x: Double, z: Double): Pair<Double, Double> {
-        return Pair(-x / baseScale, z / baseScale)  // Use baseScale instead of dynamic scale
+        // Removed negative sign for x to fix the left offset
+        return Pair(x / baseScale, z / baseScale)
     }
 
     fun setEditMode(mode: EditMode) {
