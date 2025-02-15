@@ -26,6 +26,7 @@ fun main() {
 // maybe fix player map offset 1
 
 // add shortcuts for objects
+// add rotate feature for the button
 // optional shadows
 // weapon system
 // create own weapons

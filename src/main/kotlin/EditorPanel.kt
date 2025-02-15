@@ -222,7 +222,6 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
                 selectButton,
                 moveButton,
                 createButton("Rotate"),
-                createButton("Scale")
             )))
         }
     }
