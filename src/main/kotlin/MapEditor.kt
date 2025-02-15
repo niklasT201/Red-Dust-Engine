@@ -166,9 +166,9 @@ class GridEditor : JPanel() {
                         }
                     }
                     KeyEvent.VK_N -> setWallDirection(Direction.NORTH)
-                    KeyEvent.VK_E -> setWallDirection(Direction.EAST)
+                    KeyEvent.VK_O -> setWallDirection(Direction.WEST)
                     KeyEvent.VK_S -> setWallDirection(Direction.SOUTH)
-                    KeyEvent.VK_W -> setWallDirection(Direction.WEST)
+                    KeyEvent.VK_W -> setWallDirection(Direction.EAST)
                 }
             }
         })
@@ -382,6 +382,36 @@ class GridEditor : JPanel() {
                 cellSize.toInt(),
                 cellSize.toInt()
             )
+        }
+
+        val indicatorSize = cellSize.toInt()
+        val padding = 10
+        g2.color = Color(60, 63, 65)
+        g2.fillRect(padding, padding, indicatorSize, indicatorSize)
+        g2.color = Color(100, 100, 100)
+        g2.drawRect(padding, padding, indicatorSize, indicatorSize)
+
+        // Draw direction text below indicator
+        g2.font = Font("Monospace", Font.BOLD, 12)
+        g2.drawString(currentDirection.name.first().toString(),
+            padding + indicatorSize/2 - 5,
+            padding + indicatorSize + 15)
+
+        // Draw direction letters on wall tiles
+        grid.forEach { (pos, cellData) ->
+            if (cellData.type == CellType.WALL && !cellData.isBlockWall) {
+                val (x, y) = pos
+                val (screenX, screenY) = gridToScreen(x, y)
+
+                // Draw direction letter
+                g2.color = Color.WHITE
+                g2.font = Font("Monospace", Font.BOLD, (cellSize * 0.4).toInt())
+                val letter = cellData.direction.name.first().toString()
+                val metrics = g2.fontMetrics
+                val letterX = screenX + (cellSize - metrics.stringWidth(letter))/2
+                val letterY = screenY + (cellSize + metrics.height)/2 - metrics.descent
+                g2.drawString(letter, letterX.toInt(), letterY.toInt())
+            }
         }
 
         // Draw player if camera reference exists

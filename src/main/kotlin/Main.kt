@@ -21,12 +21,12 @@ fun main() {
     }
 }
 
-// walls rotation fixing
 // wall clipping issue
 // maybe fix player map offset 1
+// east and west wrong letters
+// update wall direction directly
 
 // add shortcuts for objects
-// add rotate feature for the button
 // optional shadows
 // weapon system
 // create own weapons
