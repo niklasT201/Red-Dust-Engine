@@ -44,6 +44,11 @@ class GridEditor : JPanel() {
         background = Color(30, 33, 40)
         preferredSize = Dimension(400, 400)
 
+        // Request focus immediately when created
+        SwingUtilities.invokeLater {
+            requestFocusInWindow()
+        }
+
         // Updated mouse listeners for painting and selection
         addMouseListener(object : MouseAdapter() {
             override fun mousePressed(e: MouseEvent) {
@@ -158,8 +163,9 @@ class GridEditor : JPanel() {
         inputMap.put(KeyStroke.getKeyStroke(KeyBindings.ROTATE_SOUTH, 0), "rotate_south")
         inputMap.put(KeyStroke.getKeyStroke(KeyBindings.ROTATE_EAST, 0), "rotate_east")
 
-        inputMap.put(KeyStroke.getKeyStroke(KeyBindings.WALL_SHORTCUT, 0), "select_wall")
-        inputMap.put(KeyStroke.getKeyStroke(KeyBindings.FLOOR_SHORTCUT, 0), "select_floor")
+        val focusedInputMap = getInputMap(WHEN_FOCUSED)
+        focusedInputMap.put(KeyStroke.getKeyStroke(KeyBindings.WALL_SHORTCUT, 0), "select_wall")
+        focusedInputMap.put(KeyStroke.getKeyStroke(KeyBindings.FLOOR_SHORTCUT, 0), "select_floor")
 
 
         actionMap.put("rotate_north", object : AbstractAction() {
@@ -246,6 +252,7 @@ class GridEditor : JPanel() {
 
     fun setObjectType(type: ObjectType) {
         currentObjectType = type
+        repaint()
     }
 
     fun setWallColor(color: Color) {

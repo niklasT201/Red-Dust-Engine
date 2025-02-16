@@ -23,8 +23,9 @@ fun main() {
 
 // wall clipping issue
 // maybe fix player map offset 1
-// update wall direction directly
+// pressing gui, wall direction isnt working
 // fix floor tiles flickering
+// add floor and wall button have a visual
 
 // optional shadows
 // weapon system

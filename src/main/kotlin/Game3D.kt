@@ -164,7 +164,9 @@ class Game3D : JPanel() {
         if (isEditorMode) {
             cardLayout.show(rightPanel, "editor")
             editorPanel.setModeButtonText("Editor Mode")
-            gridEditor.requestFocusInWindow()
+            SwingUtilities.invokeLater {
+                gridEditor.requestFocusInWindow()
+            }
         } else {
             cardLayout.show(rightPanel, "game")
             editorPanel.setModeButtonText("Game Mode")
