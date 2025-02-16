@@ -13,6 +13,14 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
     private var currentWallHeight = 3.0
     private var currentWallWidth = 2.0
 
+    // Store references to object type buttons
+    private lateinit var addWallButton: JButton
+    private lateinit var addFloorButton: JButton
+
+    // Colors for button states
+    private val defaultButtonColor = Color(60, 63, 65)
+    private val selectedButtonColor = Color(100, 100, 255)
+
     // Reference to wall property buttons for updating
     private lateinit var colorButton: JButton
     private lateinit var heightButton: JButton
@@ -109,6 +117,10 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
         }
     }
 
+    private fun updateButtonStates(selectedType: ObjectType) {
+        addWallButton.background = if (selectedType == ObjectType.WALL) selectedButtonColor else defaultButtonColor
+        addFloorButton.background = if (selectedType == ObjectType.FLOOR) selectedButtonColor else defaultButtonColor
+    }
 
     private fun setupModeButton() {
         modeButton.apply {
@@ -183,18 +195,25 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             background = Color(40, 44, 52)
             border = BorderFactory.createEmptyBorder(5, 10, 5, 10)
 
+            // Create buttons with stored references
+            addWallButton = createButton("Add Wall").apply {
+                addActionListener {
+                    gridEditor.setObjectType(ObjectType.WALL)
+                    updateButtonStates(ObjectType.WALL)
+                }
+            }
+
+            addFloorButton = createButton("Add Floor").apply {
+                addActionListener {
+                    gridEditor.setObjectType(ObjectType.FLOOR)
+                    updateButtonStates(ObjectType.FLOOR)
+                }
+            }
+
             // Quick Actions section
             add(createSection("Quick Actions", listOf(
-                createButton("Add Wall").apply {
-                    addActionListener {
-                        gridEditor.setObjectType(ObjectType.WALL)
-                    }
-                },
-                createButton("Add Floor").apply {
-                    addActionListener {
-                        gridEditor.setObjectType(ObjectType.FLOOR)
-                    }
-                },
+                addWallButton,
+                addFloorButton,
                 createButton("Clear All").apply {
                     addActionListener {
                         gridEditor.clearGrid()
