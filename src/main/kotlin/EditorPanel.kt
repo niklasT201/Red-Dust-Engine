@@ -157,6 +157,19 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             add(Box.createVerticalStrut(2))
             add(blockWallRadio)
 
+            // visualization toggle checkbox
+            val visualizationToggle = JCheckBox("Show Flat Walls as Lines").apply {
+                background = Color(40, 44, 52)
+                foreground = Color.WHITE
+                alignmentX = Component.LEFT_ALIGNMENT
+                addActionListener {
+                    gridEditor.setFlatWallVisualization(isSelected)
+                }
+            }
+
+            add(Box.createVerticalStrut(5))
+            add(visualizationToggle)
+
             border = BorderFactory.createCompoundBorder(
                 border,
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)

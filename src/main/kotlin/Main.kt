@@ -25,7 +25,6 @@ fun main() {
 // maybe fix player map offset 1
 // update wall direction directly
 // fix floor tiles flickering
-// add optinal wall line design (menu bar)
 // label that shows current object
 
 // add shortcuts for objects

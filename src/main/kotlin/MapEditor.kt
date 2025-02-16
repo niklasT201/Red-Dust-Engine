@@ -12,6 +12,7 @@ class GridEditor : JPanel() {
     private var lastCell: Pair<Int, Int>? = null
     private var isRightMouseButton = false
     var useBlockWalls = false
+    private var showFlatWallsAsLines = false
 
     enum class EditMode {
         DRAW, SELECT, MOVE, ROTATE
@@ -347,6 +348,11 @@ class GridEditor : JPanel() {
         onCellSelected = listener
     }
 
+    fun setFlatWallVisualization(showAsLines: Boolean) {
+        showFlatWallsAsLines = showAsLines
+        repaint()
+    }
+
     // Function to update selected cell properties
     fun updateSelectedCell(color: Color? = null, height: Double? = null, width: Double? = null) {
         selectedCell?.let { cell ->
@@ -386,10 +392,9 @@ class GridEditor : JPanel() {
                 val wallObject = cell?.objects?.firstOrNull { it.type == ObjectType.WALL } as? WallObject
                 val floorObject = cell?.objects?.firstOrNull { it.type == ObjectType.FLOOR } as? FloorObject
 
-                when {
-                    wallObject != null -> g2.color = wallObject.color
-                    floorObject != null -> g2.color = floorObject.color
-                    else -> g2.color = Color(40, 44, 52)
+                g2.color = when {
+                    floorObject != null -> floorObject.color
+                    else -> Color(40, 44, 52) // Background color
                 }
 
                 g2.fillRect(
@@ -400,20 +405,54 @@ class GridEditor : JPanel() {
                 )
 
                 // Draw direction indicators for walls
-                wallObject?.let { wall ->
-                    if (!wall.isBlockWall) {
-                        g2.color = Color.WHITE
-                        g2.font = Font("Monospace", Font.BOLD, (cellSize * 0.4).toInt())
-                        val letter = wall.direction.name.first().toString()
-                        val metrics = g2.fontMetrics
-                        val letterX = screenX + (cellSize - metrics.stringWidth(letter))/2
-                        val letterY = screenY + (cellSize + metrics.height)/2 - metrics.descent
-                        g2.drawString(letter, letterX.toInt(), letterY.toInt())
+                if (wallObject != null) {
+                    if (wallObject.isBlockWall || !showFlatWallsAsLines) {
+                        // Draw full cell for block walls
+                        g2.color = wallObject.color
+                        g2.fillRect(
+                            screenX,
+                            screenY,
+                            cellSize.toInt(),
+                            cellSize.toInt()
+                        )
+                    } else {
+                        // Draw line for flat wall
+                        g2.color = wallObject.color
+                        g2.stroke = BasicStroke((cellSize * 0.2).toFloat())
+
+                        val padding = cellSize * 0.1
+                        when (wallObject.direction) {
+                            Direction.NORTH -> g2.drawLine(
+                                screenX + padding.toInt(),
+                                screenY + padding.toInt(),
+                                screenX + cellSize.toInt() - padding.toInt(),
+                                screenY + padding.toInt()
+                            )
+                            Direction.SOUTH -> g2.drawLine(
+                                screenX + padding.toInt(),
+                                screenY + cellSize.toInt() - padding.toInt(),
+                                screenX + cellSize.toInt() - padding.toInt(),
+                                screenY + cellSize.toInt() - padding.toInt()
+                            )
+                            Direction.WEST -> g2.drawLine(
+                                screenX + padding.toInt(),
+                                screenY + padding.toInt(),
+                                screenX + padding.toInt(),
+                                screenY + cellSize.toInt() - padding.toInt()
+                            )
+                            Direction.EAST -> g2.drawLine(
+                                screenX + cellSize.toInt() - padding.toInt(),
+                                screenY + padding.toInt(),
+                                screenX + cellSize.toInt() - padding.toInt(),
+                                screenY + cellSize.toInt() - padding.toInt()
+                            )
+                        }
                     }
                 }
 
                 // Draw grid lines
                 g2.color = Color(60, 63, 65)
+                g2.stroke = BasicStroke(1f) // Reset stroke to default
                 g2.drawRect(
                     screenX,
                     screenY,
