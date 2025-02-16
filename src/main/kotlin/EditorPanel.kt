@@ -209,7 +209,7 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
                 addActionListener {
                     if (background == Color(60, 63, 65)) {
                         // Activate selection mode
-                        background = Color(100, 100, 255)
+                        updateToolButtonStates(this)
                         gridEditor.setEditMode(GridEditor.EditMode.SELECT)
                     } else {
                         // Deactivate selection mode
@@ -223,7 +223,7 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
                 addActionListener {
                     if (background == Color(60, 63, 65)) {
                         // Activate move mode
-                        background = Color(100, 100, 255)
+                        updateToolButtonStates(this)
                         gridEditor.setEditMode(GridEditor.EditMode.MOVE)
                     } else {
                         // Deactivate move mode
@@ -237,7 +237,7 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
                 addActionListener {
                     if (background == Color(60, 63, 65)) {
                         // Activate rotate mode
-                        background = Color(100, 100, 255)
+                        updateToolButtonStates(this)
                         gridEditor.setEditMode(GridEditor.EditMode.ROTATE)
                     } else {
                         // Deactivate rotate mode
@@ -286,6 +286,17 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             foreground = Color.WHITE
             isFocusPainted = false
             maximumSize = Dimension(Int.MAX_VALUE, 30)
+        }
+    }
+
+    fun updateToolButtonStates(activeButton: JButton) {
+        val toolButtons = listOf(selectButton, moveButton, rotateButton)
+        toolButtons.forEach { button ->
+            if (button == activeButton) {
+                button.background = Color(100, 100, 255)
+            } else {
+                button.background = Color(60, 63, 65)
+            }
         }
     }
 
