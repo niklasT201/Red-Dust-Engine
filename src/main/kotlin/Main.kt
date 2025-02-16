@@ -26,6 +26,7 @@ fun main() {
 // update wall direction directly
 // fix floor tiles flickering
 // add optinal wall line design (menu bar)
+// label that shows current object
 
 // add shortcuts for objects
 // optional shadows

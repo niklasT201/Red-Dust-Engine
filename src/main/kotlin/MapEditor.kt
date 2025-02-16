@@ -157,6 +157,10 @@ class GridEditor : JPanel() {
         inputMap.put(KeyStroke.getKeyStroke(KeyBindings.ROTATE_SOUTH, 0), "rotate_south")
         inputMap.put(KeyStroke.getKeyStroke(KeyBindings.ROTATE_EAST, 0), "rotate_east")
 
+        inputMap.put(KeyStroke.getKeyStroke(KeyBindings.WALL_SHORTCUT, 0), "select_wall")
+        inputMap.put(KeyStroke.getKeyStroke(KeyBindings.FLOOR_SHORTCUT, 0), "select_floor")
+
+
         actionMap.put("rotate_north", object : AbstractAction() {
             override fun actionPerformed(e: ActionEvent) {
                 setWallDirection(Direction.NORTH)
@@ -179,6 +183,17 @@ class GridEditor : JPanel() {
             override fun actionPerformed(e: ActionEvent) {
                 setWallDirection(Direction.EAST)
                 repaint()
+            }
+        })
+
+        actionMap.put("select_wall", object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent) {
+                setObjectType(ObjectType.WALL)
+            }
+        })
+        actionMap.put("select_floor", object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent) {
+                setObjectType(ObjectType.FLOOR)
             }
         })
 

@@ -16,6 +16,8 @@ object KeyBindings {
     const val ROTATE_EAST = java.awt.event.KeyEvent.VK_O
     const val ROTATE_WEST = java.awt.event.KeyEvent.VK_W
 
-    // Other Controls
+    // Shortcuts
     const val ROTATE_WALL = java.awt.event.KeyEvent.VK_R
+    const val WALL_SHORTCUT = java.awt.event.KeyEvent.VK_1
+    const val FLOOR_SHORTCUT = java.awt.event.KeyEvent.VK_2
 }
