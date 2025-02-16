@@ -92,13 +92,19 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
     private fun setupSelectionHandling() {
         gridEditor.setOnCellSelectedListener { cellData ->
             // Update the property buttons with selected cell's values
-            cellData?.let {
-                colorButton.background = it.color
-                heightButton.text = "Wall Height: ${it.height}"
-                widthButton.text = "Wall Width: ${it.width}"
-                currentWallColor = it.color
-                currentWallHeight = it.height
-                currentWallWidth = it.width
+            cellData?.let { cell ->
+                // Find the first wall object in the cell
+                val wallObject = cell.objects.filterIsInstance<WallObject>().firstOrNull()
+
+                // Update UI only if a wall object is found
+                wallObject?.let {
+                    colorButton.background = it.color
+                    heightButton.text = "Wall Height: ${it.height}"
+                    widthButton.text = "Wall Width: ${it.width}"
+                    currentWallColor = it.color
+                    currentWallHeight = it.height
+                    currentWallWidth = it.width
+                }
             }
         }
     }
@@ -168,12 +174,12 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             add(createSection("Quick Actions", listOf(
                 createButton("Add Wall").apply {
                     addActionListener {
-                        gridEditor.setCellType(GridEditor.CellType.WALL)
+                        gridEditor.setObjectType(ObjectType.WALL)
                     }
                 },
                 createButton("Add Floor").apply {
                     addActionListener {
-                        gridEditor.setCellType(GridEditor.CellType.FLOOR)
+                        gridEditor.setObjectType(ObjectType.FLOOR)
                     }
                 },
                 createButton("Clear All").apply {

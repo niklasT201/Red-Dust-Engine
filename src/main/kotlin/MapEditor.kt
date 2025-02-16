@@ -6,9 +6,8 @@ import kotlin.math.floor
 import kotlin.math.sin
 
 class GridEditor : JPanel() {
-    private val grid = mutableMapOf<Pair<Int, Int>, CellData>()
-    private var selectedCellType = CellType.WALL
-    private var currentCellType = CellType.WALL
+    private val grid = mutableMapOf<Pair<Int, Int>, GridCell>()
+    private var currentObjectType = ObjectType.WALL
     private var isDragging = false
     private var lastCell: Pair<Int, Int>? = null
     private var isRightMouseButton = false
@@ -20,7 +19,8 @@ class GridEditor : JPanel() {
 
     // Camera reference for player position
     private var cameraRef: Camera? = null
-    private val baseScale = 2.0  // Keep this constant for grid calculations
+    private val baseScale = 2.0  // constant for grid calculations
+
     private var currentWallHeight = 3.0
     private var currentWallWidth = 2.0
     private var currentWallColor = Color(150, 0, 0)
@@ -34,14 +34,10 @@ class GridEditor : JPanel() {
 
     private var currentMode = EditMode.DRAW
     private var selectedCell: Pair<Int, Int>? = null
-    private var onCellSelected: ((CellData?) -> Unit)? = null
+    private var onCellSelected: ((GridCell?) -> Unit)? = null
     private val selectedCells = mutableSetOf<Pair<Int, Int>>()
     private var moveStartPosition: Pair<Int, Int>? = null
     private var isMultiSelectEnabled = false
-
-    enum class CellType {
-        WALL, FLOOR
-    }
 
     init {
         background = Color(30, 33, 40)
@@ -89,11 +85,11 @@ class GridEditor : JPanel() {
                             val deltaY = gridY - moveStartPosition!!.second
 
                             // Create new cells at target positions
-                            val movedCells = mutableMapOf<Pair<Int, Int>, CellData>()
+                            val movedCells = mutableMapOf<Pair<Int, Int>, GridCell>()
                             selectedCells.forEach { cell ->
                                 val newPos = Pair(cell.first + deltaX, cell.second + deltaY)
                                 grid[cell]?.let { cellData ->
-                                    movedCells[newPos] = cellData
+                                    movedCells[newPos] = GridCell(cellData.objects.toMutableList())
                                 }
                             }
 
@@ -117,12 +113,16 @@ class GridEditor : JPanel() {
                         val clickedCell = Pair(gridX, gridY)
 
                         if (grid.containsKey(clickedCell)) {
-                            grid[clickedCell]?.let { cellData ->
-                                grid[clickedCell] = cellData.copy(
-                                    direction = cellData.direction.rotate()
-                                )
-                                repaint()
-                                firePropertyChange("gridChanged", null, grid)
+                            grid[clickedCell]?.let { cell ->
+                                cell.objects.filterIsInstance<WallObject>().firstOrNull()?.let { wallObject ->
+                                    // Create new wall object with rotated direction
+                                    val newWall = wallObject.copy(direction = wallObject.direction.rotate())
+                                    // Replace old wall with new one
+                                    cell.objects.removeIf { it.type == ObjectType.WALL }
+                                    cell.objects.add(newWall)
+                                    repaint()
+                                    firePropertyChange("gridChanged", null, grid)
+                                }
                             }
                         }
                     }
@@ -228,8 +228,8 @@ class GridEditor : JPanel() {
         return Pair(screenX, screenY)
     }
 
-    fun setCellType(type: CellType) {
-        currentCellType = type
+    fun setObjectType(type: ObjectType) {
+        currentObjectType = type
     }
 
     fun setWallColor(color: Color) {
@@ -253,10 +253,13 @@ class GridEditor : JPanel() {
         if (currentMode == EditMode.DRAW) {
             currentDirection = direction
         } else if (currentMode == EditMode.SELECT && selectedCell != null) {
-            grid[selectedCell]?.let { cellData ->
-                grid[selectedCell!!] = cellData.copy(direction = direction)
-                repaint()
-                firePropertyChange("gridChanged", null, grid)
+            grid[selectedCell]?.let { cell ->
+                cell.objects.filterIsInstance<WallObject>().firstOrNull()?.let { wallObject ->
+                    cell.objects.remove(wallObject)
+                    cell.objects.add(wallObject.copy(direction = direction))
+                    repaint()
+                    firePropertyChange("gridChanged", null, grid)
+                }
             }
         }
     }
@@ -267,30 +270,34 @@ class GridEditor : JPanel() {
 
         if (currentCell != lastCell) {
             if (isRightMouseButton) {
-                // Remove cell when right mouse button is pressed
-                grid.remove(currentCell)
-            } else {
-                // Add cell when left mouse button is pressed
-                val cellData = when (currentCellType) {
-                    CellType.WALL -> CellData(
-                        CellType.WALL,
-                        currentWallColor,
-                        useBlockWalls,
-                        currentWallHeight,
-                        currentWallWidth,
-                        currentDirection
-                    )
-                    CellType.FLOOR -> CellData(
-                        CellType.FLOOR,
-                        Color(100, 100, 100),  // Default floor color
-                        false,
-                        0.0,  // Height for floor is always 0
-                        2.0,  // Standard floor tile width
-                        Direction.NORTH  // Direction doesn't matter for floors
-                    )
+                // Remove objects of current type
+                grid[currentCell]?.objects?.removeIf { it.type == currentObjectType }
+                if (grid[currentCell]?.objects?.isEmpty() == true) {
+                    grid.remove(currentCell)
                 }
-                grid[currentCell] = cellData
+            } else {
+                // Get or create cell
+                val cell = grid.getOrPut(currentCell) { GridCell() }
+
+                // Remove existing object of same type
+                cell.objects.removeIf { it.type == currentObjectType }
+
+                // Add new object
+                val newObject = when (currentObjectType) {
+                    ObjectType.WALL -> WallObject(
+                        color = currentWallColor,
+                        height = currentWallHeight,
+                        width = currentWallWidth,
+                        direction = currentDirection,
+                        isBlockWall = useBlockWalls
+                    )
+                    ObjectType.FLOOR -> FloorObject(color = Color(100, 100, 100))
+                    ObjectType.PROP -> null // Handle props in the future
+                }
+
+                newObject?.let { cell.objects.add(it) }
             }
+
             lastCell = currentCell
             repaint()
 
@@ -321,22 +328,26 @@ class GridEditor : JPanel() {
     }
 
     // Function to set selection callback
-    fun setOnCellSelectedListener(listener: (CellData?) -> Unit) {
+    fun setOnCellSelectedListener(listener: (GridCell?) -> Unit) {
         onCellSelected = listener
     }
 
     // Function to update selected cell properties
     fun updateSelectedCell(color: Color? = null, height: Double? = null, width: Double? = null) {
         selectedCell?.let { cell ->
-            grid[cell]?.let { cellData ->
-                grid[cell] = cellData.copy(
-                    color = color ?: cellData.color,
-                    height = height ?: cellData.height,
-                    width = width ?: cellData.width
-                )
-                repaint()
-                // Notify that grid has changed
-                firePropertyChange("gridChanged", null, grid)
+            grid[cell]?.let { gridCell ->
+                gridCell.objects.filterIsInstance<WallObject>().firstOrNull()?.let { wallObject ->
+                    // Remove old wall object
+                    gridCell.objects.remove(wallObject)
+                    // Add new wall object with updated properties
+                    gridCell.objects.add(wallObject.copy(
+                        color = color ?: wallObject.color,
+                        height = height ?: wallObject.height,
+                        width = width ?: wallObject.width
+                    ))
+                    repaint()
+                    firePropertyChange("gridChanged", null, grid)
+                }
             }
         }
     }
@@ -355,11 +366,14 @@ class GridEditor : JPanel() {
             for (y in (minY - visibleCellPadding)..(maxY + visibleCellPadding)) {
                 val (screenX, screenY) = gridToScreen(x, y)
 
-                // Draw cell content if it exists
-                val cellData = grid[Pair(x, y)]
-                when (cellData?.type) {
-                    CellType.WALL -> g2.color = cellData.color
-                    CellType.FLOOR -> g2.color = Color(100, 100, 100)
+                // Draw cell content
+                val cell = grid[Pair(x, y)]
+                val wallObject = cell?.objects?.firstOrNull { it.type == ObjectType.WALL } as? WallObject
+                val floorObject = cell?.objects?.firstOrNull { it.type == ObjectType.FLOOR } as? FloorObject
+
+                when {
+                    wallObject != null -> g2.color = wallObject.color
+                    floorObject != null -> g2.color = floorObject.color
                     else -> g2.color = Color(40, 44, 52)
                 }
 
@@ -369,6 +383,19 @@ class GridEditor : JPanel() {
                     cellSize.toInt(),
                     cellSize.toInt()
                 )
+
+                // Draw direction indicators for walls
+                wallObject?.let { wall ->
+                    if (!wall.isBlockWall) {
+                        g2.color = Color.WHITE
+                        g2.font = Font("Monospace", Font.BOLD, (cellSize * 0.4).toInt())
+                        val letter = wall.direction.name.first().toString()
+                        val metrics = g2.fontMetrics
+                        val letterX = screenX + (cellSize - metrics.stringWidth(letter))/2
+                        val letterY = screenY + (cellSize + metrics.height)/2 - metrics.descent
+                        g2.drawString(letter, letterX.toInt(), letterY.toInt())
+                    }
+                }
 
                 // Draw grid lines
                 g2.color = Color(60, 63, 65)
@@ -411,25 +438,28 @@ class GridEditor : JPanel() {
         // Draw direction text
         g2.color = Color.WHITE // Set text color to white
         g2.font = Font("Monospace", Font.BOLD, 12)
-        g2.drawString(currentDirection.name,
+        g2.drawString(
+            currentDirection.name,
             10, // X position for the text
             25 // Y position for the text
         )
 
         // Draw direction letters on wall tiles
-        grid.forEach { (pos, cellData) ->
-            if (cellData.type == CellType.WALL && !cellData.isBlockWall) {
-                val (x, y) = pos
-                val (screenX, screenY) = gridToScreen(x, y)
+        grid.forEach { (pos, cell) ->
+            cell.objects.filterIsInstance<WallObject>().firstOrNull()?.let { wallObject ->
+                if (!wallObject.isBlockWall) {
+                    val (x, y) = pos
+                    val (screenX, screenY) = gridToScreen(x, y)
 
-                // Draw direction letter
-                g2.color = Color.WHITE
-                g2.font = Font("Monospace", Font.BOLD, (cellSize * 0.4).toInt())
-                val letter = cellData.direction.name.first().toString()
-                val metrics = g2.fontMetrics
-                val letterX = screenX + (cellSize - metrics.stringWidth(letter))/2
-                val letterY = screenY + (cellSize + metrics.height)/2 - metrics.descent
-                g2.drawString(letter, letterX.toInt(), letterY.toInt())
+                    // Draw direction letter
+                    g2.color = Color.WHITE
+                    g2.font = Font("Monospace", Font.BOLD, (cellSize * 0.4).toInt())
+                    val letter = wallObject.direction.name.first().toString()
+                    val metrics = g2.fontMetrics
+                    val letterX = screenX + (cellSize - metrics.stringWidth(letter)) / 2
+                    val letterY = screenY + (cellSize + metrics.height) / 2 - metrics.descent
+                    g2.drawString(letter, letterX.toInt(), letterY.toInt())
+                }
             }
         }
 
@@ -447,8 +477,8 @@ class GridEditor : JPanel() {
             g2.color = Color(0, 255, 0)
             val playerSize = (cellSize * 0.3).toInt()
             g2.fillOval(
-                screenX + xOffset - playerSize/2,
-                screenY + yOffset - playerSize/2,
+                screenX + xOffset - playerSize / 2,
+                screenY + yOffset - playerSize / 2,
                 playerSize,
                 playerSize
             )
@@ -470,74 +500,78 @@ class GridEditor : JPanel() {
     fun generateWalls(): List<Wall> {
         val walls = mutableListOf<Wall>()
 
-        grid.forEach { (pos, cellData) ->
-            if (cellData.type == CellType.WALL) {
-                val (x, y) = pos
-                // Use baseScale for position calculation, but cell's width for wall size
-                val gameX = -x * baseScale
-                val gameZ = y * baseScale
+        grid.forEach { (pos, cell) ->
+            cell.objects.forEach { obj ->
+                if (obj.type == ObjectType.WALL && obj is WallObject) {
+                    val (x, y) = pos
+                    val gameX = -x * baseScale
+                    val gameZ = y * baseScale
 
-                if (cellData.isBlockWall) {
-                    // Block walls
-                    walls.addAll(listOf(
-                        // North wall
-                        Wall(
-                            start = Vec3(gameX, 0.0, gameZ),
-                            end = Vec3(gameX + cellData.width, 0.0, gameZ),
-                            height = cellData.height,
-                            color = cellData.color
-                        ),
-                        // East wall
-                        Wall(
-                            start = Vec3(gameX + cellData.width, 0.0, gameZ),
-                            end = Vec3(gameX + cellData.width, 0.0, gameZ + cellData.width),
-                            height = cellData.height,
-                            color = cellData.color
-                        ),
-                        // South wall
-                        Wall(
-                            start = Vec3(gameX + cellData.width, 0.0, gameZ + cellData.width),
-                            end = Vec3(gameX, 0.0, gameZ + cellData.width),
-                            height = cellData.height,
-                            color = cellData.color
-                        ),
-                        // West wall
-                        Wall(
-                            start = Vec3(gameX, 0.0, gameZ + cellData.width),
-                            end = Vec3(gameX, 0.0, gameZ),
-                            height = cellData.height,
-                            color = cellData.color
+                    if (obj.isBlockWall) {
+                        // Block walls
+                        walls.addAll(
+                            listOf(
+                                // North wall
+                                Wall(
+                                    start = Vec3(gameX, 0.0, gameZ),
+                                    end = Vec3(gameX + obj.width, 0.0, gameZ),
+                                    height = obj.height,
+                                    color = obj.color
+                                ),
+                                // East wall
+                                Wall(
+                                    start = Vec3(gameX + obj.width, 0.0, gameZ),
+                                    end = Vec3(gameX + obj.width, 0.0, gameZ + obj.width),
+                                    height = obj.height,
+                                    color = obj.color
+                                ),
+                                // South wall
+                                Wall(
+                                    start = Vec3(gameX + obj.width, 0.0, gameZ + obj.width),
+                                    end = Vec3(gameX, 0.0, gameZ + obj.width),
+                                    height = obj.height,
+                                    color = obj.color
+                                ),
+                                // West wall
+                                Wall(
+                                    start = Vec3(gameX, 0.0, gameZ + obj.width),
+                                    end = Vec3(gameX, 0.0, gameZ),
+                                    height = obj.height,
+                                    color = obj.color
+                                )
+                            )
                         )
-                    ))
-                } else {
-                    // Flat walls with rotation support
-                    val coords = when (cellData.direction) {
-                        Direction.NORTH -> WallCoords(
-                            gameX, gameZ,
-                            gameX + cellData.width, gameZ
-                        )
-                        Direction.WEST -> WallCoords(
-                            gameX + cellData.width, gameZ,
-                            gameX + cellData.width, gameZ + cellData.width
-                        )
-                        Direction.SOUTH -> WallCoords(
-                            gameX + cellData.width, gameZ + cellData.width,
-                            gameX, gameZ + cellData.width
-                        )
-                        Direction.EAST -> WallCoords(
-                            gameX, gameZ + cellData.width,
-                            gameX, gameZ
+                    } else {
+                        // Flat walls with rotation support
+                        val coords = when (obj.direction) {
+                            Direction.NORTH -> WallCoords(
+                                gameX, gameZ,
+                                gameX + obj.width, gameZ
+                            )
+                            Direction.WEST -> WallCoords(
+                                gameX + obj.width, gameZ,
+                                gameX + obj.width, gameZ + obj.width
+                            )
+                            Direction.SOUTH -> WallCoords(
+                                gameX + obj.width, gameZ + obj.width,
+                                gameX, gameZ + obj.width
+                            )
+                            Direction.EAST -> WallCoords(
+                                gameX, gameZ + obj.width,
+                                gameX, gameZ
+                            )
+                        }
+
+
+                        walls.add(
+                            Wall(
+                                start = Vec3(coords.startX, 0.0, coords.startZ),
+                                end = Vec3(coords.endX, 0.0, coords.endZ),
+                                height = obj.height,
+                                color = obj.color
+                            )
                         )
                     }
-
-                    walls.add(
-                        Wall(
-                            start = Vec3(coords.startX, 0.0, coords.startZ),
-                            end = Vec3(coords.endX, 0.0, coords.endZ),
-                            height = cellData.height,
-                            color = cellData.color
-                        )
-                    )
                 }
             }
         }
@@ -547,22 +581,24 @@ class GridEditor : JPanel() {
     fun generateFloors(): List<Floor> {
         val floors = mutableListOf<Floor>()
 
-        grid.forEach { (pos, cellData) ->
-            if (cellData.type == CellType.FLOOR) {
-                val (x, y) = pos
-                val gameX = -x * baseScale
-                val gameZ = y * baseScale
+        grid.forEach { (pos, cell) ->
+            cell.objects.forEach { obj ->
+                if (obj.type == ObjectType.FLOOR && obj is FloorObject) {
+                    val (x, y) = pos
+                    val gameX = -x * baseScale
+                    val gameZ = y * baseScale
 
-                floors.add(
-                    Floor(
-                        x1 = gameX,
-                        z1 = gameZ,
-                        x2 = gameX + baseScale,
-                        z2 = gameZ + baseScale,
-                        y = 0.0,
-                        color = cellData.color
+                    floors.add(
+                        Floor(
+                            x1 = gameX,
+                            z1 = gameZ,
+                            x2 = gameX + baseScale,
+                            z2 = gameZ + baseScale,
+                            y = 0.0,
+                            color = obj.color
+                        )
                     )
-                )
+                }
             }
         }
         return floors
