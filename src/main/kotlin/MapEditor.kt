@@ -489,13 +489,22 @@ class GridEditor : JPanel() {
             )
         }
 
+        // Draw current object type text
+        g2.color = Color.WHITE
+        g2.font = Font("Monospace", Font.BOLD, 12)
+        g2.drawString(
+            "Mode: ${currentObjectType.name}",  // show "WALL" or "FLOOR"
+            10, // X position for the text
+            15  // Y position for the text
+        )
+
         // Draw direction text
         g2.color = Color.WHITE // Set text color to white
         g2.font = Font("Monospace", Font.BOLD, 12)
         g2.drawString(
             currentDirection.name,
             10, // X position for the text
-            25 // Y position for the text
+            30 // Y position for the text
         )
 
         // Draw direction letters on wall tiles

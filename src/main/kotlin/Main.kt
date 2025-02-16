@@ -25,9 +25,7 @@ fun main() {
 // maybe fix player map offset 1
 // update wall direction directly
 // fix floor tiles flickering
-// label that shows current object
 
-// add shortcuts for objects
 // optional shadows
 // weapon system
 // create own weapons
