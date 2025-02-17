@@ -158,7 +158,7 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             border = BorderFactory.createEmptyBorder(0, 10, 10, 10)
 
             add(sectionsPanel)
-            add(Box.createVerticalGlue())  // Push everything to the top
+            add(Box.createVerticalGlue())
         }
 
         // Add scroll pane
@@ -166,6 +166,20 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             border = null
             verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
             horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
+
+            // Make the scrollbar invisible but functional
+            verticalScrollBar.apply {
+                unitIncrement = 5 // Adjust scroll speed
+                setUI(InvisibleScrollBarUI())
+                preferredSize = Dimension(0, 0) // Make it take up no space
+            }
+
+            // Optional: Add mouse wheel listener for smoother scrolling
+            addMouseWheelListener { e ->
+                val scrollBar = verticalScrollBar
+                val increment = if (e.wheelRotation > 0) 30 else -30
+                scrollBar.value = scrollBar.value + increment
+            }
         }
 
         add(scrollPane, BorderLayout.CENTER)

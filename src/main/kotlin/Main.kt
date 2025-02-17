@@ -38,10 +38,8 @@ fun main() {
 // FPS show
 
 // UI:
-// Sectiom seperation
 // physics optional
 // blood options
-// wall values optional for all walls in the world
 // player spawnpoint optional
 // open world or level based
 // floor sections
