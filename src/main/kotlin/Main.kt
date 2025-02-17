@@ -25,6 +25,7 @@ fun main() {
 // maybe fix player map offset 1
 // pressing gui, wall direction isnt working
 // fix floor tiles flickering
+// objects arent straight when bigger screen
 
 // optional shadows
 // weapon system

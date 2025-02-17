@@ -22,12 +22,12 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
     private val selectedButtonColor = Color(100, 100, 255)
 
     // Reference to wall property buttons for updating
-    private lateinit var colorButton: JButton
-    private lateinit var heightButton: JButton
-    private lateinit var widthButton: JButton
-    private lateinit var selectButton: JButton
-    private lateinit var moveButton: JButton
-    private lateinit var rotateButton: JButton
+    private var colorButton: JButton
+    private var heightButton: JButton
+    private var widthButton: JButton
+    private var selectButton: JButton
+    private var moveButton: JButton
+    private var rotateButton: JButton
 
     init {
         layout = BorderLayout()
@@ -37,21 +37,155 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
         setupMainPanel()
         setupSelectionHandling()
 
-        val scrollPane = JScrollPane(mainPanel).apply {
+        // Create sections container
+        val sectionsPanel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            background = Color(40, 44, 52)
+        }
+
+        // Top panel with mode button and separator
+        val topPanel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            background = Color(40, 44, 52)
+            border = BorderFactory.createEmptyBorder(10, 5, 5, 5)
+
+            add(modeButton)
+            add(Box.createVerticalStrut(10))
+            add(JSeparator())
+            add(Box.createVerticalStrut(10))
+
+            // Set maximum size to prevent stretching
+            maximumSize = Dimension(Int.MAX_VALUE, preferredSize.height)
+        }
+
+        // Create collapsible sections
+        val quickActionsSection = CollapsibleSection("Quick Actions").apply {
+            addComponent(addWallButton)
+            addComponent(addFloorButton)
+            addComponent(createButton("Clear All").apply {
+                addActionListener {
+                    gridEditor.clearGrid()
+                }
+            })
+        }
+
+        val wallStyleSection = CollapsibleSection("Wall Style").apply {
+            // Create wall style components
+            val flatWallRadio = JRadioButton("Flat Walls").apply {
+                isSelected = true
+                background = Color(40, 44, 52)
+                foreground = Color.WHITE
+                alignmentX = Component.LEFT_ALIGNMENT
+                addActionListener { onWallStyleChange?.invoke(false) }
+            }
+
+            val blockWallRadio = JRadioButton("Block Walls").apply {
+                background = Color(40, 44, 52)
+                foreground = Color.WHITE
+                alignmentX = Component.LEFT_ALIGNMENT
+                addActionListener { onWallStyleChange?.invoke(true) }
+            }
+
+            wallStyleGroup.add(flatWallRadio)
+            wallStyleGroup.add(blockWallRadio)
+
+            val visualizationToggle = JCheckBox("Show Flat Walls as Lines").apply {
+                background = Color(40, 44, 52)
+                foreground = Color.WHITE
+                alignmentX = Component.LEFT_ALIGNMENT
+                addActionListener {
+                    gridEditor.setFlatWallVisualization(isSelected)
+                }
+            }
+
+            addComponent(flatWallRadio)
+            addComponent(blockWallRadio)
+            addComponent(visualizationToggle)
+        }
+
+        val wallPropertiesSection = CollapsibleSection("Wall Properties").apply {
+            val (colorBtn, heightBtn, widthBtn) = createWallPropertiesButtons()
+            colorButton = colorBtn
+            heightButton = heightBtn
+            widthButton = widthBtn
+
+            addComponent(colorBtn)
+            addComponent(heightBtn)
+            addComponent(widthBtn)
+        }
+
+        val toolsSection = CollapsibleSection("Tools").apply {
+            selectButton = createButton("Select").apply {
+                addActionListener {
+                    handleToolButtonClick(this, GridEditor.EditMode.SELECT)
+                }
+            }
+
+            moveButton = createButton("Move").apply {
+                addActionListener {
+                    handleToolButtonClick(this, GridEditor.EditMode.MOVE)
+                }
+            }
+
+            rotateButton = createButton("Rotate").apply {
+                addActionListener {
+                    handleToolButtonClick(this, GridEditor.EditMode.ROTATE)
+                }
+            }
+
+            addComponent(selectButton)
+            addComponent(moveButton)
+            addComponent(rotateButton)
+        }
+
+        // Add sections to the panel
+        sectionsPanel.add(topPanel)
+        sectionsPanel.add(quickActionsSection)
+        sectionsPanel.add(Box.createVerticalStrut(10))  // Increased spacing between sections
+        sectionsPanel.add(wallStyleSection)
+        sectionsPanel.add(Box.createVerticalStrut(10))
+        sectionsPanel.add(wallPropertiesSection)
+        sectionsPanel.add(Box.createVerticalStrut(10))
+        sectionsPanel.add(toolsSection)
+
+        // Add rigid area at the bottom to prevent stretching
+        sectionsPanel.add(Box.createVerticalGlue())
+
+        // Wrap sectionsPanel in a panel that handles alignment
+        val wrapperPanel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            background = Color(40, 44, 52)
+            border = BorderFactory.createEmptyBorder(0, 10, 10, 10)
+
+            add(sectionsPanel)
+            add(Box.createVerticalGlue())  // Push everything to the top
+        }
+
+        // Add scroll pane
+        val scrollPane = JScrollPane(wrapperPanel).apply {
             border = null
             verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
             horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
         }
 
-        // Create wrapper panel
-        val wrapperPanel = JPanel().apply {
-            layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            background = Color(40, 44, 52)
-            add(createTopPanel())
-            add(scrollPane)
-        }
+        add(scrollPane, BorderLayout.CENTER)
+    }
 
-        add(wrapperPanel, BorderLayout.CENTER)
+    private fun handleToolButtonClick(button: JButton, mode: GridEditor.EditMode) {
+        if (button.background == Color(60, 63, 65)) {
+            updateToolButtonStates(button)
+            gridEditor.setEditMode(mode)
+        } else {
+            button.background = Color(60, 63, 65)
+            gridEditor.setEditMode(GridEditor.EditMode.DRAW)
+        }
+    }
+
+    private fun createWallPropertiesButtons(): Triple<JButton, JButton, JButton> {
+        val colorBtn = createColorButton("Wall Color", currentWallColor)
+        val heightBtn = createHeightButton()
+        val widthBtn = createWidthButton()
+        return Triple(colorBtn, heightBtn, widthBtn)
     }
 
     private fun createTopPanel(): JPanel = JPanel().apply {
