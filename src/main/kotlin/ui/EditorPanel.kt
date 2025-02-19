@@ -148,7 +148,8 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             when (evt.propertyName) {
                 "currentFloorChanged" -> {
                     val floor = evt.newValue as FloorSelectorPanel.Floor
-                    gridEditor.setCurrentFloorHeight(floor.heightOffset)
+                    gridEditor.setCurrentFloor(floor.level) // Set the current floor
+                    gridEditor.setCurrentFloorHeight(floor.heightOffset) // Set the height offset
                 }
             }
         }
@@ -266,10 +267,11 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
         gridEditor.setOnCellSelectedListener { cellData ->
             // Update the property buttons with selected cell's values
             cellData?.let { cell ->
-                // Find the first wall object in the cell
-                val wallObject = cell.objects.filterIsInstance<WallObject>().firstOrNull()
+                // Use the getter instead of directly accessing the property
+                val currentFloorObjects = cell.getObjectsForFloor(gridEditor.getCurrentFloor())
 
-                // Update UI only if a wall object is found
+                val wallObject = currentFloorObjects.filterIsInstance<WallObject>().firstOrNull()
+
                 wallObject?.let {
                     colorButton.background = it.color
                     heightButton.text = "Wall Height: ${it.height}"

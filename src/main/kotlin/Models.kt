@@ -23,8 +23,27 @@ data class WallCoords(
 )
 
 data class GridCell(
-    val objects: MutableList<GameObject> = mutableListOf()
-)
+    val objectsByFloor: MutableMap<Int, MutableList<GameObject>> = mutableMapOf()
+) {
+    fun getObjectsForFloor(floor: Int): MutableList<GameObject> {
+        return objectsByFloor.getOrPut(floor) { mutableListOf() }
+    }
+
+    fun addObject(floor: Int, obj: GameObject) {
+        val floorObjects = getObjectsForFloor(floor)
+        // Only remove existing object of same type if it's on the same floor
+        floorObjects.removeIf { it.type == obj.type }
+        floorObjects.add(obj)
+    }
+
+    fun removeObject(floor: Int, type: ObjectType) {
+        objectsByFloor[floor]?.removeIf { it.type == type }
+        // Remove floor entry if empty
+        if (objectsByFloor[floor]?.isEmpty() == true) {
+            objectsByFloor.remove(floor)
+        }
+    }
+}
 
 sealed class GameObject {
     abstract val type: ObjectType
@@ -52,7 +71,8 @@ data class WallObject(
 }
 
 data class FloorObject(
-    override val color: Color
+    override val color: Color,
+    val floorHeight: Double
 ) : GameObject() {
     override val type = ObjectType.FLOOR
     override val height = 0.0
