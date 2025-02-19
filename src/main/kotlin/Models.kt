@@ -45,7 +45,8 @@ data class WallObject(
     override val height: Double,
     override val width: Double,
     override val direction: Direction,
-    val isBlockWall: Boolean
+    val isBlockWall: Boolean,
+    val floorHeight: Double  // Add this new property
 ) : GameObject() {
     override val type = ObjectType.WALL
 }

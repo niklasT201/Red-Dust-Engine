@@ -26,6 +26,8 @@ fun main() {
 // pressing gui, wall direction isnt working
 // fix floor tiles flickering
 // objects arent straight when bigger screen
+// tiles placeable on each other
+// floors also having section support
 
 // optional shadows
 // weapon system
@@ -42,7 +44,6 @@ fun main() {
 // blood options
 // player spawnpoint optional
 // open world or level based
-// floor sections
 
 // Screen:
 // Settings Menu

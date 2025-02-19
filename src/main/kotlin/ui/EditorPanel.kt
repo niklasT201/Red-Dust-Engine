@@ -1,9 +1,15 @@
+package ui
+
+import GridEditor
+import ObjectType
+import WallObject
 import java.awt.*
 import javax.swing.*
 import javax.swing.border.TitledBorder
 
 class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
     var gridEditor = GridEditor()
+    val sectionChooser = FloorSelectorPanel()
     private val modeButton = JButton("Editor Mode")
     private val mainPanel = JPanel()
     private val wallStyleGroup = ButtonGroup()
@@ -138,10 +144,21 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             addComponent(rotateButton)
         }
 
+        sectionChooser.addPropertyChangeListener { evt ->
+            when (evt.propertyName) {
+                "currentFloorChanged" -> {
+                    val floor = evt.newValue as FloorSelectorPanel.Floor
+                    gridEditor.setCurrentFloorHeight(floor.heightOffset)
+                }
+            }
+        }
+
         // Add sections to the panel
         sectionsPanel.add(topPanel)
         sectionsPanel.add(quickActionsSection)
         sectionsPanel.add(Box.createVerticalStrut(10))  // Increased spacing between sections
+        sectionsPanel.add(sectionChooser)
+        sectionsPanel.add(Box.createVerticalStrut(10))
         sectionsPanel.add(wallStyleSection)
         sectionsPanel.add(Box.createVerticalStrut(10))
         sectionsPanel.add(wallPropertiesSection)

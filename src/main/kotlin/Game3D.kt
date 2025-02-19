@@ -1,3 +1,5 @@
+import ui.EditorPanel
+import ui.MenuSystem
 import java.awt.*
 import java.awt.event.*
 import javax.swing.*

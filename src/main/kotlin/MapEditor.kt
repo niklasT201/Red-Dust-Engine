@@ -26,6 +26,7 @@ class GridEditor : JPanel() {
     private var currentWallWidth = 2.0
     private var currentWallColor = Color(150, 0, 0)
     private var currentDirection = Direction.NORTH
+    private var currentFloorHeight = 0.0
 
     // View properties
     private var viewportX = 0.0 // Center of viewport in grid coordinates
@@ -312,7 +313,8 @@ class GridEditor : JPanel() {
                         height = currentWallHeight,
                         width = currentWallWidth,
                         direction = currentDirection,
-                        isBlockWall = useBlockWalls
+                        isBlockWall = useBlockWalls,
+                        floorHeight = currentFloorHeight  // Store the current floor height
                     )
                     ObjectType.FLOOR -> FloorObject(color = Color(100, 100, 100))
                     ObjectType.PROP -> null // Handle props in the future
@@ -566,6 +568,11 @@ class GridEditor : JPanel() {
         }
     }
 
+    fun setCurrentFloorHeight(height: Double) {
+        currentFloorHeight = height
+        repaint()
+    }
+
     // Convert grid to game walls
     fun generateWalls(): List<Wall> {
         val walls = mutableListOf<Wall>()
@@ -583,29 +590,29 @@ class GridEditor : JPanel() {
                             listOf(
                                 // North wall
                                 Wall(
-                                    start = Vec3(gameX, 0.0, gameZ),
-                                    end = Vec3(gameX + obj.width, 0.0, gameZ),
+                                    start = Vec3(gameX, obj.floorHeight, gameZ),
+                                    end = Vec3(gameX + obj.width, obj.floorHeight, gameZ),
                                     height = obj.height,
                                     color = obj.color
                                 ),
                                 // East wall
                                 Wall(
-                                    start = Vec3(gameX + obj.width, 0.0, gameZ),
-                                    end = Vec3(gameX + obj.width, 0.0, gameZ + obj.width),
+                                    start = Vec3(gameX + obj.width, obj.floorHeight, gameZ),
+                                    end = Vec3(gameX + obj.width, obj.floorHeight, gameZ + obj.width),
                                     height = obj.height,
                                     color = obj.color
                                 ),
                                 // South wall
                                 Wall(
-                                    start = Vec3(gameX + obj.width, 0.0, gameZ + obj.width),
-                                    end = Vec3(gameX, 0.0, gameZ + obj.width),
+                                    start = Vec3(gameX + obj.width, obj.floorHeight, gameZ + obj.width),
+                                    end = Vec3(gameX, obj.floorHeight, gameZ + obj.width),
                                     height = obj.height,
                                     color = obj.color
                                 ),
                                 // West wall
                                 Wall(
-                                    start = Vec3(gameX, 0.0, gameZ + obj.width),
-                                    end = Vec3(gameX, 0.0, gameZ),
+                                    start = Vec3(gameX, obj.floorHeight, gameZ + obj.width),
+                                    end = Vec3(gameX, obj.floorHeight, gameZ),
                                     height = obj.height,
                                     color = obj.color
                                 )
@@ -635,8 +642,8 @@ class GridEditor : JPanel() {
 
                         walls.add(
                             Wall(
-                                start = Vec3(coords.startX, 0.0, coords.startZ),
-                                end = Vec3(coords.endX, 0.0, coords.endZ),
+                                start = Vec3(coords.startX, obj.floorHeight, coords.startZ),
+                                end = Vec3(coords.endX, obj.floorHeight, coords.endZ),
                                 height = obj.height,
                                 color = obj.color
                             )
