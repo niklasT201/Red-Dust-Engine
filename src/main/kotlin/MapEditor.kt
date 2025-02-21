@@ -600,79 +600,96 @@ class GridEditor : JPanel() {
         val walls = mutableListOf<Wall>()
 
         grid.forEach { (pos, cell) ->
-            // Iterate through all floors in the cell
-            cell.objectsByFloor.forEach { (_, floorObjects) ->
+            // Get the walls sorted by floor for this cell
+            val wallsInCell = mutableListOf<Pair<Int, WallObject>>()
+            cell.objectsByFloor.forEach { (floor, floorObjects) ->
                 floorObjects.forEach { obj ->
                     if (obj.type == ObjectType.WALL && obj is WallObject) {
-                        val (x, y) = pos
-                        val gameX = -x * baseScale
-                        val gameZ = y * baseScale
-
-                        if (obj.isBlockWall) {
-                            // Block walls
-                            walls.addAll(
-                                listOf(
-                                    // North wall
-                                    Wall(
-                                        start = Vec3(gameX, obj.floorHeight, gameZ),
-                                        end = Vec3(gameX + obj.width, obj.floorHeight, gameZ),
-                                        height = obj.height,
-                                        color = obj.color
-                                    ),
-                                    // East wall
-                                    Wall(
-                                        start = Vec3(gameX + obj.width, obj.floorHeight, gameZ),
-                                        end = Vec3(gameX + obj.width, obj.floorHeight, gameZ + obj.width),
-                                        height = obj.height,
-                                        color = obj.color
-                                    ),
-                                    // South wall
-                                    Wall(
-                                        start = Vec3(gameX + obj.width, obj.floorHeight, gameZ + obj.width),
-                                        end = Vec3(gameX, obj.floorHeight, gameZ + obj.width),
-                                        height = obj.height,
-                                        color = obj.color
-                                    ),
-                                    // West wall
-                                    Wall(
-                                        start = Vec3(gameX, obj.floorHeight, gameZ + obj.width),
-                                        end = Vec3(gameX, obj.floorHeight, gameZ),
-                                        height = obj.height,
-                                        color = obj.color
-                                    )
-                                )
-                            )
-                        } else {
-                            // Flat walls with rotation support
-                            val coords = when (obj.direction) {
-                                Direction.NORTH -> WallCoords(
-                                    gameX, gameZ,
-                                    gameX + obj.width, gameZ
-                                )
-                                Direction.WEST -> WallCoords(
-                                    gameX, gameZ,
-                                    gameX, gameZ + obj.width
-                                )
-                                Direction.SOUTH -> WallCoords(
-                                    gameX, gameZ + obj.width,
-                                    gameX + obj.width, gameZ + obj.width
-                                )
-                                Direction.EAST -> WallCoords(
-                                    gameX + obj.width, gameZ,
-                                    gameX + obj.width, gameZ + obj.width
-                                )
-                            }
-
-                            walls.add(
-                                Wall(
-                                    start = Vec3(coords.startX, obj.floorHeight, coords.startZ),
-                                    end = Vec3(coords.endX, obj.floorHeight, coords.endZ),
-                                    height = obj.height,
-                                    color = obj.color
-                                )
-                            )
-                        }
+                        wallsInCell.add(floor to obj)
                     }
+                }
+            }
+
+            // Sort walls by floor
+            wallsInCell.sortBy { it.first }
+
+            // Generate walls with adjusted Y positions
+            wallsInCell.forEachIndexed { index, (floor, obj) ->
+                val (x, y) = pos
+                val gameX = -x * baseScale
+                val gameZ = y * baseScale
+
+                // If there's a wall below this one, adjust Y position to eliminate gap
+                val yPosition = if (index > 0) {
+                    val wallBelow = wallsInCell[index - 1].second
+                    wallBelow.floorHeight + wallBelow.height
+                } else {
+                    obj.floorHeight
+                }
+
+                if (obj.isBlockWall) {
+                    // Block walls
+                    walls.addAll(
+                        listOf(
+                            // North wall
+                            Wall(
+                                start = Vec3(gameX, yPosition, gameZ),
+                                end = Vec3(gameX + obj.width, yPosition, gameZ),
+                                height = obj.height,  // Keep original height
+                                color = obj.color
+                            ),
+                            // East wall
+                            Wall(
+                                start = Vec3(gameX + obj.width, yPosition, gameZ),
+                                end = Vec3(gameX + obj.width, yPosition, gameZ + obj.width),
+                                height = obj.height,  // Keep original height
+                                color = obj.color
+                            ),
+                            // South wall
+                            Wall(
+                                start = Vec3(gameX + obj.width, yPosition, gameZ + obj.width),
+                                end = Vec3(gameX, yPosition, gameZ + obj.width),
+                                height = obj.height,  // Keep original height
+                                color = obj.color
+                            ),
+                            // West wall
+                            Wall(
+                                start = Vec3(gameX, yPosition, gameZ + obj.width),
+                                end = Vec3(gameX, yPosition, gameZ),
+                                height = obj.height,  // Keep original height
+                                color = obj.color
+                            )
+                        )
+                    )
+                } else {
+                    // Flat walls with rotation support
+                    val coords = when (obj.direction) {
+                        Direction.NORTH -> WallCoords(
+                            gameX, gameZ,
+                            gameX + obj.width, gameZ
+                        )
+                        Direction.WEST -> WallCoords(
+                            gameX, gameZ,
+                            gameX, gameZ + obj.width
+                        )
+                        Direction.SOUTH -> WallCoords(
+                            gameX, gameZ + obj.width,
+                            gameX + obj.width, gameZ + obj.width
+                        )
+                        Direction.EAST -> WallCoords(
+                            gameX + obj.width, gameZ,
+                            gameX + obj.width, gameZ + obj.width
+                        )
+                    }
+
+                    walls.add(
+                        Wall(
+                            start = Vec3(coords.startX, yPosition, coords.startZ),
+                            end = Vec3(coords.endX, yPosition, coords.endZ),
+                            height = obj.height,
+                            color = obj.color
+                        )
+                    )
                 }
             }
         }
