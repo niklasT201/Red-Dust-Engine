@@ -158,8 +158,8 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
         sectionsPanel.add(topPanel)
         sectionsPanel.add(quickActionsSection)
         sectionsPanel.add(Box.createVerticalStrut(10))  // Increased spacing between sections
-        sectionsPanel.add(sectionChooser)
-        sectionsPanel.add(Box.createVerticalStrut(10))
+        //sectionsPanel.add(sectionChooser)
+        //sectionsPanel.add(Box.createVerticalStrut(10))
         sectionsPanel.add(wallStyleSection)
         sectionsPanel.add(Box.createVerticalStrut(10))
         sectionsPanel.add(wallPropertiesSection)

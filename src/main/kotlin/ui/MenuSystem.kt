@@ -7,13 +7,17 @@ import java.awt.event.InputEvent
 import javax.swing.border.EmptyBorder
 import javax.swing.border.MatteBorder
 
-class MenuSystem {
+class MenuSystem(
+    private val onFloorSelected: (Int) -> Unit,
+    private val onFloorAdded: (Boolean) -> Unit
+) {
     private val controlsMap = mutableMapOf<String, String>()
+    private val floorLevelMenu = FloorLevelMenu(onFloorSelected, onFloorAdded)
 
     // Define colors as constants for consistency
     companion object {
-        private val BACKGROUND_COLOR = Color(40, 44, 52)
-        private val BORDER_COLOR = Color(28, 31, 36)  // Darker color for borders
+        val BACKGROUND_COLOR = Color(40, 44, 52)
+        private val BORDER_COLOR = Color(28, 31, 36)
         private val HOVER_COLOR = Color(60, 63, 65)
         private val SEPARATOR_COLOR = Color(70, 73, 75)
     }
@@ -63,7 +67,21 @@ class MenuSystem {
             add(createEditMenu())
             add(createControlsMenu())
             add(createHelpMenu())
+
+            // Add a glue to push the floor menu to the right
+            add(Box.createHorizontalGlue())
+
+            // Add the floor level menu
+            add(floorLevelMenu)
         }
+    }
+
+    fun addFloor(level: Int) {
+        floorLevelMenu.addFloor(level)
+    }
+
+    fun setCurrentFloor(level: Int) {
+        floorLevelMenu.setCurrentFloor(level)
     }
 
     private fun createMenuItem(text: String, accelerator: KeyStroke? = null): JMenuItem {

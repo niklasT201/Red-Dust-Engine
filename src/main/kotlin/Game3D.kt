@@ -1,4 +1,5 @@
 import ui.EditorPanel
+import ui.FloorSelectorPanel
 import ui.MenuSystem
 import java.awt.*
 import java.awt.event.*
@@ -9,6 +10,7 @@ import kotlin.math.sin
 class Game3D : JPanel() {
     private val camera = Camera(Vec3(0.0, 1.7, -5.0))
     private val renderer = Renderer(800, 600)
+    private lateinit var menuSystem: MenuSystem
     private val keysPressed = mutableSetOf<Int>()
     private val walls = mutableListOf<Wall>()
     private val floors = mutableListOf<Floor>()
@@ -88,7 +90,50 @@ class Game3D : JPanel() {
         editorPanel.preferredSize = Dimension(250, height)
 
         // Create menu bar
-        val menuSystem = MenuSystem()
+        menuSystem = MenuSystem(
+            onFloorSelected = { level ->
+                // Update editor panel's floor selector
+                editorPanel.sectionChooser.setCurrentFloor(level)
+                // Update grid editor
+                gridEditor.setCurrentFloor(level)
+                gridEditor.setCurrentFloorHeight(level * 4.0) // 4 units between floors
+                renderPanel.repaint()
+            },
+            onFloorAdded = { isAbove ->
+                val floors = editorPanel.sectionChooser.floors
+                val newLevel = if (isAbove) {
+                    floors.maxOf { it.level } + 1
+                } else {
+                    floors.minOf { it.level } - 1
+                }
+
+                // Add new floor to both menu and section chooser
+                menuSystem.addFloor(newLevel)
+                editorPanel.sectionChooser.floors.add(
+                    FloorSelectorPanel.Floor(newLevel)
+                )
+
+                // Update UI
+                editorPanel.sectionChooser.updateFloorButtons(
+                    editorPanel.sectionChooser.findFloorsPanel()
+                )
+                renderPanel.repaint()
+            }
+        )
+
+        // Add listeners to keep menu and section chooser in sync
+        editorPanel.sectionChooser.addPropertyChangeListener("currentFloorChanged") { evt ->
+            val floor = evt.newValue as FloorSelectorPanel.Floor
+            menuSystem.setCurrentFloor(floor.level)
+        }
+
+        editorPanel.sectionChooser.addPropertyChangeListener("floorsChanged") { _ ->
+            // Ensure menu shows all available floors
+            editorPanel.sectionChooser.floors.forEach { floor ->
+                menuSystem.addFloor(floor.level)
+            }
+        }
+
         add(menuSystem.createMenuBar(), BorderLayout.NORTH)
 
         // split pane to the main panel

@@ -9,7 +9,7 @@ import javax.swing.*
 import javax.swing.border.TitledBorder
 
 class FloorSelectorPanel : JPanel() {
-    private val floors = mutableListOf<Floor>()
+    val floors = mutableListOf<Floor>()
     private var currentFloorIndex = 0
     private val floorButtons = mutableMapOf<Int, JButton>()
 
@@ -132,7 +132,7 @@ class FloorSelectorPanel : JPanel() {
         }
     }
 
-    private fun updateFloorButtons(panel: JPanel) {
+    fun updateFloorButtons(panel: JPanel) {
         panel.removeAll()
         floorButtons.clear()
 
@@ -184,7 +184,7 @@ class FloorSelectorPanel : JPanel() {
         }
     }
 
-    private fun findFloorsPanel(): JPanel {
+    fun findFloorsPanel(): JPanel {
         return ((components.find { it is JScrollPane } as? JScrollPane)?.viewport?.view as? JPanel)
             ?: throw IllegalStateException("Floors panel not found")
     }
