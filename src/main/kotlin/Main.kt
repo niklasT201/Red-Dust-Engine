@@ -26,7 +26,6 @@ fun main() {
 // pressing gui, wall direction isnt working
 // fix floor tiles flickering
 // objects arent straight when bigger screen bc of mouse movement
-// floors are transparent
 
 // optional shadows
 // weapon system

@@ -230,8 +230,7 @@ class Game3D : JPanel() {
             g2.color = Color(135, 206, 235)
             g2.fillRect(0, 0, width, height)
 
-            floors.forEach { floor -> renderer.drawFloor(g2, floor, camera) }
-            renderer.drawWall(g2, walls, camera)
+            renderer.drawScene(g2, walls, floors, camera)
 
             if (!isEditorMode) {
                 // Draw crosshair

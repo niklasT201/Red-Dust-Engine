@@ -9,73 +9,77 @@ class Renderer(private val width: Int, private val height: Int) {
     private val nearPlane = 0.1
     private val farPlane = 100.0
 
-    // Helper class to store wall drawing information
-    private data class WallRenderInfo(
-        val wall: Wall,
-        val screenPoints: List<Pair<Int, Int>>,
-        val distance: Double,
-        val color: Color
-    )
+    // Combined class to store rendering info for both walls and floors
+    private sealed class RenderableObject {
+        abstract val distance: Double
+        abstract val screenPoints: List<Pair<Int, Int>>
+        abstract val color: Color
 
-    fun drawFloor(g2: Graphics2D, floor: Floor, camera: Camera) {
-        val corners = listOf(
-            Vec3(floor.x1, floor.y, floor.z1),
-            Vec3(floor.x2, floor.y, floor.z1),
-            Vec3(floor.x2, floor.y, floor.z2),
-            Vec3(floor.x1, floor.y, floor.z2)
-        )
+        data class WallInfo(
+            override val distance: Double,
+            override val screenPoints: List<Pair<Int, Int>>,
+            override val color: Color,
+            val wall: Wall
+        ) : RenderableObject()
 
-        // Transform all corners
-        val transformedCorners = corners.map { transformPoint(it, camera) }
+        data class FloorInfo(
+            override val distance: Double,
+            override val screenPoints: List<Pair<Int, Int>>,
+            override val color: Color,
+            val floor: Floor
+        ) : RenderableObject()
+    }
 
-        // Check if floor is behind camera or outside view frustum
-        if (transformedCorners.all { it.z <= nearPlane }) return
+    fun drawScene(g2: Graphics2D, walls: List<Wall>, floors: List<Floor>, camera: Camera) {
+        val renderQueue = mutableListOf<RenderableObject>()
 
-        // Calculate normal vector of floor
-        val normal = Vec3(0.0, 1.0, 0.0)
-        val transformedNormal = transformNormal(normal, camera)
-
-        // Don't render if floor is facing away from camera (backface culling)
-        if (transformedNormal.y < 0) return
-
-        // Project corners to screen space
-        val screenPoints = transformedCorners.map { projectPoint(it) }
-
-        // Check if any points are within the view frustum
-        val anyVisible = screenPoints.any { (x, y) ->
-            x >= -width/2 && x <= width*1.5 && y >= -height/2 && y <= height*1.5
-        }
-
-        if (anyVisible) {
-            val polygon = Polygon(
-                screenPoints.map { it.first }.toIntArray(),
-                screenPoints.map { it.second }.toIntArray(),
-                4
+        // Process floors
+        for (floor in floors) {
+            val corners = listOf(
+                Vec3(floor.x1, floor.y, floor.z1),
+                Vec3(floor.x2, floor.y, floor.z1),
+                Vec3(floor.x2, floor.y, floor.z2),
+                Vec3(floor.x1, floor.y, floor.z2)
             )
 
-            val centerZ = (floor.z1 + floor.z2) / 2 - camera.position.z
-            val centerX = (floor.x1 + floor.x2) / 2 - camera.position.x
-            val distance = sqrt(centerX * centerX + centerZ * centerZ)
-            val shade = (1.0 / (1.0 + distance * 0.1)).coerceIn(0.3, 1.0)
+            val transformedCorners = corners.map { transformPoint(it, camera) }
+            if (transformedCorners.all { it.z <= nearPlane }) continue
 
-            g2.color = Color(
+            val screenPoints = transformedCorners.map { projectPoint(it) }
+
+            // Calculate center point for distance sorting
+            val centerX = (floor.x1 + floor.x2) / 2
+            val centerY = floor.y
+            val centerZ = (floor.z1 + floor.z2) / 2
+
+            // Calculate distance to camera for sorting
+            val dx = centerX - camera.position.x
+            val dy = centerY - camera.position.y
+            val dz = centerZ - camera.position.z
+            val distance = sqrt(dx * dx + dy * dy + dz * dz)
+
+            // Calculate view direction and normal dot product for backface culling
+            val normalY = 1.0 // Floor normal always points up
+            val viewY = camera.position.y - centerY
+            val viewLength = sqrt(dx * dx + dy * dy + dz * dz)
+            val dotProduct = viewY / viewLength
+
+            // Skip if viewing from wrong side
+            if (floor.y > camera.position.y && dotProduct > 0) continue
+            if (floor.y < camera.position.y && dotProduct < 0) continue
+
+            // Calculate shading
+            val shade = (1.0 / (1.0 + distance * 0.1)).coerceIn(0.3, 1.0)
+            val shadedColor = Color(
                 (floor.color.red * shade).toInt(),
                 (floor.color.green * shade).toInt(),
                 (floor.color.blue * shade).toInt()
             )
-            g2.fill(polygon)
+
+            renderQueue.add(RenderableObject.FloorInfo(distance, screenPoints, shadedColor, floor))
         }
-    }
 
-    fun drawWall(g2: Graphics2D, walls: List<Wall>, camera: Camera) {
-        val wallsToRender = mutableListOf<WallRenderInfo>()
-
-        // Calculate view frustum bounds
-        val frustumLeft = -width/2
-        val frustumRight = (width * 1.5).toInt()
-        val frustumTop = -height/2
-        val frustumBottom = (height * 1.5).toInt()
-
+        // Process walls
         for (wall in walls) {
             val startTransformed = transformPoint(wall.start, camera)
             val endTransformed = transformPoint(wall.end, camera)
@@ -87,11 +91,28 @@ class Renderer(private val width: Int, private val height: Int) {
             val startTransformedTop = transformPoint(topStart, camera)
             val endTransformedTop = transformPoint(topEnd, camera)
 
-            // Improved near plane clipping check
-            val allPoints = listOf(startTransformed, endTransformed, startTransformedTop, endTransformedTop)
-            if (allPoints.all { it.z <= nearPlane }) continue
+            if (listOf(startTransformed, endTransformed, startTransformedTop, endTransformedTop)
+                    .all { it.z <= nearPlane }) continue
 
-            // Calculate wall normal
+            val screenPoints = listOf(
+                projectPoint(startTransformedTop),
+                projectPoint(endTransformedTop),
+                projectPoint(endTransformed),
+                projectPoint(startTransformed)
+            )
+
+            // Calculate center point of wall for distance sorting
+            val centerX = (wall.start.x + wall.end.x) / 2
+            val centerY = (wall.start.y + wall.end.y) / 2 + wall.height / 2
+            val centerZ = (wall.start.z + wall.end.z) / 2
+
+            val distance = sqrt(
+                (centerX - camera.position.x).pow(2) +
+                        (centerY - camera.position.y).pow(2) +
+                        (centerZ - camera.position.z).pow(2)
+            )
+
+            // Calculate wall normal and view direction for shading
             val wallVector = Vec3(
                 wall.end.x - wall.start.x,
                 0.0,
@@ -103,74 +124,36 @@ class Renderer(private val width: Int, private val height: Int) {
                 Vec3(it.x / length, 0.0, it.z / length)
             }
 
-            // Calculate view direction vector (from wall center to camera)
-            val wallCenterX = (wall.start.x + wall.end.x) / 2
-            val wallCenterZ = (wall.start.z + wall.end.z) / 2
-            val toCameraX = camera.position.x - wallCenterX
-            val toCameraZ = camera.position.z - wallCenterZ
-
-            // Calculate distance for depth sorting
-            val distance = sqrt(toCameraX * toCameraX + toCameraZ * toCameraZ)
-
-            // Normalize the view direction vector
+            val toCameraX = camera.position.x - centerX
+            val toCameraZ = camera.position.z - centerZ
             val viewLength = sqrt(toCameraX * toCameraX + toCameraZ * toCameraZ)
-            val normalizedToCameraX = toCameraX / viewLength
-            val normalizedToCameraZ = toCameraZ / viewLength
+            val dotProduct = (normal.x * toCameraX + normal.z * toCameraZ) / viewLength
 
-            // Calculate dot product between normal and view direction
-            val dotProduct = normal.x * normalizedToCameraX + normal.z * normalizedToCameraZ
+            // Calculate shading
+            val angleFactor = abs(dotProduct)
+            val distanceFactor = (1.0 / (1.0 + distance * 0.1)).coerceIn(0.3, 1.0)
+            val shade = (angleFactor * distanceFactor).coerceIn(0.3, 1.0)
 
-            // Project points to screen space
-            val screenPoints = listOf(
-                projectPoint(startTransformedTop),
-                projectPoint(endTransformedTop),
-                projectPoint(endTransformed),
-                projectPoint(startTransformed)
+            val shadedColor = Color(
+                (wall.color.red * shade).toInt(),
+                (wall.color.green * shade).toInt(),
+                (wall.color.blue * shade).toInt()
             )
 
-            // Improved view frustum check
-            val anyPointInFrustum = screenPoints.any { (x, y) ->
-                x >= frustumLeft && x <= frustumRight && y >= frustumTop && y <= frustumBottom
-            }
-
-            // Check if wall crosses the view frustum
-            val crossesFrustum = screenPoints.zipWithNext { a, b ->
-                lineIntersectsFrustum(
-                    a.first, a.second,
-                    b.first, b.second,
-                    frustumLeft, frustumTop,
-                    frustumRight, frustumBottom
-                )
-            }.any { it }
-
-            if (anyPointInFrustum || crossesFrustum) {
-                // Calculate shading based on angle to camera and distance
-                // Use absolute value of dot product to shade both sides
-                val angleFactor = abs(dotProduct)
-                val distanceFactor = (1.0 / (1.0 + distance * 0.1)).coerceIn(0.3, 1.0)
-                val shade = (angleFactor * distanceFactor).coerceIn(0.3, 1.0)
-
-                val shadedColor = Color(
-                    (wall.color.red * shade).toInt(),
-                    (wall.color.green * shade).toInt(),
-                    (wall.color.blue * shade).toInt()
-                )
-
-                wallsToRender.add(WallRenderInfo(wall, screenPoints, distance, shadedColor))
-            }
+            renderQueue.add(RenderableObject.WallInfo(distance, screenPoints, shadedColor, wall))
         }
 
-        // Sort walls by distance (furthest first)
-        wallsToRender.sortByDescending { it.distance }
+        // Sort all objects by distance (furthest first)
+        renderQueue.sortByDescending { it.distance }
 
-        // Draw walls in sorted order
-        for (wallInfo in wallsToRender) {
+        // Draw all objects in sorted order
+        for (renderable in renderQueue) {
             val polygon = Polygon(
-                wallInfo.screenPoints.map { it.first }.toIntArray(),
-                wallInfo.screenPoints.map { it.second }.toIntArray(),
-                4
+                renderable.screenPoints.map { it.first }.toIntArray(),
+                renderable.screenPoints.map { it.second }.toIntArray(),
+                renderable.screenPoints.size
             )
-            g2.color = wallInfo.color
+            g2.color = renderable.color
             g2.fill(polygon)
         }
     }
