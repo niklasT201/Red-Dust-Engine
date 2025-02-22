@@ -154,6 +154,10 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             }
         }
 
+        val imageSection = CollapsibleSection("Images").apply {
+            addComponent(ImageLoaderPanel())
+        }
+
         // Add sections to the panel
         sectionsPanel.add(topPanel)
         sectionsPanel.add(quickActionsSection)
@@ -165,6 +169,8 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
         sectionsPanel.add(wallPropertiesSection)
         sectionsPanel.add(Box.createVerticalStrut(10))
         sectionsPanel.add(toolsSection)
+        sectionsPanel.add(Box.createVerticalStrut(10))
+        sectionsPanel.add(imageSection)
 
         // Add rigid area at the bottom to prevent stretching
         sectionsPanel.add(Box.createVerticalGlue())

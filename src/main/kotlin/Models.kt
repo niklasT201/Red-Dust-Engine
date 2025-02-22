@@ -1,3 +1,4 @@
+import ui.ImageEntry
 import java.awt.Color
 
 data class Vec3(var x: Double, var y: Double, var z: Double)
@@ -51,6 +52,7 @@ sealed class GameObject {
     abstract val height: Double
     abstract val width: Double
     abstract val direction: Direction
+    open val texture: ImageEntry? = null
 }
 
 enum class ObjectType {
@@ -64,6 +66,7 @@ data class WallObject(
     override val height: Double,
     override val width: Double,
     override val direction: Direction,
+    override val texture: ImageEntry? = null,
     val isBlockWall: Boolean,
     val floorHeight: Double  // Add this new property
 ) : GameObject() {

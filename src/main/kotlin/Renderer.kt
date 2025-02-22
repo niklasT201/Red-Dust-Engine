@@ -158,20 +158,6 @@ class Renderer(private val width: Int, private val height: Int) {
         }
     }
 
-    // Helper function to check if a line segment intersects with the view frustum
-    private fun lineIntersectsFrustum(
-        x1: Int, y1: Int,
-        x2: Int, y2: Int,
-        frustumLeft: Int, frustumTop: Int,
-        frustumRight: Int, frustumBottom: Int
-    ): Boolean {
-        // Check if line segment intersects with any of the frustum edges
-        return lineIntersectsLine(x1, y1, x2, y2, frustumLeft, frustumTop, frustumRight, frustumTop) ||
-                lineIntersectsLine(x1, y1, x2, y2, frustumRight, frustumTop, frustumRight, frustumBottom) ||
-                lineIntersectsLine(x1, y1, x2, y2, frustumRight, frustumBottom, frustumLeft, frustumBottom) ||
-                lineIntersectsLine(x1, y1, x2, y2, frustumLeft, frustumBottom, frustumLeft, frustumTop)
-    }
-
     // Helper function to check if two line segments intersect
     private fun lineIntersectsLine(
         x1: Int, y1: Int,
@@ -207,19 +193,6 @@ class Renderer(private val width: Int, private val height: Int) {
             relPoint.x * cosYaw + relPoint.z * sinYaw,
             relPoint.y * cosPitch - (-relPoint.x * sinYaw + relPoint.z * cosYaw) * sinPitch,
             (-relPoint.x * sinYaw + relPoint.z * cosYaw) * cosPitch + relPoint.y * sinPitch
-        )
-    }
-
-    private fun transformNormal(normal: Vec3, camera: Camera): Vec3 {
-        val cosYaw = cos(camera.yaw)
-        val sinYaw = sin(camera.yaw)
-        val cosPitch = cos(camera.pitch)
-        val sinPitch = sin(camera.pitch)
-
-        return Vec3(
-            normal.x * cosYaw + normal.z * sinYaw,
-            normal.y * cosPitch - (-normal.x * sinYaw + normal.z * cosYaw) * sinPitch,
-            (-normal.x * sinYaw + normal.z * cosYaw) * cosPitch + normal.y * sinPitch
         )
     }
 
