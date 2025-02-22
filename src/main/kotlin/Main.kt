@@ -24,7 +24,7 @@ fun main() {
 // wall clipping issue
 // maybe fix player map offset 1
 // pressing gui, wall direction isnt working
-// fix floor tiles flickering
+// fix visible floor tile border
 // objects arent straight when bigger screen bc of mouse movement
 
 // optional shadows

@@ -600,96 +600,74 @@ class GridEditor : JPanel() {
         val walls = mutableListOf<Wall>()
 
         grid.forEach { (pos, cell) ->
-            // Get the walls sorted by floor for this cell
-            val wallsInCell = mutableListOf<Pair<Int, WallObject>>()
-            cell.objectsByFloor.forEach { (floor, floorObjects) ->
-                floorObjects.forEach { obj ->
-                    if (obj.type == ObjectType.WALL && obj is WallObject) {
-                        wallsInCell.add(floor to obj)
-                    }
-                }
-            }
+            // Get all floors that have walls in this cell
+            val floorsWithWalls = cell.objectsByFloor.filterValues { objects ->
+                objects.any { it.type == ObjectType.WALL }
+            }.keys.sorted()
 
-            // Sort walls by floor
-            wallsInCell.sortBy { it.first }
+            floorsWithWalls.forEach { floor ->
+                val wallsInFloor = cell.objectsByFloor[floor]?.filterIsInstance<WallObject>() ?: return@forEach
 
-            // Generate walls with adjusted Y positions
-            wallsInCell.forEachIndexed { index, (floor, obj) ->
-                val (x, y) = pos
-                val gameX = -x * baseScale
-                val gameZ = y * baseScale
+                wallsInFloor.forEach { obj ->
+                    val (x, y) = pos
+                    val gameX = -x * baseScale
+                    val gameZ = y * baseScale
 
-                // If there's a wall below this one, adjust Y position to eliminate gap
-                val yPosition = if (index > 0) {
-                    val wallBelow = wallsInCell[index - 1].second
-                    wallBelow.floorHeight + wallBelow.height
-                } else {
-                    obj.floorHeight
-                }
+                    // Calculate Y position based on floor number directly
+                    val yPosition = floor * obj.height
 
-                if (obj.isBlockWall) {
-                    // Block walls
-                    walls.addAll(
-                        listOf(
-                            // North wall
+                    if (obj.isBlockWall) {
+                        // Block walls
+                        walls.addAll(
+                            listOf(
+                                // North wall
+                                Wall(
+                                    start = Vec3(gameX, yPosition, gameZ),
+                                    end = Vec3(gameX + obj.width, yPosition, gameZ),
+                                    height = obj.height,
+                                    color = obj.color
+                                ),
+                                // East wall
+                                Wall(
+                                    start = Vec3(gameX + obj.width, yPosition, gameZ),
+                                    end = Vec3(gameX + obj.width, yPosition, gameZ + obj.width),
+                                    height = obj.height,
+                                    color = obj.color
+                                ),
+                                // South wall
+                                Wall(
+                                    start = Vec3(gameX + obj.width, yPosition, gameZ + obj.width),
+                                    end = Vec3(gameX, yPosition, gameZ + obj.width),
+                                    height = obj.height,
+                                    color = obj.color
+                                ),
+                                // West wall
+                                Wall(
+                                    start = Vec3(gameX, yPosition, gameZ + obj.width),
+                                    end = Vec3(gameX, yPosition, gameZ),
+                                    height = obj.height,
+                                    color = obj.color
+                                )
+                            )
+                        )
+                    } else {
+                        // Flat walls with rotation support
+                        val coords = when (obj.direction) {
+                            Direction.NORTH -> WallCoords(gameX, gameZ, gameX + obj.width, gameZ)
+                            Direction.WEST -> WallCoords(gameX, gameZ, gameX, gameZ + obj.width)
+                            Direction.SOUTH -> WallCoords(gameX, gameZ + obj.width, gameX + obj.width, gameZ + obj.width)
+                            Direction.EAST -> WallCoords(gameX + obj.width, gameZ, gameX + obj.width, gameZ + obj.width)
+                        }
+
+                        walls.add(
                             Wall(
-                                start = Vec3(gameX, yPosition, gameZ),
-                                end = Vec3(gameX + obj.width, yPosition, gameZ),
-                                height = obj.height,  // Keep original height
-                                color = obj.color
-                            ),
-                            // East wall
-                            Wall(
-                                start = Vec3(gameX + obj.width, yPosition, gameZ),
-                                end = Vec3(gameX + obj.width, yPosition, gameZ + obj.width),
-                                height = obj.height,  // Keep original height
-                                color = obj.color
-                            ),
-                            // South wall
-                            Wall(
-                                start = Vec3(gameX + obj.width, yPosition, gameZ + obj.width),
-                                end = Vec3(gameX, yPosition, gameZ + obj.width),
-                                height = obj.height,  // Keep original height
-                                color = obj.color
-                            ),
-                            // West wall
-                            Wall(
-                                start = Vec3(gameX, yPosition, gameZ + obj.width),
-                                end = Vec3(gameX, yPosition, gameZ),
-                                height = obj.height,  // Keep original height
+                                start = Vec3(coords.startX, yPosition, coords.startZ),
+                                end = Vec3(coords.endX, yPosition, coords.endZ),
+                                height = obj.height,
                                 color = obj.color
                             )
                         )
-                    )
-                } else {
-                    // Flat walls with rotation support
-                    val coords = when (obj.direction) {
-                        Direction.NORTH -> WallCoords(
-                            gameX, gameZ,
-                            gameX + obj.width, gameZ
-                        )
-                        Direction.WEST -> WallCoords(
-                            gameX, gameZ,
-                            gameX, gameZ + obj.width
-                        )
-                        Direction.SOUTH -> WallCoords(
-                            gameX, gameZ + obj.width,
-                            gameX + obj.width, gameZ + obj.width
-                        )
-                        Direction.EAST -> WallCoords(
-                            gameX + obj.width, gameZ,
-                            gameX + obj.width, gameZ + obj.width
-                        )
                     }
-
-                    walls.add(
-                        Wall(
-                            start = Vec3(coords.startX, yPosition, coords.startZ),
-                            end = Vec3(coords.endX, yPosition, coords.endZ),
-                            height = obj.height,
-                            color = obj.color
-                        )
-                    )
                 }
             }
         }
@@ -700,25 +678,30 @@ class GridEditor : JPanel() {
         val floors = mutableListOf<Floor>()
 
         grid.forEach { (pos, cell) ->
-            // Iterate through all floors in the cell
-            cell.objectsByFloor.forEach { (_, floorObjects) ->
-                floorObjects.forEach { obj ->
-                    if (obj.type == ObjectType.FLOOR && obj is FloorObject) {
-                        val (x, y) = pos
-                        val gameX = -x * baseScale
-                        val gameZ = y * baseScale
+            // Get all floors that have floor objects in this cell
+            val floorsWithTiles = cell.objectsByFloor.filterValues { objects ->
+                objects.any { it.type == ObjectType.FLOOR }
+            }.keys.sorted()
 
-                        floors.add(
-                            Floor(
-                                x1 = gameX,
-                                z1 = gameZ,
-                                x2 = gameX + baseScale,
-                                z2 = gameZ + baseScale,
-                                y = obj.floorHeight, // Use the floor's height
-                                color = obj.color
-                            )
+            floorsWithTiles.forEach { floorNum ->
+                cell.objectsByFloor[floorNum]?.filterIsInstance<FloorObject>()?.forEach { obj ->
+                    val (x, y) = pos
+                    val gameX = -x * baseScale
+                    val gameZ = y * baseScale
+
+                    // Calculate Y position based on floor number
+                    val yPosition = floorNum * 3.0  // Assuming standard floor height of 3.0
+
+                    floors.add(
+                        Floor(
+                            x1 = gameX,
+                            z1 = gameZ,
+                            x2 = gameX + baseScale,
+                            z2 = gameZ + baseScale,
+                            y = yPosition,
+                            color = obj.color
                         )
-                    }
+                    )
                 }
             }
         }
