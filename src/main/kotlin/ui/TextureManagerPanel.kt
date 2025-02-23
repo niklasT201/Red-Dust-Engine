@@ -1,5 +1,6 @@
 package ui
 
+import ImageEntry
 import ObjectType
 import java.awt.*
 import javax.swing.*

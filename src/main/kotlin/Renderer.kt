@@ -1,6 +1,4 @@
-import java.awt.Graphics2D
-import java.awt.Color
-import java.awt.Polygon
+import java.awt.*
 import kotlin.math.*
 
 class Renderer(private val width: Int, private val height: Int) {
@@ -59,7 +57,6 @@ class Renderer(private val width: Int, private val height: Int) {
             val distance = sqrt(dx * dx + dy * dy + dz * dz)
 
             // Calculate view direction and normal dot product for backface culling
-            val normalY = 1.0 // Floor normal always points up
             val viewY = camera.position.y - centerY
             val viewLength = sqrt(dx * dx + dy * dy + dz * dz)
             val dotProduct = viewY / viewLength
@@ -156,22 +153,6 @@ class Renderer(private val width: Int, private val height: Int) {
             g2.color = renderable.color
             g2.fill(polygon)
         }
-    }
-
-    // Helper function to check if two line segments intersect
-    private fun lineIntersectsLine(
-        x1: Int, y1: Int,
-        x2: Int, y2: Int,
-        x3: Int, y3: Int,
-        x4: Int, y4: Int
-    ): Boolean {
-        val denominator = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
-        if (denominator == 0) return false
-
-        val t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denominator.toDouble()
-        val u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denominator.toDouble()
-
-        return t in 0.0..1.0 && u in 0.0..1.0
     }
 
     private fun transformPoint(point: Vec3, camera: Camera): Vec3 {

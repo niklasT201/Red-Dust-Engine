@@ -1,9 +1,15 @@
-import ui.ImageEntry
 import java.awt.Color
+import java.awt.Image
 
 data class Vec3(var x: Double, var y: Double, var z: Double)
-data class Wall(val start: Vec3, val end: Vec3, val height: Double, val color: Color)
-data class Floor(val x1: Double, val z1: Double, val x2: Double, val z2: Double, val y: Double, val color: Color)
+data class Wall(val start: Vec3, val end: Vec3, val height: Double, val color: Color, val texture: ImageEntry? = null)
+data class Floor(val x1: Double, val z1: Double, val x2: Double, val z2: Double, val y: Double, val color: Color, val texture: ImageEntry? = null)
+
+data class ImageEntry(
+    val name: String,
+    val path: String,
+    val image: Image
+)
 
 enum class Direction {
     NORTH, EAST, SOUTH, WEST;
@@ -75,7 +81,8 @@ data class WallObject(
 
 data class FloorObject(
     override val color: Color,
-    val floorHeight: Double
+    val floorHeight: Double,
+    override val texture: ImageEntry? = null
 ) : GameObject() {
     override val type = ObjectType.FLOOR
     override val height = 0.0

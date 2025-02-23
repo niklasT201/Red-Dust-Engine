@@ -1,5 +1,6 @@
 package ui
 
+import ImageEntry
 import java.awt.Image
 
 class ResourceManager {
