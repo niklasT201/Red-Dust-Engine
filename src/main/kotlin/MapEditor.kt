@@ -175,6 +175,7 @@ class GridEditor : JPanel() {
         val focusedInputMap = getInputMap(WHEN_FOCUSED)
         focusedInputMap.put(KeyStroke.getKeyStroke(KeyBindings.WALL_SHORTCUT, 0), "select_wall")
         focusedInputMap.put(KeyStroke.getKeyStroke(KeyBindings.FLOOR_SHORTCUT, 0), "select_floor")
+        focusedInputMap.put(KeyStroke.getKeyStroke(KeyBindings.PLAYER_SPAWN_SHORTCUT, 0), "select_player_spawn")
 
 
         actionMap.put("rotate_north", object : AbstractAction() {
@@ -210,6 +211,12 @@ class GridEditor : JPanel() {
         actionMap.put("select_floor", object : AbstractAction() {
             override fun actionPerformed(e: ActionEvent) {
                 setObjectType(ObjectType.FLOOR)
+            }
+        })
+
+        actionMap.put("select_player_spawn", object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent) {
+                setObjectType(ObjectType.PLAYER_SPAWN)
             }
         })
 
