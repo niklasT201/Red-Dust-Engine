@@ -43,6 +43,7 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
                 background = Color(60, 63, 65)
                 foreground = Color.WHITE
             })
+            alignmentX = LEFT_ALIGNMENT
         }
 
         // Texture List
@@ -60,6 +61,7 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
             preferredSize = Dimension(0, 120)
             border = BorderFactory.createLineBorder(Color(70, 73, 75))
             background = Color(40, 44, 52)
+            alignmentX = LEFT_ALIGNMENT
         }
 
         // Preview Panel
@@ -74,18 +76,27 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
                 null,
                 Color.WHITE
             )
-            add(previewLabel)
+            alignmentX = LEFT_ALIGNMENT
+
+            // Create a fixed-size panel for the preview
+            add(JPanel().apply {
+                preferredSize = Dimension(100, 100)
+                background = Color(50, 54, 62)
+                layout = BorderLayout()
+                add(previewLabel, BorderLayout.CENTER)
+            })
         }
 
         // Buttons
         val buttonPanel = JPanel().apply {
-            layout = BoxLayout(this, BoxLayout.X_AXIS)
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
             background = Color(40, 44, 52)
+            alignmentX = LEFT_ALIGNMENT
 
             add(createButton("Add Texture") { addTexture() })
-            add(Box.createHorizontalStrut(5))
+            add(Box.createVerticalStrut(5))
             add(createButton("Remove Texture") { removeSelectedTexture() })
-            add(Box.createHorizontalStrut(5))
+            add(Box.createVerticalStrut(5))
             add(createButton("Set as Default") { setAsDefault() })
         }
 
@@ -97,6 +108,7 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
         add(previewPanel)
         add(Box.createVerticalStrut(10))
         add(buttonPanel)
+        add(Box.createVerticalGlue())
 
         // Event Listeners
         objectTypeComboBox.addActionListener { updateTextureList() }
@@ -193,10 +205,12 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
 
     private fun updatePreview() {
         val selectedTexture = textureList.selectedValue as? TextureEntry
-        previewLabel.icon = selectedTexture?.let {
-            val image = it.imageEntry.image
+        if (selectedTexture != null) {
+            val image = selectedTexture.imageEntry.image
             val scaledImage = image.getScaledInstance(100, 100, Image.SCALE_SMOOTH)
-            ImageIcon(scaledImage)
+            previewLabel.icon = ImageIcon(scaledImage)
+        } else {
+            previewLabel.icon = null
         }
     }
 
