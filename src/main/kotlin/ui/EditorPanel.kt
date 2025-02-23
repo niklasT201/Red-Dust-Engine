@@ -24,6 +24,7 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
     // Store references to object type buttons
     private lateinit var addWallButton: JButton
     private lateinit var addFloorButton: JButton
+    private lateinit var addPlayerSpawnButton: JButton
 
     // Colors for button states
     private val defaultButtonColor = Color(60, 63, 65)
@@ -70,6 +71,7 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
         val quickActionsSection = CollapsibleSection("Quick Actions").apply {
             addComponent(addWallButton)
             addComponent(addFloorButton)
+            addComponent(addPlayerSpawnButton)
             addComponent(createButton("Clear All").apply {
                 addActionListener {
                     gridEditor.clearGrid()
@@ -262,6 +264,7 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
     private fun updateButtonStates(selectedType: ObjectType) {
         addWallButton.background = if (selectedType == ObjectType.WALL) selectedButtonColor else defaultButtonColor
         addFloorButton.background = if (selectedType == ObjectType.FLOOR) selectedButtonColor else defaultButtonColor
+        addPlayerSpawnButton.background = if (selectedType == ObjectType.PLAYER_SPAWN) selectedButtonColor else defaultButtonColor
     }
 
     private fun setupModeButton() {
@@ -352,10 +355,18 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
                 }
             }
 
+            addPlayerSpawnButton = createButton("Add Player Spawn").apply {
+                addActionListener {
+                    gridEditor.setObjectType(ObjectType.PLAYER_SPAWN)
+                    updateButtonStates(ObjectType.PLAYER_SPAWN)
+                }
+            }
+
             // Quick Actions section
             add(createSection("Quick Actions", listOf(
                 addWallButton,
                 addFloorButton,
+                addPlayerSpawnButton,
                 createButton("Clear All").apply {
                     addActionListener {
                         gridEditor.clearGrid()

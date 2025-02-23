@@ -6,7 +6,7 @@ import kotlin.math.floor
 import kotlin.math.sin
 
 class GridEditor : JPanel() {
-    private val grid = mutableMapOf<Pair<Int, Int>, GridCell>()
+    val grid = mutableMapOf<Pair<Int, Int>, GridCell>()
     private var currentObjectType = ObjectType.WALL
     private var isDragging = false
     private var lastCell: Pair<Int, Int>? = null
@@ -20,7 +20,7 @@ class GridEditor : JPanel() {
 
     // Camera reference for player position
     private var cameraRef: Camera? = null
-    private val baseScale = 2.0  // constant for grid calculations
+    val baseScale = 2.0  // constant for grid calculations
 
     private var currentWallHeight = 3.0
     private var currentWallWidth = 2.0
@@ -337,6 +337,12 @@ class GridEditor : JPanel() {
                         color = Color(100, 100, 100),
                         floorHeight = currentFloorHeight
                     )
+                    ObjectType.PLAYER_SPAWN -> {
+                        // Update camera position immediately
+                        cameraRef?.position?.x = -gridX * baseScale
+                        cameraRef?.position?.z = gridY * baseScale
+                        PlayerSpawnObject()
+                    }
                     ObjectType.PROP -> null
                 }
 
@@ -421,8 +427,9 @@ class GridEditor : JPanel() {
                 val floorObjects = cell?.getObjectsForFloor(currentFloor)
                 val wallObject = floorObjects?.firstOrNull { it.type == ObjectType.WALL } as? WallObject
                 val floorObject = floorObjects?.firstOrNull { it.type == ObjectType.FLOOR } as? FloorObject
+                val playerSpawnObject = floorObjects?.firstOrNull { it.type == ObjectType.PLAYER_SPAWN } as? PlayerSpawnObject
 
-
+                // Draw floor or background
                 g2.color = when {
                     floorObject != null -> floorObject.color
                     else -> Color(40, 44, 52) // Background color
@@ -493,20 +500,6 @@ class GridEditor : JPanel() {
             }
         }
 
-        if (currentMode == EditMode.MOVE) {
-            selectedCells.forEach { (x, y) ->
-                val (screenX, screenY) = gridToScreen(x, y)
-                g2.color = Color(0, 255, 255, 100) // Semi-transparent cyan
-                g2.stroke = BasicStroke(2f)
-                g2.drawRect(
-                    screenX,
-                    screenY,
-                    cellSize.toInt(),
-                    cellSize.toInt()
-                )
-            }
-        }
-
         // Draw selection highlight
         selectedCell?.let { (x, y) ->
             val (screenX, screenY) = gridToScreen(x, y)
@@ -524,7 +517,7 @@ class GridEditor : JPanel() {
         g2.color = Color.WHITE
         g2.font = Font("Monospace", Font.BOLD, 12)
         g2.drawString(
-            "Mode: ${currentObjectType.name}",  // show "WALL" or "FLOOR"
+            "Mode: ${currentObjectType.name}",  // show "WALL", "FLOOR", or "PLAYER_SPAWN"
             10, // X position for the text
             15  // Y position for the text
         )

@@ -27,6 +27,7 @@ fun main() {
 // fix visible floor tile border
 // objects arent straight when bigger screen bc of mouse movement
 // changing texture manager preview
+// fix collisions for floor levels
 
 // optional shadows
 // weapon system
@@ -41,7 +42,6 @@ fun main() {
 // UI:
 // physics optional
 // blood options
-// player spawnpoint optional
 // open world or level based
 
 // Screen:

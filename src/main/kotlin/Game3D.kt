@@ -215,6 +215,16 @@ class Game3D : JPanel() {
                 gridEditor.requestFocusInWindow()
             }
         } else {
+            // Find the player spawn point and set the camera position
+            gridEditor.grid.forEach { (pos, cell) ->
+                cell.getObjectsForFloor(gridEditor.getCurrentFloor()).firstOrNull { it.type == ObjectType.PLAYER_SPAWN }?.let {
+                    val (x, y) = pos
+                    camera.position.x = -x * gridEditor.baseScale
+                    camera.position.z = y * gridEditor.baseScale
+                    camera.position.y = 1.7  // Default player height
+                }
+            }
+
             cardLayout.show(rightPanel, "game")
             editorPanel.setModeButtonText("Game Mode")
             renderPanel.requestFocusInWindow()

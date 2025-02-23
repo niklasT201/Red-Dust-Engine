@@ -20,4 +20,5 @@ object KeyBindings {
     const val ROTATE_WALL = java.awt.event.KeyEvent.VK_R
     const val WALL_SHORTCUT = java.awt.event.KeyEvent.VK_1
     const val FLOOR_SHORTCUT = java.awt.event.KeyEvent.VK_2
+    const val PLAYER_SPAWN_SHORTCUT = java.awt.event.KeyEvent.VK_3  // New key binding for player spawn
 }

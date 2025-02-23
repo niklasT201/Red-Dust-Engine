@@ -64,7 +64,18 @@ sealed class GameObject {
 enum class ObjectType {
     FLOOR,
     WALL,
-    PROP  // For future use with other objects
+    PROP, // For future use with other objects
+    PLAYER_SPAWN  // New object type for player spawn
+}
+
+data class PlayerSpawnObject(
+    override val color: Color = Color.GREEN,  // Default color for spawn point
+    override val height: Double = 1.0,  // Height of the spawn point indicator
+    override val width: Double = 1.0,  // Width of the spawn point indicator
+    override val direction: Direction = Direction.NORTH  // Default direction
+) : GameObject() {
+    override val type = ObjectType.PLAYER_SPAWN
+    override val texture: ImageEntry? = null
 }
 
 data class WallObject(
