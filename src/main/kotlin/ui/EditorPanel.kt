@@ -9,6 +9,8 @@ import javax.swing.border.TitledBorder
 
 class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
     var gridEditor = GridEditor()
+    val resourceManager = ResourceManager()
+    val textureManager = TextureManagerPanel(resourceManager)
     val sectionChooser = FloorSelectorPanel()
     private val modeButton = JButton("Editor Mode")
     private val mainPanel = JPanel()
@@ -154,16 +156,14 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             }
         }
 
-        val imageSection = CollapsibleSection("Images").apply {
-            addComponent(ImageLoaderPanel())
+        val imageSection = CollapsibleSection("Textures").apply {
+            addComponent(textureManager)
         }
 
         // Add sections to the panel
         sectionsPanel.add(topPanel)
         sectionsPanel.add(quickActionsSection)
         sectionsPanel.add(Box.createVerticalStrut(10))  // Increased spacing between sections
-        //sectionsPanel.add(sectionChooser)
-        //sectionsPanel.add(Box.createVerticalStrut(10))
         sectionsPanel.add(wallStyleSection)
         sectionsPanel.add(Box.createVerticalStrut(10))
         sectionsPanel.add(wallPropertiesSection)
