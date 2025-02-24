@@ -97,7 +97,7 @@ class Game3D : JPanel() {
                 editorPanel.sectionChooser.setCurrentFloor(level)
                 // Update grid editor
                 gridEditor.setCurrentFloor(level)
-                gridEditor.setCurrentFloorHeight(level * 4.0) // 4 units between floors
+                gridEditor.updateCurrentFloorHeight(level * 4.0) // 4 units between floors
                 renderPanel.repaint()
             },
             onFloorAdded = { isAbove ->

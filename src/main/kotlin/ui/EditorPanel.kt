@@ -1,8 +1,8 @@
 package ui
 
-import grideditor.GridEditor
 import ObjectType
 import WallObject
+import grideditor.GridEditor
 import texturemanager.ResourceManager
 import texturemanager.TextureManagerPanel
 import java.awt.*
@@ -155,7 +155,7 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
                 "currentFloorChanged" -> {
                     val floor = evt.newValue as FloorSelectorPanel.Floor
                     gridEditor.setCurrentFloor(floor.level) // Set the current floor
-                    gridEditor.setCurrentFloorHeight(floor.heightOffset) // Set the height offset
+                    gridEditor.updateCurrentFloorHeight(floor.heightOffset) // Set the height offset
                 }
             }
         }
