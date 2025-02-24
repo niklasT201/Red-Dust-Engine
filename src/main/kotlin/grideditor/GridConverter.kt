@@ -37,8 +37,8 @@ class GridConverter(private val editor: GridEditor) {
                     val gameX = -x * editor.baseScale
                     val gameZ = y * editor.baseScale
 
-                    // Calculate Y position based on floor number directly
-                    val yPosition = floor * obj.height
+                    // Calculate Y position based on floor number
+                    val floorHeight = floor * editor.floorHeight // Use consistent floor height calculation
 
                     if (obj.isBlockWall) {
                         // Block walls
@@ -46,29 +46,29 @@ class GridConverter(private val editor: GridEditor) {
                             listOf(
                                 // North wall
                                 Wall(
-                                    start = Vec3(gameX, yPosition, gameZ),
-                                    end = Vec3(gameX + obj.width, yPosition, gameZ),
+                                    start = Vec3(gameX, floorHeight, gameZ),
+                                    end = Vec3(gameX + obj.width, floorHeight, gameZ),
                                     height = obj.height,
                                     color = obj.color
                                 ),
                                 // East wall
                                 Wall(
-                                    start = Vec3(gameX + obj.width, yPosition, gameZ),
-                                    end = Vec3(gameX + obj.width, yPosition, gameZ + obj.width),
+                                    start = Vec3(gameX + obj.width, floorHeight, gameZ),
+                                    end = Vec3(gameX + obj.width, floorHeight, gameZ + obj.width),
                                     height = obj.height,
                                     color = obj.color
                                 ),
                                 // South wall
                                 Wall(
-                                    start = Vec3(gameX + obj.width, yPosition, gameZ + obj.width),
-                                    end = Vec3(gameX, yPosition, gameZ + obj.width),
+                                    start = Vec3(gameX + obj.width, floorHeight, gameZ + obj.width),
+                                    end = Vec3(gameX, floorHeight, gameZ + obj.width),
                                     height = obj.height,
                                     color = obj.color
                                 ),
                                 // West wall
                                 Wall(
-                                    start = Vec3(gameX, yPosition, gameZ + obj.width),
-                                    end = Vec3(gameX, yPosition, gameZ),
+                                    start = Vec3(gameX, floorHeight, gameZ + obj.width),
+                                    end = Vec3(gameX, floorHeight, gameZ),
                                     height = obj.height,
                                     color = obj.color
                                 )
@@ -85,8 +85,8 @@ class GridConverter(private val editor: GridEditor) {
 
                         walls.add(
                             Wall(
-                                start = Vec3(coords.startX, yPosition, coords.startZ),
-                                end = Vec3(coords.endX, yPosition, coords.endZ),
+                                start = Vec3(coords.startX, floorHeight, coords.startZ),
+                                end = Vec3(coords.endX, floorHeight, coords.endZ),
                                 height = obj.height,
                                 color = obj.color
                             )
@@ -113,8 +113,8 @@ class GridConverter(private val editor: GridEditor) {
                     val gameX = -x * editor.baseScale
                     val gameZ = y * editor.baseScale
 
-                    // Calculate Y position based on floor number
-                    val yPosition = floorNum * 3.0  // Assuming standard floor height of 3.0
+                    // Calculate Y position based on floor number using consistent floor height
+                    val yPosition = floorNum * editor.floorHeight
 
                     floors.add(
                         Floor(

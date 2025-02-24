@@ -60,13 +60,24 @@ class Player(
         camera.position.y = newY.coerceIn(minHeight, maxHeight)
     }
 
-    // Separate collision detection method
     private fun checkCollision(newX: Double, newZ: Double, walls: List<Wall>): Pair<Boolean, Boolean> {
         var canMoveX = true
         var canMoveZ = true
 
         // Check each wall for collision
         for (wall in walls) {
+            // Only consider walls if player is on or near the same floor
+            // Allow for a bit of vertical movement (jumping, stairs, etc)
+            val playerY = camera.position.y
+            val wallY = wall.start.y
+            val wallTopY = wall.start.y + wall.height
+
+            // Skip walls that aren't on the player's current floor
+            // Player can be anywhere between the floor and ceiling of a wall
+            if (playerY < wallY || playerY > wallTopY) {
+                continue  // Wall is on a different floor, skip collision check
+            }
+
             // Simple box collision check
             val wallMinX = minOf(wall.start.x, wall.end.x) - playerRadius
             val wallMaxX = maxOf(wall.start.x, wall.end.x) + playerRadius

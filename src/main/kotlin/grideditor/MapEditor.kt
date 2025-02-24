@@ -28,6 +28,7 @@ class GridEditor : JPanel() {
     // player.Camera reference for player position
     var cameraRef: Camera? = null
     val baseScale = 2.0  // constant for grid calculations
+    val floorHeight = 3.0
 
     // Grid editing state
     var currentWallHeight = 3.0
@@ -68,10 +69,6 @@ class GridEditor : JPanel() {
     // Grid coordinate conversions
     fun screenToGrid(screenX: Int, screenY: Int): Pair<Int, Int> {
         return renderer.screenToGrid(screenX, screenY)
-    }
-
-    fun gridToScreen(gridX: Int, gridY: Int): Pair<Int, Int> {
-        return renderer.gridToScreen(gridX, gridY)
     }
 
     // World coordinate conversions

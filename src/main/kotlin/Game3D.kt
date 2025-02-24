@@ -223,7 +223,10 @@ class Game3D : JPanel() {
                     val (x, y) = pos
                     player.camera.position.x = -x * gridEditor.baseScale
                     player.camera.position.z = y * gridEditor.baseScale
-                    player.camera.position.y = 1.7  // Default player height
+
+                    // Calculate correct Y position based on current floor
+                    val floorHeight = gridEditor.getCurrentFloor() * gridEditor.floorHeight
+                    player.camera.position.y = 1.7 + floorHeight  // Player eye height + floor height
                 }
             }
 
