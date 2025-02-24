@@ -1,3 +1,6 @@
+package player
+
+import Vec3
 import kotlin.math.*
 
 class Camera(

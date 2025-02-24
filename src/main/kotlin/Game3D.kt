@@ -1,4 +1,5 @@
 import grideditor.GridEditor
+import player.Player
 import ui.EditorPanel
 import ui.FloorSelectorPanel
 import ui.MenuSystem
@@ -9,7 +10,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 class Game3D : JPanel() {
-    private val camera = Camera(Vec3(0.0, 1.7, -5.0))
+    private val player = Player()
     private val renderer = Renderer(800, 600)
     private lateinit var menuSystem: MenuSystem
     private val keysPressed = mutableSetOf<Int>()
@@ -145,7 +146,7 @@ class Game3D : JPanel() {
             splitPane.dividerLocation = 250
         }
 
-        gridEditor.setCamera(camera)
+        gridEditor.setCamera(player.camera)
 
         setupInputHandling()
         updateMode()
@@ -189,7 +190,7 @@ class Game3D : JPanel() {
     private fun handleMouseMovement(e: MouseEvent) {
         val dx = e.x - renderPanel.width/2
         val dy = e.y - renderPanel.height/2
-        camera.rotate(dx.toDouble(), dy.toDouble())
+        player.rotate(dx.toDouble(), dy.toDouble())
 
         try {
             val robot = Robot()
@@ -220,9 +221,9 @@ class Game3D : JPanel() {
             gridEditor.grid.forEach { (pos, cell) ->
                 cell.getObjectsForFloor(gridEditor.getCurrentFloor()).firstOrNull { it.type == ObjectType.PLAYER_SPAWN }?.let {
                     val (x, y) = pos
-                    camera.position.x = -x * gridEditor.baseScale
-                    camera.position.z = y * gridEditor.baseScale
-                    camera.position.y = 1.7  // Default player height
+                    player.camera.position.x = -x * gridEditor.baseScale
+                    player.camera.position.z = y * gridEditor.baseScale
+                    player.camera.position.y = 1.7  // Default player height
                 }
             }
 
@@ -241,7 +242,7 @@ class Game3D : JPanel() {
             g2.color = Color(135, 206, 235)
             g2.fillRect(0, 0, width, height)
 
-            renderer.drawScene(g2, walls, floors, camera)
+            renderer.drawScene(g2, walls, floors, player.camera)
 
             if (!isEditorMode) {
                 // Draw crosshair
@@ -252,17 +253,17 @@ class Game3D : JPanel() {
                 // Draw direction indicator
                 g2.font = Font("Monospace", Font.BOLD, 14)
 
-                // Get cardinal direction from camera
-                val direction = camera.getCardinalDirection()
+                // Get cardinal direction from player
+                val direction = player.getCardinalDirection()
 
-                // Convert angles to degrees for display
-                val yawDegrees = Math.toDegrees(camera.yaw).toInt()
-                val pitchDegrees = Math.toDegrees(camera.pitch).toInt()
+                // Get angles in degrees for display
+                val yawDegrees = player.getYawDegrees()
+                val pitchDegrees = player.getPitchDegrees()
 
                 // Draw debug information
                 g2.color = Color.WHITE
                 g2.drawString("Direction: $direction (${yawDegrees}°)", 10, 20)
-                g2.drawString("Position: (${String.format("%.1f", camera.position.x)}, ${String.format("%.1f", camera.position.y)}, ${String.format("%.1f", camera.position.z)})", 10, 40)
+                g2.drawString("Position: (${String.format("%.1f", player.position.x)}, ${String.format("%.1f", player.position.y)}, ${String.format("%.1f", player.position.z)})", 10, 40)
             }
         }
     }
@@ -281,56 +282,9 @@ class Game3D : JPanel() {
             if (KeyBindings.MOVE_UP in keysPressed) up += 1.0
             if (KeyBindings.MOVE_DOWN in keysPressed) up -= 1.0
 
-            // Calculate movement based on camera direction
-            val moveSpeed = 0.05
+            // Move player with collected input
+            player.move(forward, right, up, walls)
 
-            // These vectors determine the direction of movement
-            val forwardX = -sin(camera.yaw)    // Forward X component
-            val forwardZ = cos(camera.yaw)    // Forward Z component
-            val rightX = cos(camera.yaw)      // Right X component
-            val rightZ = sin(camera.yaw)     // Right Z component
-
-            // Calculate new position using forward and right vectors
-            val newX = camera.position.x + (forward * forwardX + right * rightX) * moveSpeed
-            val newZ = camera.position.z + (forward * forwardZ + right * rightZ) * moveSpeed
-            val newY = camera.position.y + up * moveSpeed
-
-            // Collision detection
-            val playerRadius = 0.3
-            var canMoveX = true
-            var canMoveZ = true
-
-            // Check each wall for collision
-            for (wall in walls) {
-                // Simple box collision check
-                val wallMinX = minOf(wall.start.x, wall.end.x) - playerRadius
-                val wallMaxX = maxOf(wall.start.x, wall.end.x) + playerRadius
-                val wallMinZ = minOf(wall.start.z, wall.end.z) - playerRadius
-                val wallMaxZ = maxOf(wall.start.z, wall.end.z) + playerRadius
-
-                // Check X collision
-                if (newX in wallMinX..wallMaxX &&
-                    camera.position.z in wallMinZ..wallMaxZ) {
-                    canMoveX = false
-                }
-
-                // Check Z collision
-                if (camera.position.x in wallMinX..wallMaxX &&
-                    newZ in wallMinZ..wallMaxZ) {
-                    canMoveZ = false
-                }
-            }
-
-            // Apply movement with collision detection
-            if (canMoveX) {
-                camera.position.x = newX
-            }
-            if (canMoveZ) {
-                camera.position.z = newZ
-            }
-
-            // Apply Y movement (up/down) with bounds
-            camera.position.y = newY.coerceIn(0.5, 2.5)
             gridEditor.repaint()  // Update the grid editor to show new player position
         }
 

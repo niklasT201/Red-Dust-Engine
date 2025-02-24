@@ -1,16 +1,11 @@
 package grideditor
 
-import Camera
+import player.Camera
 import Direction
 import Floor
-import FloorObject
 import GridCell
-import KeyBindings
 import ObjectType
-import PlayerSpawnObject
-import Vec3
 import Wall
-import WallCoords
 import WallObject
 import java.awt.*
 import javax.swing.*
@@ -30,7 +25,7 @@ class GridEditor : JPanel() {
     var cellSize = 20.0 // Initial cell size in pixels
     val visibleCellPadding = 2 // Extra cells to render beyond viewport
 
-    // Camera reference for player position
+    // player.Camera reference for player position
     var cameraRef: Camera? = null
     val baseScale = 2.0  // constant for grid calculations
 

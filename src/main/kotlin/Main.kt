@@ -28,6 +28,10 @@ fun main() {
 // objects arent straight when bigger screen bc of mouse movement
 // changing texture manager preview
 // fix collisions for floor levels
+// adding player collisions class
+// adding save system
+// removing player up and down border
+// adding physics
 
 // optional shadows
 // weapon system
