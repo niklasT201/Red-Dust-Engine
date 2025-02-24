@@ -1,16 +1,18 @@
 package ui
 
-import GridEditor
+import grideditor.GridEditor
 import ObjectType
 import WallObject
+import texturemanager.ResourceManager
+import texturemanager.TextureManagerPanel
 import java.awt.*
 import javax.swing.*
 import javax.swing.border.TitledBorder
 
 class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
     var gridEditor = GridEditor()
-    val resourceManager = ResourceManager()
-    val textureManager = TextureManagerPanel(resourceManager)
+    private val resourceManager = ResourceManager()
+    private val textureManager = TextureManagerPanel(resourceManager)
     val sectionChooser = FloorSelectorPanel()
     private val modeButton = JButton("Editor Mode")
     private val mainPanel = JPanel()

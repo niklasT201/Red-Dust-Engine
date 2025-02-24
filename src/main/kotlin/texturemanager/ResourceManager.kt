@@ -1,4 +1,4 @@
-package ui
+package texturemanager
 
 import ImageEntry
 import java.awt.Image

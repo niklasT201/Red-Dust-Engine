@@ -1,3 +1,4 @@
+import grideditor.GridEditor
 import ui.EditorPanel
 import ui.FloorSelectorPanel
 import ui.MenuSystem
@@ -294,7 +295,7 @@ class Game3D : JPanel() {
             val newZ = camera.position.z + (forward * forwardZ + right * rightZ) * moveSpeed
             val newY = camera.position.y + up * moveSpeed
 
-            // Collision detection code remains the same
+            // Collision detection
             val playerRadius = 0.3
             var canMoveX = true
             var canMoveZ = true

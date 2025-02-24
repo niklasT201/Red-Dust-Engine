@@ -1,3 +1,17 @@
+package grideditor
+
+import Camera
+import Direction
+import Floor
+import FloorObject
+import GridCell
+import KeyBindings
+import ObjectType
+import PlayerSpawnObject
+import Vec3
+import Wall
+import WallCoords
+import WallObject
 import java.awt.*
 import java.awt.event.*
 import javax.swing.*

@@ -1,4 +1,4 @@
-package ui
+package texturemanager
 
 import ImageEntry
 import ObjectType
@@ -215,11 +215,34 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
         }
     }
 
+    fun getAllTexturesForType(type: ObjectType): List<ImageEntry> {
+        return texturesByType[type]?.map { it.imageEntry } ?: emptyList()
+    }
+
     fun getDefaultTextureForType(type: ObjectType): ImageEntry? {
         return texturesByType[type]?.find { it.isDefault }?.imageEntry
     }
 
+    fun isDefaultTexture(type: ObjectType, texture: ImageEntry): Boolean {
+        val defaultEntry = texturesByType[type]?.find { it.isDefault }
+        return defaultEntry?.imageEntry == texture
+    }
+
     fun getTexturesForType(type: ObjectType): List<ImageEntry> {
         return texturesByType[type]?.map { it.imageEntry } ?: emptyList()
+    }
+
+    fun loadTexturesFromResourceManager() {
+        for (entry in resourceManager.getAllImages()) {
+            val (id, imageEntry) = entry
+            // You'd need some way to determine what object type each texture is for
+            // This could be from filename patterns, metadata, or user selection
+            // For now, we'll assume all are available for all types but not set as default
+            for (objectType in ObjectType.values()) {
+                val textureEntry = TextureEntry(objectType, imageEntry)
+                texturesByType.getOrPut(objectType) { mutableListOf() }.add(textureEntry)
+            }
+        }
+        updateTextureList()
     }
 }
