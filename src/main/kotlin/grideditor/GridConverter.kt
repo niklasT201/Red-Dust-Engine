@@ -49,28 +49,32 @@ class GridConverter(private val editor: GridEditor) {
                                     start = Vec3(gameX, floorHeight, gameZ),
                                     end = Vec3(gameX + obj.width, floorHeight, gameZ),
                                     height = obj.height,
-                                    color = obj.color
+                                    color = obj.color,
+                                    texture = obj.texture
                                 ),
                                 // East wall
                                 Wall(
                                     start = Vec3(gameX + obj.width, floorHeight, gameZ),
                                     end = Vec3(gameX + obj.width, floorHeight, gameZ + obj.width),
                                     height = obj.height,
-                                    color = obj.color
+                                    color = obj.color,
+                                    texture = obj.texture
                                 ),
                                 // South wall
                                 Wall(
                                     start = Vec3(gameX + obj.width, floorHeight, gameZ + obj.width),
                                     end = Vec3(gameX, floorHeight, gameZ + obj.width),
                                     height = obj.height,
-                                    color = obj.color
+                                    color = obj.color,
+                                    texture = obj.texture
                                 ),
                                 // West wall
                                 Wall(
                                     start = Vec3(gameX, floorHeight, gameZ + obj.width),
                                     end = Vec3(gameX, floorHeight, gameZ),
                                     height = obj.height,
-                                    color = obj.color
+                                    color = obj.color,
+                                    texture = obj.texture
                                 )
                             )
                         )
@@ -88,7 +92,8 @@ class GridConverter(private val editor: GridEditor) {
                                 start = Vec3(coords.startX, floorHeight, coords.startZ),
                                 end = Vec3(coords.endX, floorHeight, coords.endZ),
                                 height = obj.height,
-                                color = obj.color
+                                color = obj.color,
+                                texture = obj.texture
                             )
                         )
                     }
@@ -123,7 +128,8 @@ class GridConverter(private val editor: GridEditor) {
                             x2 = gameX + editor.baseScale,
                             z2 = gameZ + editor.baseScale,
                             y = yPosition,
-                            color = obj.color
+                            color = obj.color,
+                            texture = obj.texture
                         )
                     )
                 }

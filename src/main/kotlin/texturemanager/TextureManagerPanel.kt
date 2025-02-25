@@ -3,6 +3,9 @@ package texturemanager
 import ImageEntry
 import ObjectType
 import java.awt.*
+import java.awt.image.BufferedImage
+import java.io.File
+import javax.imageio.ImageIO
 import javax.swing.*
 import javax.swing.border.TitledBorder
 import javax.swing.filechooser.FileNameExtensionFilter
@@ -15,6 +18,9 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
 
     // Map to store textures by object type
     private val texturesByType = mutableMapOf<ObjectType, MutableList<TextureEntry>>()
+
+    // Last browsed directory
+    private var lastDirectory: File? = null
 
     data class TextureEntry(
         val objectType: ObjectType,
@@ -54,12 +60,12 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
             selectionBackground = Color(100, 100, 255)
             selectionForeground = Color.WHITE
             visibleRowCount = 5
-            fixedCellHeight = 25
+            fixedCellHeight = 40 // Increased height for thumbnails
             cellRenderer = createTextureListRenderer()
         }
 
         val scrollPane = JScrollPane(textureList).apply {
-            preferredSize = Dimension(0, 120)
+            preferredSize = Dimension(0, 150) // Increased height
             border = BorderFactory.createLineBorder(Color(70, 73, 75))
             background = Color(40, 44, 52)
             alignmentX = LEFT_ALIGNMENT
@@ -81,7 +87,7 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
 
             // Create a fixed-size panel for the preview
             add(JPanel().apply {
-                preferredSize = Dimension(100, 100)
+                preferredSize = Dimension(150, 150) // Larger preview
                 background = Color(50, 54, 62)
                 layout = BorderLayout()
                 add(previewLabel, BorderLayout.CENTER)
@@ -90,15 +96,14 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
 
         // Buttons
         val buttonPanel = JPanel().apply {
-            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            layout = GridLayout(2, 2, 5, 5)
             background = Color(40, 44, 52)
             alignmentX = LEFT_ALIGNMENT
 
             add(createButton("Add Texture") { addTexture() })
-            add(Box.createVerticalStrut(5))
-            add(createButton("Remove Texture") { removeSelectedTexture() })
-            add(Box.createVerticalStrut(5))
-            add(createButton("Set as Default") { setAsDefault() })
+            add(createButton("Add Folder") { addTextureFolder() })
+            add(createButton("Remove") { removeSelectedTexture() })
+            add(createButton("Set Default") { setAsDefault() })
         }
 
         // Layout
@@ -135,44 +140,119 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
                 isSelected: Boolean,
                 cellHasFocus: Boolean
             ): Component {
-                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
-                background = if (isSelected) Color(100, 100, 255) else Color(50, 54, 62)
-                foreground = Color.WHITE
-
-                val entry = value as? TextureEntry
-                text = if (entry?.isDefault == true) {
-                    "${entry.imageEntry.name} (Default)"
-                } else {
-                    entry?.imageEntry?.name ?: ""
+                val panel = JPanel(BorderLayout()).apply {
+                    background = if (isSelected) Color(100, 100, 255) else Color(50, 54, 62)
+                    border = BorderFactory.createEmptyBorder(2, 5, 2, 5)
                 }
 
-                return this
+                val entry = value as? TextureEntry
+                if (entry != null) {
+                    // Create thumbnail
+                    val thumb = createThumbnail(entry.imageEntry.image, 32, 32)
+                    val imageLabel = JLabel(ImageIcon(thumb))
+
+                    // Create text label
+                    val textLabel = JLabel(if (entry.isDefault) "${entry.imageEntry.name} (Default)" else entry.imageEntry.name)
+                    textLabel.foreground = Color.WHITE
+
+                    panel.add(imageLabel, BorderLayout.WEST)
+                    panel.add(textLabel, BorderLayout.CENTER)
+                }
+
+                return panel
             }
         }
     }
 
+    private fun createThumbnail(image: Image, width: Int, height: Int): Image {
+        val thumb = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+        val g2d = thumb.createGraphics()
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
+        g2d.drawImage(image, 0, 0, width, height, null)
+        g2d.dispose()
+        return thumb
+    }
+
     private fun addTexture() {
-        val fileChooser = JFileChooser().apply {
-            fileFilter = FileNameExtensionFilter("Image files", "jpg", "jpeg", "png", "gif")
+        val fileChooser = JFileChooser(lastDirectory).apply {
+            fileFilter = FileNameExtensionFilter("Image files", "jpg", "jpeg", "png", "gif", "bmp")
+            fileSelectionMode = JFileChooser.FILES_ONLY
+            isMultiSelectionEnabled = true
         }
 
         if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-            val file = fileChooser.selectedFile
-            val image = ImageIcon(file.path).image
-            val imageEntry = ImageEntry(file.name, file.path, image)
+            lastDirectory = fileChooser.currentDirectory
+            val files = fileChooser.selectedFiles
 
-            // Add to resource manager
-            val id = resourceManager.addImage(file.name, file.path, image)
-
-            // Create texture entry
-            val selectedType = objectTypeComboBox.selectedItem as ObjectType
-            val textureEntry = TextureEntry(selectedType, imageEntry)
-
-            // Add to type-specific list
-            texturesByType.getOrPut(selectedType) { mutableListOf() }.add(textureEntry)
+            for (file in files) {
+                try {
+                    val image = ImageIO.read(file)
+                    if (image != null) {
+                        addTextureFromImage(file.name, file.path, image)
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Could not load image: ${file.name}", "Error", JOptionPane.ERROR_MESSAGE)
+                    }
+                } catch (e: Exception) {
+                    JOptionPane.showMessageDialog(this, "Error loading image: ${e.message}", "Error", JOptionPane.ERROR_MESSAGE)
+                }
+            }
 
             updateTextureList()
         }
+    }
+
+    private fun addTextureFolder() {
+        val fileChooser = JFileChooser(lastDirectory).apply {
+            fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+        }
+
+        if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            lastDirectory = fileChooser.selectedFile
+            val directory = fileChooser.selectedFile
+
+            val imageFilter = FileNameExtensionFilter("Image files", "jpg", "jpeg", "png", "gif", "bmp")
+            val files = directory.listFiles { file ->
+                file.isFile && imageFilter.accept(file)
+            } ?: return
+
+            var loadedCount = 0
+            var errorCount = 0
+
+            for (file in files) {
+                try {
+                    val image = ImageIO.read(file)
+                    if (image != null) {
+                        addTextureFromImage(file.name, file.path, image)
+                        loadedCount++
+                    } else {
+                        errorCount++
+                    }
+                } catch (e: Exception) {
+                    errorCount++
+                }
+            }
+
+            JOptionPane.showMessageDialog(
+                this,
+                "Loaded $loadedCount images. $errorCount files could not be loaded.",
+                "Import Complete",
+                JOptionPane.INFORMATION_MESSAGE
+            )
+
+            updateTextureList()
+        }
+    }
+
+    private fun addTextureFromImage(name: String, path: String, image: Image) {
+        // Add to resource manager
+        val id = resourceManager.addImage(name, path, image)
+
+        // Create texture entry
+        val selectedType = objectTypeComboBox.selectedItem as ObjectType
+        val textureEntry = TextureEntry(selectedType, ImageEntry(name, path, image))
+
+        // Add to type-specific list
+        texturesByType.getOrPut(selectedType) { mutableListOf() }.add(textureEntry)
     }
 
     private fun removeSelectedTexture() {
@@ -186,14 +266,11 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
         val objectType = selectedEntry.objectType
 
         // Remove default flag from all textures of this type
-        texturesByType[objectType]?.forEach { entry ->
-            texturesByType[objectType]?.remove(entry)
-            texturesByType[objectType]?.add(entry.copy(isDefault = false))
+        val textures = texturesByType[objectType] ?: mutableListOf()
+        for (i in textures.indices) {
+            val entry = textures[i]
+            textures[i] = entry.copy(isDefault = entry == selectedEntry)
         }
-
-        // Add the selected texture with default flag
-        texturesByType[objectType]?.remove(selectedEntry)
-        texturesByType[objectType]?.add(selectedEntry.copy(isDefault = true))
 
         updateTextureList()
     }
@@ -208,7 +285,7 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
         val selectedTexture = textureList.selectedValue as? TextureEntry
         if (selectedTexture != null) {
             val image = selectedTexture.imageEntry.image
-            val scaledImage = image.getScaledInstance(100, 100, Image.SCALE_SMOOTH)
+            val scaledImage = image.getScaledInstance(150, 150, Image.SCALE_SMOOTH)
             previewLabel.icon = ImageIcon(scaledImage)
         } else {
             previewLabel.icon = null
@@ -232,16 +309,33 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
         return texturesByType[type]?.map { it.imageEntry } ?: emptyList()
     }
 
+    fun getSelectedTextureEntry(): TextureEntry? {
+        return textureList.selectedValue
+    }
+
     fun loadTexturesFromResourceManager() {
         for (entry in resourceManager.getAllImages()) {
             val (id, imageEntry) = entry
-            // You'd need some way to determine what object type each texture is for
-            // This could be from filename patterns, metadata, or user selection
-            // For now, we'll assume all are available for all types but not set as default
-            for (objectType in ObjectType.values()) {
-                val textureEntry = TextureEntry(objectType, imageEntry)
-                texturesByType.getOrPut(objectType) { mutableListOf() }.add(textureEntry)
+
+            // Attempt to determine object type from file name patterns
+            val filename = imageEntry.name.toLowerCase()
+            val objectType = when {
+                filename.contains("wall") || filename.contains("brick") ||
+                        filename.contains("wood") || filename.contains("stone") -> ObjectType.WALL
+
+                filename.contains("floor") || filename.contains("ground") ||
+                        filename.contains("tile") || filename.contains("carpet") -> ObjectType.FLOOR
+
+                filename.contains("prop") || filename.contains("object") ||
+                        filename.contains("item") -> ObjectType.PROP
+
+                filename.contains("spawn") || filename.contains("start") -> ObjectType.PLAYER_SPAWN
+
+                else -> objectTypeComboBox.selectedItem as ObjectType
             }
+
+            val textureEntry = TextureEntry(objectType, imageEntry)
+            texturesByType.getOrPut(objectType) { mutableListOf() }.add(textureEntry)
         }
         updateTextureList()
     }

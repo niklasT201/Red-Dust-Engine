@@ -1,5 +1,7 @@
 import player.Camera
 import java.awt.*
+import java.awt.geom.AffineTransform
+import java.awt.geom.Point2D
 import kotlin.math.*
 
 class Renderer(private val width: Int, private val height: Int) {
@@ -13,11 +15,15 @@ class Renderer(private val width: Int, private val height: Int) {
         abstract val distance: Double
         abstract val screenPoints: List<Pair<Int, Int>>
         abstract val color: Color
+        abstract val texture: ImageEntry?
+        abstract val textureCoords: List<Pair<Double, Double>>
 
         data class WallInfo(
             override val distance: Double,
             override val screenPoints: List<Pair<Int, Int>>,
             override val color: Color,
+            override val texture: ImageEntry?,
+            override val textureCoords: List<Pair<Double, Double>>,
             val wall: Wall
         ) : RenderableObject()
 
@@ -25,6 +31,8 @@ class Renderer(private val width: Int, private val height: Int) {
             override val distance: Double,
             override val screenPoints: List<Pair<Int, Int>>,
             override val color: Color,
+            override val texture: ImageEntry?,
+            override val textureCoords: List<Pair<Double, Double>>,
             val floor: Floor
         ) : RenderableObject()
     }
@@ -66,15 +74,31 @@ class Renderer(private val width: Int, private val height: Int) {
             if (floor.y > camera.position.y && dotProduct > 0) continue
             if (floor.y < camera.position.y && dotProduct < 0) continue
 
-            // Calculate shading
+            /* Shading disabled as requested
             val shade = (1.0 / (1.0 + distance * 0.1)).coerceIn(0.3, 1.0)
             val shadedColor = Color(
                 (floor.color.red * shade).toInt(),
                 (floor.color.green * shade).toInt(),
                 (floor.color.blue * shade).toInt()
             )
+            */
 
-            renderQueue.add(RenderableObject.FloorInfo(distance, screenPoints, shadedColor, floor))
+            // Texture coordinates for floor (simple planar mapping)
+            val textureCoords = listOf(
+                Pair(0.0, 0.0),
+                Pair(1.0, 0.0),
+                Pair(1.0, 1.0),
+                Pair(0.0, 1.0)
+            )
+
+            renderQueue.add(RenderableObject.FloorInfo(
+                distance,
+                screenPoints,
+                floor.color,
+                floor.texture,
+                textureCoords,
+                floor
+            ))
         }
 
         // Process walls
@@ -127,7 +151,10 @@ class Renderer(private val width: Int, private val height: Int) {
             val viewLength = sqrt(toCameraX * toCameraX + toCameraZ * toCameraZ)
             val dotProduct = (normal.x * toCameraX + normal.z * toCameraZ) / viewLength
 
-            // Calculate shading
+            // REMOVE THIS LINE to stop skipping backfaces:
+            // if (dotProduct <= 0) continue
+
+            /* Shading disabled as requested
             val angleFactor = abs(dotProduct)
             val distanceFactor = (1.0 / (1.0 + distance * 0.1)).coerceIn(0.3, 1.0)
             val shade = (angleFactor * distanceFactor).coerceIn(0.3, 1.0)
@@ -137,8 +164,30 @@ class Renderer(private val width: Int, private val height: Int) {
                 (wall.color.green * shade).toInt(),
                 (wall.color.blue * shade).toInt()
             )
+            */
 
-            renderQueue.add(RenderableObject.WallInfo(distance, screenPoints, shadedColor, wall))
+            // Calculate texture coordinates based on wall dimensions
+            val wallLength = sqrt(
+                (wall.end.x - wall.start.x).pow(2) +
+                        (wall.end.z - wall.start.z).pow(2)
+            )
+
+            // Texture coordinates for wall
+            val textureCoords = listOf(
+                Pair(0.0, 0.0),           // Top-left
+                Pair(wallLength, 0.0),     // Top-right
+                Pair(wallLength, wall.height), // Bottom-right
+                Pair(0.0, wall.height)     // Bottom-left
+            )
+
+            renderQueue.add(RenderableObject.WallInfo(
+                distance,
+                screenPoints,
+                wall.color,
+                wall.texture,
+                textureCoords,
+                wall
+            ))
         }
 
         // Sort all objects by distance (furthest first)
@@ -151,9 +200,106 @@ class Renderer(private val width: Int, private val height: Int) {
                 renderable.screenPoints.map { it.second }.toIntArray(),
                 renderable.screenPoints.size
             )
-            g2.color = renderable.color
-            g2.fill(polygon)
+
+            // Check if we have a texture for this object
+            if (renderable.texture != null) {
+                drawTexturedPolygon(g2, polygon, renderable.texture as ImageEntry, renderable.textureCoords, renderable.screenPoints)
+            } else {
+                // Fall back to solid color if no texture
+                g2.color = renderable.color
+                g2.fill(polygon)
+            }
         }
+    }
+
+    private fun drawTexturedPolygon(
+        g2: Graphics2D,
+        polygon: Polygon,
+        textureEntry: ImageEntry,
+        textureCoords: List<Pair<Double, Double>>,
+        screenPoints: List<Pair<Int, Int>>
+    ) {
+        if (screenPoints.size < 3 || textureCoords.size != screenPoints.size) return
+
+        val image = textureEntry.image
+        val bounds = polygon.bounds
+
+        // Set up clipping to the polygon
+        val originalClip = g2.clip
+        g2.clip = polygon
+
+        try {
+            // Create source-to-destination transform based on the first three points
+            val srcPoints = Array(3) { i ->
+                val (u, v) = textureCoords[i]
+                Point2D.Double(u * image.getWidth(null), v * image.getHeight(null))
+            }
+
+            val dstPoints = Array(3) { i ->
+                val (x, y) = screenPoints[i]
+                Point2D.Double(x.toDouble(), y.toDouble())
+            }
+
+            val transform = createTransform(srcPoints, dstPoints)
+
+            // Draw the transformed image
+            g2.drawImage(
+                image,
+                AffineTransform(
+                    transform[0], transform[3],
+                    transform[1], transform[4],
+                    transform[2], transform[5]
+                ),
+                null
+            )
+        } finally {
+            // Restore original clip
+            g2.clip = originalClip
+        }
+    }
+
+    // Create a transform matrix from source to destination points
+    private fun createTransform(src: Array<Point2D.Double>, dst: Array<Point2D.Double>): DoubleArray {
+        val matrix = DoubleArray(6)
+
+        val x1 = src[0].x
+        val y1 = src[0].y
+        val x2 = src[1].x
+        val y2 = src[1].y
+        val x3 = src[2].x
+        val y3 = src[2].y
+
+        val u1 = dst[0].x
+        val v1 = dst[0].y
+        val u2 = dst[1].x
+        val v2 = dst[1].y
+        val u3 = dst[2].x
+        val v3 = dst[2].y
+
+        // Compute the adjoint matrix
+        val det = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3)
+        if (abs(det) < 1e-10) {
+            // Determinant too small, use identity transform
+            matrix[0] = 1.0
+            matrix[1] = 0.0
+            matrix[2] = 0.0
+            matrix[3] = 0.0
+            matrix[4] = 1.0
+            matrix[5] = 0.0
+            return matrix
+        }
+
+        val invDet = 1.0 / det
+
+        // Compute matrix elements
+        matrix[0] = ((y2 - y3) * (u1 - u3) + (u3 - u2) * (y1 - y3)) * invDet
+        matrix[1] = ((x3 - x2) * (u1 - u3) + (u2 - u3) * (x1 - x3)) * invDet
+        matrix[2] = u1
+        matrix[3] = ((y2 - y3) * (v1 - v3) + (v3 - v2) * (y1 - y3)) * invDet
+        matrix[4] = ((x3 - x2) * (v1 - v3) + (v2 - v3) * (x1 - x3)) * invDet
+        matrix[5] = v1
+
+        return matrix
     }
 
     private fun transformPoint(point: Vec3, camera: Camera): Vec3 {

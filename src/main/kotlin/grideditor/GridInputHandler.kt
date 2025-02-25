@@ -246,6 +246,8 @@ class GridInputHandler(private val editor: GridEditor) {
             } else {
                 // Get or create cell
                 val cell = editor.grid.getOrPut(currentCell) { GridCell() }
+                val texture = editor.currentWallTexture
+                println("Using texture for new wall: ${texture?.name ?: "null"}")
 
                 // Create new object
                 val newObject = when (editor.currentObjectType) {
@@ -255,7 +257,8 @@ class GridInputHandler(private val editor: GridEditor) {
                         width = editor.currentWallWidth,
                         direction = editor.currentDirection,
                         isBlockWall = editor.useBlockWalls,
-                        floorHeight = editor.currentFloorHeight
+                        floorHeight = editor.currentFloorHeight,
+                        texture = editor.currentWallTexture
                     )
                     ObjectType.FLOOR -> FloorObject(
                         color = Color(100, 100, 100),

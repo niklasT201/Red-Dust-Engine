@@ -7,6 +7,9 @@ import GridCell
 import ObjectType
 import Wall
 import WallObject
+import texturemanager.ResourceManager
+import texturemanager.TextureManagerPanel
+import ImageEntry
 import java.awt.*
 import javax.swing.*
 
@@ -38,6 +41,12 @@ class GridEditor : JPanel() {
     var currentFloorHeight = 0.0
     private var currentFloor = 0
 
+    // Texture management
+    var resourceManager: ResourceManager? = null
+    var textureManagerPanel: TextureManagerPanel? = null
+    var currentWallTexture: ImageEntry? = null
+    var currentFloorTexture: ImageEntry? = null
+
     // View properties
     var currentMode = EditMode.DRAW
     var selectedCell: Pair<Int, Int>? = null
@@ -64,6 +73,16 @@ class GridEditor : JPanel() {
         inputHandler.setupListeners()
 
         isFocusable = true
+    }
+
+    // Set resource manager
+    fun initializeResourceManager(manager: ResourceManager) {
+        resourceManager = manager
+    }
+
+    // Set texture manager panel
+    fun initializeTextureManagerPanel(panel: TextureManagerPanel) {
+        textureManagerPanel = panel
     }
 
     // Grid coordinate conversions
@@ -103,6 +122,17 @@ class GridEditor : JPanel() {
 
     fun setWallWidth(width: Double) {
         currentWallWidth = width
+        repaint()
+    }
+
+    fun setWallTexture(texture: ImageEntry?) {
+        println("Setting wall texture to: ${texture?.name ?: "null"}")
+        currentWallTexture = texture
+        repaint()
+    }
+
+    fun setFloorTexture(texture: ImageEntry?) {
+        currentFloorTexture = texture
         repaint()
     }
 
@@ -148,7 +178,7 @@ class GridEditor : JPanel() {
         repaint()
     }
 
-    fun updateSelectedCell(color: Color? = null, height: Double? = null, width: Double? = null) {
+    fun updateSelectedCell(color: Color? = null, height: Double? = null, width: Double? = null, texture: ImageEntry? = null) {
         selectedCell?.let { cell ->
             grid[cell]?.let { gridCell ->
                 gridCell.getObjectsForFloor(currentFloor).filterIsInstance<WallObject>().firstOrNull()?.let { wallObject ->
@@ -158,7 +188,8 @@ class GridEditor : JPanel() {
                     gridCell.addObject(currentFloor, wallObject.copy(
                         color = color ?: wallObject.color,
                         height = height ?: wallObject.height,
-                        width = width ?: wallObject.width
+                        width = width ?: wallObject.width,
+                        texture = texture ?: wallObject.texture
                     ))
                     repaint()
                     firePropertyChange("gridChanged", null, grid)

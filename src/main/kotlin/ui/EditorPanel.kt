@@ -69,6 +69,20 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             maximumSize = Dimension(Int.MAX_VALUE, preferredSize.height)
         }
 
+        val setWallTextureButton = createButton("Set Wall Texture").apply {
+            addActionListener {
+                // Get the selected texture from the texture manager
+                val selectedTextureEntry = textureManager.getSelectedTextureEntry()
+                if (selectedTextureEntry != null) {
+                    // Set the wall texture in the grid editor
+                    gridEditor.setWallTexture(selectedTextureEntry.imageEntry)
+                    JOptionPane.showMessageDialog(this, "Wall texture set to: ${selectedTextureEntry.imageEntry.name}", "Texture Set", JOptionPane.INFORMATION_MESSAGE)
+                } else {
+                    JOptionPane.showMessageDialog(this, "No texture selected!", "Error", JOptionPane.ERROR_MESSAGE)
+                }
+            }
+        }
+
         // Create collapsible sections
         val quickActionsSection = CollapsibleSection("Quick Actions").apply {
             addComponent(addWallButton)
@@ -124,6 +138,7 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             addComponent(colorBtn)
             addComponent(heightBtn)
             addComponent(widthBtn)
+            addComponent(setWallTextureButton)
         }
 
         val toolsSection = CollapsibleSection("Tools").apply {
