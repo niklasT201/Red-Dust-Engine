@@ -12,7 +12,7 @@ import javax.swing.border.TitledBorder
 class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
     var gridEditor = GridEditor()
     private val resourceManager = ResourceManager()
-    private val textureManager = TextureManagerPanel(resourceManager)
+    val textureManager = TextureManagerPanel(resourceManager)
     val sectionChooser = FloorSelectorPanel()
     private val modeButton = JButton("Editor Mode")
     private val mainPanel = JPanel()
@@ -27,6 +27,7 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
     private lateinit var addWallButton: JButton
     private lateinit var addFloorButton: JButton
     private lateinit var addPlayerSpawnButton: JButton
+    val setWallTextureButton: JButton
 
     // Colors for button states
     private val defaultButtonColor = Color(60, 63, 65)
@@ -74,7 +75,7 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             maximumSize = Dimension(Int.MAX_VALUE, preferredSize.height)
         }
 
-        val setWallTextureButton = createButton("Set Wall Texture").apply {
+        setWallTextureButton = createButton("Set Wall Texture").apply {
             addActionListener {
                 // Get the selected texture from the texture manager
                 val selectedTextureEntry = textureManager.getSelectedTextureEntry()
