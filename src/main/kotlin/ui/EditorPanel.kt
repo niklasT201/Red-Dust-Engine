@@ -48,6 +48,11 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
         setupMainPanel()
         setupSelectionHandling()
 
+        // Initialize the components with each other
+        gridEditor.initializeResourceManager(resourceManager)
+        gridEditor.initializeTextureManagerPanel(textureManager)
+        textureManager.gridEditor = gridEditor
+
         // Create sections container
         val sectionsPanel = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)

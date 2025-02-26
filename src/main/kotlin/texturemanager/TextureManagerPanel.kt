@@ -2,6 +2,7 @@ package texturemanager
 
 import ImageEntry
 import ObjectType
+import grideditor.GridEditor
 import java.awt.*
 import java.awt.image.BufferedImage
 import java.io.File
@@ -11,6 +12,7 @@ import javax.swing.border.TitledBorder
 import javax.swing.filechooser.FileNameExtensionFilter
 
 class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel() {
+    var gridEditor: GridEditor? = null
     private val objectTypeComboBox = JComboBox(ObjectType.values())
     private val textureListModel = DefaultListModel<TextureEntry>()
     private val textureList = JList(textureListModel)
@@ -117,7 +119,21 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
         add(Box.createVerticalGlue())
 
         // Event Listeners
-        objectTypeComboBox.addActionListener { updateTextureList() }
+        objectTypeComboBox.addActionListener {
+            updateTextureList()
+            // Apply the default texture for the selected type
+            val selectedType = objectTypeComboBox.selectedItem as ObjectType
+            getDefaultTextureForType(selectedType)?.let { defaultTexture ->
+                gridEditor?.let { editor ->
+                    when (selectedType) {
+                        ObjectType.WALL -> editor.setWallTexture(defaultTexture)
+                        ObjectType.FLOOR -> editor.setFloorTexture(defaultTexture)
+                        // Handle other types as needed
+                        else -> {}
+                    }
+                }
+            }
+            }
         textureList.addListSelectionListener { updatePreview() }
     }
 
@@ -298,11 +314,6 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
 
     fun getDefaultTextureForType(type: ObjectType): ImageEntry? {
         return texturesByType[type]?.find { it.isDefault }?.imageEntry
-    }
-
-    fun isDefaultTexture(type: ObjectType, texture: ImageEntry): Boolean {
-        val defaultEntry = texturesByType[type]?.find { it.isDefault }
-        return defaultEntry?.imageEntry == texture
     }
 
     fun getTexturesForType(type: ObjectType): List<ImageEntry> {

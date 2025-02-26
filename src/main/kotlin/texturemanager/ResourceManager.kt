@@ -5,6 +5,7 @@ import java.awt.Image
 import java.io.File
 import javax.imageio.ImageIO
 import java.awt.image.BufferedImage
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 class ResourceManager {
@@ -36,7 +37,7 @@ class ResourceManager {
         val imageExtensions = listOf("jpg", "jpeg", "png", "gif", "bmp")
 
         directory.listFiles()?.forEach { file ->
-            if (file.isFile && imageExtensions.contains(file.extension.toLowerCase())) {
+            if (file.isFile && imageExtensions.contains(file.extension.lowercase(Locale.getDefault()))) {
                 loadImageFromFile(file)?.let {
                     result.add(it)
                     // Also add to our map

@@ -30,6 +30,7 @@ fun main() {
 // adding save system
 // removing player up and down border
 // adding physics
+// default button calling test button
 
 // optional shadows
 // weapon system
