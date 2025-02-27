@@ -3,7 +3,6 @@ package texturemanager
 import ImageEntry
 import ObjectType
 import grideditor.GridEditor
-import ui.EditorPanel
 import java.awt.*
 import java.awt.image.BufferedImage
 import java.io.File
@@ -14,7 +13,7 @@ import javax.swing.filechooser.FileNameExtensionFilter
 
 class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel() {
     var gridEditor: GridEditor? = null
-    private val objectTypeComboBox = JComboBox(ObjectType.values())
+    private val objectTypeComboBox = JComboBox(ObjectType.entries.toTypedArray())
     private val textureListModel = DefaultListModel<TextureEntry>()
     private val textureList = JList(textureListModel)
     private val previewLabel = JLabel()
@@ -24,8 +23,6 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
 
     // Last browsed directory
     private var lastDirectory: File? = null
-
-    private var editorPanel: EditorPanel? = null
 
     data class TextureEntry(
         val objectType: ObjectType,
@@ -108,7 +105,18 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
             add(createButton("Add Texture") { addTexture() })
             add(createButton("Add Folder") { addTextureFolder() })
             add(createButton("Remove") { removeSelectedTexture() })
-            add(createButton("Set Default") { setAsDefault() })
+            add(createButton("Set Default") {
+                val selectedEntry = textureList.selectedValue as? TextureEntry
+                if (selectedEntry != null) {
+                    val objectType = selectedEntry.objectType
+                    // Mark as default in our manager
+                    setAsDefault(selectedEntry, objectType)
+                    // Notify listener (EditorPanel) to update GridEditor
+                    textureSelectionListener?.onTextureSetAsDefault(selectedEntry, objectType)
+                } else {
+                    JOptionPane.showMessageDialog(this, "No texture selected!", "Error", JOptionPane.ERROR_MESSAGE)
+                }
+            })
         }
 
         // Layout
@@ -124,6 +132,18 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
         // Event Listeners
         objectTypeComboBox.addActionListener { updateTextureList() }
         textureList.addListSelectionListener { updatePreview() }
+    }
+
+    interface TextureSelectionListener {
+        fun onTextureSetAsDefault(entry: TextureEntry, objectType: ObjectType)
+    }
+
+    // Add a field to store the listener
+    private var textureSelectionListener: TextureSelectionListener? = null
+
+    // Add this method to set the listener
+    fun setTextureSelectionListener(listener: TextureSelectionListener) {
+        textureSelectionListener = listener
     }
 
     private fun createButton(text: String, action: () -> Unit): JButton {
@@ -266,43 +286,20 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
         updateTextureList()
     }
 
-    private fun setAsDefault() {
-        val selectedEntry = textureList.selectedValue as? TextureEntry ?: return
-        val objectType = selectedEntry.objectType
+    fun getSelectedObjectType(): ObjectType {
+        return objectTypeComboBox.selectedItem as ObjectType
+    }
 
-        println("Setting default texture for $objectType: ${selectedEntry.imageEntry.name}")
-
+    fun setAsDefault(entry: TextureEntry, objectType: ObjectType) {
         // Remove default flag from all textures of this type
-        texturesByType[objectType]?.forEachIndexed { index, entry ->
-            texturesByType[objectType]!![index] = entry.copy(isDefault = entry == selectedEntry)
+        texturesByType[objectType]?.forEachIndexed { index, texture ->
+            texturesByType[objectType]!![index] = texture.copy(isDefault = texture == entry)
         }
 
-        // Apply the selected texture to the gridEditor based on type
-        gridEditor?.let { editor ->
-            when (objectType) {
-                ObjectType.WALL -> {
-                    println("Applying wall texture to grid editor")
-                    editor.setWallTexture(selectedEntry.imageEntry)
-                    editor.currentWallTexture = selectedEntry.imageEntry // Explicitly set the texture
-                }
-                ObjectType.FLOOR -> {
-                    println("Applying floor texture to grid editor")
-                    editor.setFloorTexture(selectedEntry.imageEntry)
-                }
-                // Handle other types as needed
-                else -> {}
-            }
-        }
-
-        // Show confirmation popup
-        JOptionPane.showMessageDialog(
-            this,
-            "Set '${selectedEntry.imageEntry.name}' as default for ${objectType.name}",
-            "Default Texture Set",
-            JOptionPane.INFORMATION_MESSAGE
-        )
-
+        // Update the texture list to show the new default
         updateTextureList()
+
+        println("TextureManager: Marked '${entry.imageEntry.name}' as default for ${objectType.name}")
     }
 
     private fun updateTextureList() {
@@ -336,10 +333,6 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
 
     fun getSelectedTextureEntry(): TextureEntry? {
         return textureList.selectedValue
-    }
-
-    fun setEditorPanel(panel: EditorPanel) {
-        editorPanel = panel
     }
 
     fun loadTexturesFromResourceManager() {

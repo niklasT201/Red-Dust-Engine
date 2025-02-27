@@ -26,7 +26,6 @@ fun main() {
 // pressing gui, wall direction isnt working
 // fix visible floor tile border
 // objects arent straight when bigger screen bc of mouse movement
-// changing texture manager preview
 // adding save system
 // removing player up and down border
 // adding physics

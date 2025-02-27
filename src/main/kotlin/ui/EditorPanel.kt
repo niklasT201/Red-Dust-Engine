@@ -27,7 +27,6 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
     private lateinit var addWallButton: JButton
     private lateinit var addFloorButton: JButton
     private lateinit var addPlayerSpawnButton: JButton
-    val setWallTextureButton: JButton
 
     // Colors for button states
     private val defaultButtonColor = Color(60, 63, 65)
@@ -75,19 +74,26 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             maximumSize = Dimension(Int.MAX_VALUE, preferredSize.height)
         }
 
-        setWallTextureButton = createButton("Set Wall Texture").apply {
-            addActionListener {
-                // Get the selected texture from the texture manager
-                val selectedTextureEntry = textureManager.getSelectedTextureEntry()
-                if (selectedTextureEntry != null) {
-                    // Set the wall texture in the grid editor
-                    gridEditor.setWallTexture(selectedTextureEntry.imageEntry)
-                    JOptionPane.showMessageDialog(this, "Wall texture set to: ${selectedTextureEntry.imageEntry.name}", "Texture Set", JOptionPane.INFORMATION_MESSAGE)
-                } else {
-                    JOptionPane.showMessageDialog(this, "No texture selected!", "Error", JOptionPane.ERROR_MESSAGE)
+        textureManager.setTextureSelectionListener(object : TextureManagerPanel.TextureSelectionListener {
+            override fun onTextureSetAsDefault(entry: TextureManagerPanel.TextureEntry, objectType: ObjectType) {
+                // Apply the texture to the grid editor based on type
+                when (objectType) {
+                    ObjectType.WALL -> {
+                        gridEditor.setWallTexture(entry.imageEntry)
+                        gridEditor.currentWallTexture = entry.imageEntry
+                        println("Listener: Applied wall texture '${entry.imageEntry.name}' to GridEditor")
+                    }
+                    ObjectType.FLOOR -> {
+                        gridEditor.setFloorTexture(entry.imageEntry)
+                        println("Listener: Applied floor texture '${entry.imageEntry.name}' to GridEditor")
+                    }
+                    // Handle other types
+                    else -> {
+                        println("Listener: Object type ${objectType.name} not handled for texture application")
+                    }
                 }
             }
-        }
+        })
 
         // Create collapsible sections
         val quickActionsSection = CollapsibleSection("Quick Actions").apply {
@@ -144,7 +150,6 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             addComponent(colorBtn)
             addComponent(heightBtn)
             addComponent(widthBtn)
-            addComponent(setWallTextureButton)
         }
 
         val toolsSection = CollapsibleSection("Tools").apply {
