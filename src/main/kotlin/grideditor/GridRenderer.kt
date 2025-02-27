@@ -146,6 +146,18 @@ class GridRenderer(private val editor: GridEditor) {
             30 // Y position for the text
         )
 
+        // Texture name display
+        val textureName = when(editor.currentObjectType) {
+            ObjectType.WALL -> editor.currentWallTexture?.name ?: "None"
+            ObjectType.FLOOR -> editor.currentFloorTexture?.name ?: "None"
+            else -> "None"
+        }
+        g2.drawString(
+            "Current ${editor.currentObjectType.name} Image: $textureName",
+            10,
+            45  // Position it below the direction text
+        )
+
         // Draw direction letters on wall tiles
         editor.grid.forEach { (pos, cell) ->
             cell.getObjectsForFloor(editor.getCurrentFloor()).filterIsInstance<WallObject>().firstOrNull()?.let { wallObject ->
