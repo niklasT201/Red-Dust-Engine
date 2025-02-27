@@ -6,21 +6,18 @@ import ui.MenuSystem
 import java.awt.*
 import java.awt.event.*
 import javax.swing.*
-import kotlin.math.cos
-import kotlin.math.sin
 
 class Game3D : JPanel() {
     private val player = Player()
     private val renderer = Renderer(800, 600)
+    private val renderPanel = RenderPanel()
+    private val gridEditor = GridEditor()
+    private val editorPanel = EditorPanel { toggleEditorMode() }
     private lateinit var menuSystem: MenuSystem
     private val keysPressed = mutableSetOf<Int>()
     private val walls = mutableListOf<Wall>()
     private val floors = mutableListOf<Floor>()
     private var isEditorMode = true
-
-    private val renderPanel = RenderPanel()
-    private val gridEditor = GridEditor()
-    private val editorPanel = EditorPanel { toggleEditorMode() }
 
     // Right panel with card layout to switch between grid editor and game view
     private val rightPanel = JPanel(CardLayout()).apply {
@@ -57,7 +54,9 @@ class Game3D : JPanel() {
             renderPanel.repaint()
         }
 
+        //textureManager.gridEditor = gridEditor
         editorPanel.gridEditor = gridEditor
+        //textureManager.setEditorPanel(editorPanel)
 
         editorPanel.setColorChangeListener { color ->
             gridEditor.setWallColor(color)
@@ -90,6 +89,9 @@ class Game3D : JPanel() {
 
         // Set initial size for editor panel
         editorPanel.preferredSize = Dimension(250, height)
+
+        //val textureManager = editorPanel.textureManager // Get reference from EditorPanel instead of creating new
+        //textureManager.setEditorPanel(editorPanel)
 
         // Create menu bar
         menuSystem = MenuSystem(
