@@ -287,8 +287,8 @@ class Game3D : JPanel() {
             if (KeyBindings.FLY_UP in keysPressed) up += 1.0
             if (KeyBindings.FLY_DOWN in keysPressed) up -= 1.0
 
-            // Move player with collected input
-            player.move(forward, right, up, walls)
+            // Move player with collected input and pass floors list
+            player.move(forward, right, up, walls, floors)
 
             gridEditor.repaint()  // Update the grid editor to show new player position
         }

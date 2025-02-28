@@ -2,6 +2,7 @@ package player
 
 import Vec3
 import Wall
+import Floor
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -9,13 +10,13 @@ class Player(
     val camera: Camera = Camera(Vec3(0.0, 1.7, -5.0)),
     private val moveSpeed: Double = 0.05,
     private val playerRadius: Double = 0.3,
-    private val minHeight: Double = 0.5,
-    private val maxHeight: Double = 2.5
+    private val playerHeight: Double = 1.7,  // Distance from eyes to feet
+    private val headClearance: Double = 0.3   // Extra space needed above the head
 ) {
     // Getter for player position (via camera)
     val position: Vec3 get() = camera.position
 
-    // player.Camera-related methods
+    // Camera-related methods
     fun rotate(dx: Double, dy: Double) {
         camera.rotate(dx, dy)
     }
@@ -33,7 +34,7 @@ class Player(
     }
 
     // Movement and collision
-    fun move(forward: Double, right: Double, up: Double, walls: List<Wall>) {
+    fun move(forward: Double, right: Double, up: Double, walls: List<Wall>, floors: List<Floor>) {
         // Calculate movement based on camera direction
         val forwardX = -sin(camera.yaw)
         val forwardZ = cos(camera.yaw)
@@ -45,10 +46,10 @@ class Player(
         val newZ = camera.position.z + (forward * forwardZ + right * rightZ) * moveSpeed
         val newY = camera.position.y + up * moveSpeed
 
-        // Collision detection
-        val canMove = checkCollision(newX, newZ, walls)
+        // Collision detection for walls
+        val canMove = checkWallCollision(newX, newZ, walls)
 
-        // Apply movement with collision detection
+        // Apply horizontal movement with wall collision detection
         if (canMove.first) {
             camera.position.x = newX
         }
@@ -56,14 +57,45 @@ class Player(
             camera.position.z = newZ
         }
 
-        // Apply Y movement without bounds
-        camera.position.y = newY
+        // Get player's feet position (camera is at eye level)
+        val currentFeetY = camera.position.y - playerHeight
+        val newFeetY = newY - playerHeight
 
-        // Alternatively, extremely large bounds instead of none:
-        // camera.position.y = newY.coerceIn(-1000.0, 1000.0)
+        // Check if moving up through a floor
+        if (up > 0) {
+            // When moving up, check if head will hit a ceiling
+            val headCollision = checkCeilingCollision(camera.position.x, newY + headClearance, camera.position.z, floors)
+            if (headCollision.first) {
+                // Hit ceiling, stop at collision point minus head clearance
+                camera.position.y = headCollision.second - headClearance
+            } else {
+                // No ceiling collision, move freely upward
+                camera.position.y = newY
+            }
+        }
+        // Check if moving down onto or through a floor
+        else if (up < 0) {
+            // When moving down, check if feet will hit a floor
+            val floorCollision = checkFloorCollision(camera.position.x, newFeetY, camera.position.z, floors)
+            if (floorCollision.first) {
+                // Hit floor, place feet exactly on floor
+                camera.position.y = floorCollision.second + playerHeight
+            } else {
+                // No floor collision, move freely downward
+                camera.position.y = newY
+            }
+        }
+        // Not moving vertically, still check if we're standing on a floor
+        else {
+            // Check if standing on floor (a tiny bit below feet to account for precision)
+            val standingCheck = checkFloorCollision(camera.position.x, currentFeetY - 0.01, camera.position.z, floors)
+            if (standingCheck.first && standingCheck.second - currentFeetY < 0.2) {
+                camera.position.y = standingCheck.second + playerHeight
+            }
+        }
     }
 
-    private fun checkCollision(newX: Double, newZ: Double, walls: List<Wall>): Pair<Boolean, Boolean> {
+    private fun checkWallCollision(newX: Double, newZ: Double, walls: List<Wall>): Pair<Boolean, Boolean> {
         var canMoveX = true
         var canMoveZ = true
 
@@ -103,10 +135,54 @@ class Player(
         return Pair(canMoveX, canMoveZ)
     }
 
+    private fun checkFloorCollision(x: Double, feetY: Double, z: Double, floors: List<Floor>): Pair<Boolean, Double> {
+        // Find the highest floor below the player's feet
+        var hasCollision = false
+        var floorY = Double.NEGATIVE_INFINITY
+
+        for (floor in floors) {
+            // Check if player is within the floor's horizontal boundaries
+            if (x >= floor.x1 - playerRadius && x <= floor.x2 + playerRadius &&
+                z >= floor.z1 - playerRadius && z <= floor.z2 + playerRadius) {
+
+                // Check if feet are at or below floor level AND the player isn't too far below
+                // Only register a collision if the player is close to the floor (not far underneath)
+                val distanceBelow = floor.y - feetY
+                if (feetY <= floor.y && distanceBelow <= 0.1 && floor.y > floorY) {
+                    floorY = floor.y
+                    hasCollision = true
+                }
+            }
+        }
+
+        return Pair(hasCollision, floorY)
+    }
+
+    private fun checkCeilingCollision(x: Double, headY: Double, z: Double, floors: List<Floor>): Pair<Boolean, Double> {
+        // Find the lowest ceiling above the player's head
+        var hasCollision = false
+        var ceilingY = Double.POSITIVE_INFINITY
+
+        for (floor in floors) {
+            // Check if player is within the floor's horizontal boundaries
+            if (x >= floor.x1 - playerRadius && x <= floor.x2 + playerRadius &&
+                z >= floor.z1 - playerRadius && z <= floor.z2 + playerRadius) {
+
+                // Check if head is at or above floor level (floor acts as ceiling)
+                if (headY >= floor.y && floor.y < ceilingY) {
+                    ceilingY = floor.y
+                    hasCollision = true
+                }
+            }
+        }
+
+        return Pair(hasCollision, ceilingY)
+    }
+
     // Set player position from spawn point
     fun setPositionFromSpawn(x: Double, y: Double, floorHeight: Double = 0.0) {
         camera.position.x = x
         camera.position.z = y
-        camera.position.y = 1.7 + floorHeight // Default player height
+        camera.position.y = playerHeight + floorHeight // Eye level above floor
     }
 }
