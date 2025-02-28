@@ -27,7 +27,6 @@ fun main() {
 // fix visible floor tile border
 // objects arent straight when bigger screen bc of mouse movement
 // adding save system
-// removing player up and down border
 // adding physics
 
 // optional shadows

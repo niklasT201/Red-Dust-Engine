@@ -178,6 +178,11 @@ class GridEditor : JPanel() {
         repaint()
     }
 
+    fun getScaledTexture(image: Image, size: Int): Image {
+        // Create scaled version for better performance, especially when zooming
+        return image.getScaledInstance(size, size, Image.SCALE_FAST)
+    }
+
     fun updateSelectedCell(color: Color? = null, height: Double? = null, width: Double? = null, texture: ImageEntry? = null) {
         selectedCell?.let { cell ->
             grid[cell]?.let { gridCell ->

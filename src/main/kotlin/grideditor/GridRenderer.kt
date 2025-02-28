@@ -45,60 +45,139 @@ class GridRenderer(private val editor: GridEditor) {
                 val playerSpawnObject = floorObjects?.firstOrNull { it.type == ObjectType.PLAYER_SPAWN } as? PlayerSpawnObject
 
                 // Draw floor or background
-                g2.color = when {
-                    floorObject != null -> floorObject.color
-                    else -> Color(40, 44, 52) // Background color
-                }
-
-                g2.fillRect(
-                    screenX,
-                    screenY,
-                    editor.cellSize.toInt(),
-                    editor.cellSize.toInt()
-                )
-
-                // Draw direction indicators for walls
-                if (wallObject != null) {
-                    if (wallObject.isBlockWall || !editor.showFlatWallsAsLines) {
-                        // Draw full cell for block walls
-                        g2.color = wallObject.color
+                if (floorObject != null) {
+                    if (floorObject.texture != null) {
+                        // Draw floor texture
+                        val texture = floorObject.texture.image
+                        g2.drawImage(
+                            texture,
+                            screenX,
+                            screenY,
+                            editor.cellSize.toInt(),
+                            editor.cellSize.toInt(),
+                            null
+                        )
+                    } else {
+                        // Fall back to color if no texture
+                        g2.color = floorObject.color
                         g2.fillRect(
                             screenX,
                             screenY,
                             editor.cellSize.toInt(),
                             editor.cellSize.toInt()
                         )
-                    } else {
-                        // Draw line for flat wall
-                        g2.color = wallObject.color
-                        g2.stroke = BasicStroke((editor.cellSize * 0.2).toFloat())
+                    }
+                } else {
+                    // Background color for empty cells
+                    g2.color = Color(40, 44, 52)
+                    g2.fillRect(
+                        screenX,
+                        screenY,
+                        editor.cellSize.toInt(),
+                        editor.cellSize.toInt()
+                    )
+                }
 
-                        val padding = editor.cellSize * 0.1
-                        when (wallObject.direction) {
-                            Direction.NORTH -> g2.drawLine(
-                                screenX + padding.toInt(),
-                                screenY + padding.toInt(),
-                                screenX + editor.cellSize.toInt() - padding.toInt(),
-                                screenY + padding.toInt()
+                // Draw direction indicators for walls
+                if (wallObject != null) {
+                    if (wallObject.isBlockWall || !editor.showFlatWallsAsLines) {
+                        // Block walls - draw full cell with texture or color
+                        if (wallObject.texture != null) {
+                            // Draw wall texture
+                            val texture = wallObject.texture.image
+                            g2.drawImage(
+                                texture,
+                                screenX,
+                                screenY,
+                                editor.cellSize.toInt(),
+                                editor.cellSize.toInt(),
+                                null
                             )
-                            Direction.SOUTH -> g2.drawLine(
-                                screenX + padding.toInt(),
-                                screenY + editor.cellSize.toInt() - padding.toInt(),
-                                screenX + editor.cellSize.toInt() - padding.toInt(),
-                                screenY + editor.cellSize.toInt() - padding.toInt()
+                        } else {
+                            // Fall back to color if no texture
+                            g2.color = wallObject.color
+                            g2.fillRect(
+                                screenX,
+                                screenY,
+                                editor.cellSize.toInt(),
+                                editor.cellSize.toInt()
                             )
-                            Direction.WEST -> g2.drawLine(
-                                screenX + padding.toInt(),
-                                screenY + padding.toInt(),
-                                screenX + padding.toInt(),
-                                screenY + editor.cellSize.toInt() - padding.toInt()
-                            )
-                            Direction.EAST -> g2.drawLine(
-                                screenX + editor.cellSize.toInt() - padding.toInt(),
-                                screenY + padding.toInt(),
-                                screenX + editor.cellSize.toInt() - padding.toInt(),
-                                screenY + editor.cellSize.toInt() - padding.toInt()
-                            )
+                        }
+                    } else {
+                        // Flat walls - draw a line with a gradient or solid color
+                        if (wallObject.texture != null) {
+                            // For flat walls, we could draw a small strip of the texture
+                            g2.color = wallObject.color  // Use color as fallback for line visual
+                            g2.stroke = BasicStroke((editor.cellSize * 0.2).toFloat())
+
+                            val padding = editor.cellSize * 0.1
+                            when (wallObject.direction) {
+                                Direction.NORTH -> {
+                                    // Could create a texture strip here if needed
+                                    g2.drawLine(
+                                        screenX + padding.toInt(),
+                                        screenY + padding.toInt(),
+                                        screenX + editor.cellSize.toInt() - padding.toInt(),
+                                        screenY + padding.toInt()
+                                    )
+                                }
+                                Direction.SOUTH -> {
+                                    g2.drawLine(
+                                        screenX + padding.toInt(),
+                                        screenY + editor.cellSize.toInt() - padding.toInt(),
+                                        screenX + editor.cellSize.toInt() - padding.toInt(),
+                                        screenY + editor.cellSize.toInt() - padding.toInt()
+                                    )
+                                }
+                                Direction.WEST -> {
+                                    g2.drawLine(
+                                        screenX + padding.toInt(),
+                                        screenY + padding.toInt(),
+                                        screenX + padding.toInt(),
+                                        screenY + editor.cellSize.toInt() - padding.toInt()
+                                    )
+                                }
+                                Direction.EAST -> {
+                                    g2.drawLine(
+                                        screenX + editor.cellSize.toInt() - padding.toInt(),
+                                        screenY + padding.toInt(),
+                                        screenX + editor.cellSize.toInt() - padding.toInt(),
+                                        screenY + editor.cellSize.toInt() - padding.toInt()
+                                    )
+                                }
+                            }
+                        } else {
+                            // Draw line for flat wall
+                            g2.color = wallObject.color
+                            g2.stroke = BasicStroke((editor.cellSize * 0.2).toFloat())
+
+                            val padding = editor.cellSize * 0.1
+                            when (wallObject.direction) {
+                                Direction.NORTH -> g2.drawLine(
+                                    screenX + padding.toInt(),
+                                    screenY + padding.toInt(),
+                                    screenX + editor.cellSize.toInt() - padding.toInt(),
+                                    screenY + padding.toInt()
+                                )
+                                Direction.SOUTH -> g2.drawLine(
+                                    screenX + padding.toInt(),
+                                    screenY + editor.cellSize.toInt() - padding.toInt(),
+                                    screenX + editor.cellSize.toInt() - padding.toInt(),
+                                    screenY + editor.cellSize.toInt() - padding.toInt()
+                                )
+                                Direction.WEST -> g2.drawLine(
+                                    screenX + padding.toInt(),
+                                    screenY + padding.toInt(),
+                                    screenX + padding.toInt(),
+                                    screenY + editor.cellSize.toInt() - padding.toInt()
+                                )
+                                Direction.EAST -> g2.drawLine(
+                                    screenX + editor.cellSize.toInt() - padding.toInt(),
+                                    screenY + padding.toInt(),
+                                    screenX + editor.cellSize.toInt() - padding.toInt(),
+                                    screenY + editor.cellSize.toInt() - padding.toInt()
+                                )
+                            }
                         }
                     }
                 }

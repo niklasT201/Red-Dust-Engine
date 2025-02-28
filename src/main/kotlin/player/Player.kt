@@ -56,8 +56,11 @@ class Player(
             camera.position.z = newZ
         }
 
-        // Apply Y movement with bounds
-        camera.position.y = newY.coerceIn(minHeight, maxHeight)
+        // Apply Y movement without bounds
+        camera.position.y = newY
+
+        // Alternatively, extremely large bounds instead of none:
+        // camera.position.y = newY.coerceIn(-1000.0, 1000.0)
     }
 
     private fun checkCollision(newX: Double, newZ: Double, walls: List<Wall>): Pair<Boolean, Boolean> {
