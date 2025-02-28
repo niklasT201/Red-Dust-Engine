@@ -4,8 +4,9 @@ object KeyBindings {
     const val MOVE_BACKWARD = java.awt.event.KeyEvent.VK_S
     const val MOVE_LEFT = java.awt.event.KeyEvent.VK_A
     const val MOVE_RIGHT = java.awt.event.KeyEvent.VK_D
-    const val MOVE_UP = java.awt.event.KeyEvent.VK_SPACE
-    const val MOVE_DOWN = java.awt.event.KeyEvent.VK_SHIFT
+    const val FLY_UP = java.awt.event.KeyEvent.VK_SPACE
+    const val FLY_DOWN = java.awt.event.KeyEvent.VK_SHIFT
+    const val JUMP = java.awt.event.KeyEvent.VK_J
 
     // Mode Toggle
     const val TOGGLE_EDITOR = java.awt.event.KeyEvent.VK_E

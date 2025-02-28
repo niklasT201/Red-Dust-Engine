@@ -284,8 +284,8 @@ class Game3D : JPanel() {
             if (KeyBindings.MOVE_BACKWARD in keysPressed) forward -= 1.0
             if (KeyBindings.MOVE_LEFT in keysPressed) right -= 1.0
             if (KeyBindings.MOVE_RIGHT in keysPressed) right += 1.0
-            if (KeyBindings.MOVE_UP in keysPressed) up += 1.0
-            if (KeyBindings.MOVE_DOWN in keysPressed) up -= 1.0
+            if (KeyBindings.FLY_UP in keysPressed) up += 1.0
+            if (KeyBindings.FLY_DOWN in keysPressed) up -= 1.0
 
             // Move player with collected input
             player.move(forward, right, up, walls)
