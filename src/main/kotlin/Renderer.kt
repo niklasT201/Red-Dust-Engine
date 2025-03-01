@@ -70,10 +70,6 @@ class Renderer(private val width: Int, private val height: Int) {
             val viewLength = sqrt(dx * dx + dy * dy + dz * dz)
             val dotProduct = viewY / viewLength
 
-            // Skip if viewing from wrong side
-            if (floor.y > camera.position.y && dotProduct > 0) continue
-            if (floor.y < camera.position.y && dotProduct < 0) continue
-
             /* Shading disabled as requested
             val shade = (1.0 / (1.0 + distance * 0.1)).coerceIn(0.3, 1.0)
             val shadedColor = Color(
@@ -83,13 +79,26 @@ class Renderer(private val width: Int, private val height: Int) {
             )
             */
 
+            // Determine if we're viewing the floor from below (for texture orientation)
+            val viewingFromBelow = (floor.y > camera.position.y)
+
             // Texture coordinates for floor (simple planar mapping)
-            val textureCoords = listOf(
-                Pair(0.0, 0.0),
-                Pair(1.0, 0.0),
-                Pair(1.0, 1.0),
-                Pair(0.0, 1.0)
-            )
+            val textureCoords = if (!viewingFromBelow) {
+                listOf(
+                    Pair(0.0, 0.0),
+                    Pair(1.0, 0.0),
+                    Pair(1.0, 1.0),
+                    Pair(0.0, 1.0)
+                )
+            } else {
+                // When viewing from below, reverse texture coordinates
+                listOf(
+                    Pair(0.0, 1.0),
+                    Pair(1.0, 1.0),
+                    Pair(1.0, 0.0),
+                    Pair(0.0, 0.0)
+                )
+            }
 
             renderQueue.add(RenderableObject.FloorInfo(
                 distance,
