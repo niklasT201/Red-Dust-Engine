@@ -183,9 +183,6 @@ class Renderer(private val width: Int, private val height: Int) {
             val viewLength = sqrt(toCameraX * toCameraX + toCameraZ * toCameraZ)
             val dotProduct = (normal.x * toCameraX + normal.z * toCameraZ) / viewLength
 
-            // REMOVE THIS LINE to stop skipping backfaces:
-            // if (dotProduct <= 0) continue
-
             /* Shading disabled as requested
             val angleFactor = abs(dotProduct)
             val distanceFactor = (1.0 / (1.0 + distance * 0.1)).coerceIn(0.3, 1.0)
