@@ -265,20 +265,22 @@ class Renderer(private val width: Int, private val height: Int) {
         if (screenPoints.size < 3 || textureCoords.size != screenPoints.size) return
 
         val image = textureEntry.image
-        val bounds = polygon.bounds
+        val imageWidth = image.getWidth(null)
+        val imageHeight = image.getHeight(null)
 
         // Set up clipping to the polygon
         val originalClip = g2.clip
         g2.clip = polygon
 
         try {
-            // Create source-to-destination transform based on the first three points
-            val srcPoints = Array(3) { i ->
+            // More stable texture mapping for complex polygons
+            val srcPoints = Array(screenPoints.size.coerceAtMost(3)) { i ->
                 val (u, v) = textureCoords[i]
-                Point2D.Double(u * image.getWidth(null), v * image.getHeight(null))
+                // Map texture coordinates directly to image dimensions
+                Point2D.Double(u * imageWidth, v * imageHeight)
             }
 
-            val dstPoints = Array(3) { i ->
+            val dstPoints = Array(screenPoints.size.coerceAtMost(3)) { i ->
                 val (x, y) = screenPoints[i]
                 Point2D.Double(x.toDouble(), y.toDouble())
             }
