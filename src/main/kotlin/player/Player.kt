@@ -168,8 +168,9 @@ class Player(
             if (x >= floor.x1 - playerRadius && x <= floor.x2 + playerRadius &&
                 z >= floor.z1 - playerRadius && z <= floor.z2 + playerRadius) {
 
-                // Check if head is at or above floor level (floor acts as ceiling)
-                if (headY >= floor.y && floor.y < ceilingY) {
+                // Only consider floors that are above the player's current position
+                val floorAboveHead = floor.y > camera.position.y && headY >= floor.y;
+                if (floorAboveHead && floor.y < ceilingY) {
                     ceilingY = floor.y
                     hasCollision = true
                 }
