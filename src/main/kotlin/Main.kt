@@ -21,7 +21,6 @@ fun main() {
     }
 }
 
-// wall clipping issue
 // maybe fix player map offset 1
 // pressing gui, wall direction isnt working
 // fix visible floor tile border

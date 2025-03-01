@@ -180,6 +180,9 @@ class Renderer(private val width: Int, private val height: Int) {
                 Pair(0.0, wall.height)     // Bottom-left
             )
 
+            if (listOf(startTransformed, endTransformed, startTransformedTop, endTransformedTop)
+                    .any { it.z <= 0 }) continue
+
             renderQueue.add(RenderableObject.WallInfo(
                 distance,
                 screenPoints,
@@ -325,7 +328,12 @@ class Renderer(private val width: Int, private val height: Int) {
     }
 
     private fun projectPoint(point: Vec3): Pair<Int, Int> {
-        // Ensure point is not behind near plane
+        // If point is behind camera, return a point outside the viewport
+        if (point.z <= 0) {
+            return Pair(-1000, -1000) // Well outside screen boundaries
+        }
+
+        // Apply perspective projection for points in front of camera
         val z = maxOf(point.z, nearPlane)
 
         // Apply perspective projection
