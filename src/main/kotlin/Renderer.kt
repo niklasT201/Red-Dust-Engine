@@ -103,25 +103,41 @@ class Renderer(private val width: Int, private val height: Int) {
 
         // Process walls
         for (wall in walls) {
-            val startTransformed = transformPoint(wall.start, camera)
-            val endTransformed = transformPoint(wall.end, camera)
+            // Transform the wall's four corners
+            val bottomStart = transformPoint(wall.start, camera)
+            val bottomEnd = transformPoint(wall.end, camera)
+            val topStart = transformPoint(Vec3(wall.start.x, wall.start.y + wall.height, wall.start.z), camera)
+            val topEnd = transformPoint(Vec3(wall.end.x, wall.end.y + wall.height, wall.end.z), camera)
 
-            // Get the wall corners in view space
-            val topStart = Vec3(wall.start.x, wall.start.y + wall.height, wall.start.z)
-            val topEnd = Vec3(wall.end.x, wall.end.y + wall.height, wall.end.z)
+            // Skip if all points are behind near plane
+            if (listOf(bottomStart, bottomEnd, topStart, topEnd).all { it.z <= nearPlane }) {
+                continue
+            }
 
-            val startTransformedTop = transformPoint(topStart, camera)
-            val endTransformedTop = transformPoint(topEnd, camera)
+            // Clip each edge of the wall against the near plane
+            val clippedEdges = mutableListOf<Pair<Vec3, Vec3>>()
 
-            if (listOf(startTransformed, endTransformed, startTransformedTop, endTransformedTop)
-                    .all { it.z <= nearPlane }) continue
+            // Try to clip each edge
+            clipLineToNearPlane(bottomStart, bottomEnd)?.let { clippedEdges.add(it) }
+            clipLineToNearPlane(bottomEnd, topEnd)?.let { clippedEdges.add(it) }
+            clipLineToNearPlane(topEnd, topStart)?.let { clippedEdges.add(it) }
+            clipLineToNearPlane(topStart, bottomStart)?.let { clippedEdges.add(it) }
 
-            val screenPoints = listOf(
-                projectPoint(startTransformedTop),
-                projectPoint(endTransformedTop),
-                projectPoint(endTransformed),
-                projectPoint(startTransformed)
-            )
+            // If we have no edges after clipping, skip this wall
+            if (clippedEdges.isEmpty()) {
+                continue
+            }
+
+            // Collect all unique vertices after clipping
+            val clippedVertices = clippedEdges.flatMap { listOf(it.first, it.second) }.distinctBy { Triple(it.x, it.y, it.z) }
+
+            // Project the clipped vertices to screen coordinates
+            val screenPoints = clippedVertices.map { projectPoint(it) }
+
+            // If we have fewer than 3 points, we can't form a polygon
+            if (screenPoints.size < 3) {
+                continue
+            }
 
             // Calculate center point of wall for distance sorting
             val centerX = (wall.start.x + wall.end.x) / 2
@@ -173,15 +189,23 @@ class Renderer(private val width: Int, private val height: Int) {
             )
 
             // Texture coordinates for wall
-            val textureCoords = listOf(
-                Pair(0.0, 0.0),           // Top-left
-                Pair(wallLength, 0.0),     // Top-right
-                Pair(wallLength, wall.height), // Bottom-right
-                Pair(0.0, wall.height)     // Bottom-left
-            )
+            val textureCoords = clippedVertices.map { vertex ->
+                // Calculate relative position within the wall
+                val horzPos = if (wall.end.x != wall.start.x || wall.end.z != wall.start.z) {
+                    val wallVec = Vec3(wall.end.x - wall.start.x, 0.0, wall.end.z - wall.start.z)
+                    val pointVec = Vec3(vertex.x - wall.start.x, 0.0, vertex.z - wall.start.z)
+                    val wallLength = sqrt(wallVec.x * wallVec.x + wallVec.z * wallVec.z)
+                    val projection = (pointVec.x * wallVec.x + pointVec.z * wallVec.z) / wallLength
+                    projection / wallLength
+                } else {
+                    0.0
+                }
 
-            if (listOf(startTransformed, endTransformed, startTransformedTop, endTransformedTop)
-                    .any { it.z <= 0 }) continue
+                // Calculate vertical position (0 at bottom, 1 at top)
+                val vertPos = (vertex.y - wall.start.y) / wall.height
+
+                Pair(horzPos, vertPos)
+            }
 
             renderQueue.add(RenderableObject.WallInfo(
                 distance,
@@ -327,14 +351,38 @@ class Renderer(private val width: Int, private val height: Int) {
         )
     }
 
-    private fun projectPoint(point: Vec3): Pair<Int, Int> {
-        // If point is behind camera, return a point outside the viewport
-        if (point.z <= 0) {
-            return Pair(-1000, -1000) // Well outside screen boundaries
+    private fun clipLineToNearPlane(p1: Vec3, p2: Vec3): Pair<Vec3, Vec3>? {
+        // If both points are in front of near plane, no clipping needed
+        if (p1.z > nearPlane && p2.z > nearPlane) {
+            return Pair(p1, p2)
         }
 
-        // Apply perspective projection for points in front of camera
-        val z = maxOf(point.z, nearPlane)
+        // If both points are behind near plane, line is not visible
+        if (p1.z <= nearPlane && p2.z <= nearPlane) {
+            return null
+        }
+
+        // One point is behind, one is in front - clip line
+        val t = (nearPlane - p1.z) / (p2.z - p1.z)
+
+        // The clipped point
+        val clippedPoint = Vec3(
+            p1.x + t * (p2.x - p1.x),
+            p1.y + t * (p2.y - p1.y),
+            nearPlane // Set exactly to near plane
+        )
+
+        // Return the clipped line - ensure in front point is first
+        return if (p1.z > nearPlane) {
+            Pair(p1, clippedPoint)
+        } else {
+            Pair(clippedPoint, p2)
+        }
+    }
+
+    private fun projectPoint(point: Vec3): Pair<Int, Int> {
+        // Use max to ensure we don't divide by a very small number
+        val z = maxOf(point.z, nearPlane * 1.01) // Add a small margin to avoid division problems
 
         // Apply perspective projection
         return Pair(
