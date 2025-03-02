@@ -34,7 +34,6 @@ fun main() {
 // damage system
 // all objects in editor menu
 
-// image support
 // direction label optional
 // FPS show
 

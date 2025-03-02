@@ -262,7 +262,8 @@ class GridInputHandler(private val editor: GridEditor) {
                     )
                     ObjectType.FLOOR -> FloorObject(
                         color = Color(100, 100, 100),
-                        floorHeight = editor.currentFloorHeight
+                        floorHeight = editor.currentFloorHeight,
+                        texture = editor.currentFloorTexture,
                     )
                     ObjectType.PLAYER_SPAWN -> {
                         // Update camera position immediately

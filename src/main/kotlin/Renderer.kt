@@ -51,11 +51,22 @@ class Renderer(private val width: Int, private val height: Int) {
 
             val transformedCorners = corners.map { transformPoint(it, camera) }
 
+            // Determine if we're viewing the floor from below (for texture orientation)
+            val viewingFromBelow = (floor.y > camera.position.y)
+
+            // Adjust texture coordinates based on viewing direction
+            val texCoords = corners.map { vertex ->
+                val u = (vertex.x - floor.x1) / (floor.x2 - floor.x1)
+                val v = (vertex.z - floor.z1) / (floor.z2 - floor.z1)
+
+                if (viewingFromBelow) Pair(u, 1.0 - v) else Pair(u, v)
+            }
+
             // More robust near plane checking - if any point is in front of the near plane, process the floor
             if (transformedCorners.none { it.z > nearPlane }) continue
 
             // Clip the floor polygon against the near plane if needed
-            val clippedCorners = clipPolygonToNearPlane(transformedCorners)
+            val (clippedCorners, clippedTexCoords) = clipPolygonToNearPlane(transformedCorners, texCoords)
             if (clippedCorners.isEmpty()) continue
 
             val screenPoints = clippedCorners.map { projectPoint(it) }
@@ -85,19 +96,6 @@ class Renderer(private val width: Int, private val height: Int) {
             )
             */
 
-            // Determine if we're viewing the floor from below (for texture orientation)
-            val viewingFromBelow = (floor.y > camera.position.y)
-
-            // Adjust texture coordinates based on viewing direction
-            val textureCoords = clippedCorners.map { vertex ->
-                // Calculate relative position within the floor
-                val u = (vertex.x - floor.x1) / (floor.x2 - floor.x1)
-                val v = (vertex.z - floor.z1) / (floor.z2 - floor.z1)
-
-                // Flip texture coordinates when viewing from below
-                if (viewingFromBelow) Pair(u, 1.0 - v) else Pair(u, v)
-            }
-
             // Adjust sorting distance for floors when player is very close
             // This helps with extreme close-up viewing angles
             val adjustedDistance = if (abs(viewY) < 0.5) {
@@ -112,7 +110,7 @@ class Renderer(private val width: Int, private val height: Int) {
                 screenPoints,
                 floor.color,
                 floor.texture,
-                textureCoords,
+                clippedTexCoords,  // Use the clipped texture coordinates
                 floor
             ))
         }
@@ -240,57 +238,6 @@ class Renderer(private val width: Int, private val height: Int) {
             )
             */
 
-            // Texture coordinates for wall
-            val textureCoords = clippedVertices.map { transformedVertex ->
-                // Calculate relative position within the wall
-                val wallVector = Vec3(
-                    wall.end.x - wall.start.x,
-                    0.0,
-                    wall.end.z - wall.start.z
-                )
-
-                // Calculate texture coordinates based on wall dimensions
-                val wallLength = sqrt(wallVector.x * wallVector.x + wallVector.z * wallVector.z)
-
-                val distToStart = sqrt(
-                    (transformedVertex.x - bottomStart.x).pow(2) +
-                            (transformedVertex.z - bottomStart.z).pow(2)
-                )
-
-                val distToEnd = sqrt(
-                    (transformedVertex.x - bottomEnd.x).pow(2) +
-                            (transformedVertex.z - bottomEnd.z).pow(2)
-                )
-
-                val totalDist = sqrt(
-                    (bottomEnd.x - bottomStart.x).pow(2) +
-                            (bottomEnd.z - bottomStart.z).pow(2)
-                )
-
-                // Approximate horizontal position from 0 to 1 along the wall's length
-                val horzPos = if (totalDist > 0.001) {
-                    distToStart / (distToStart + distToEnd)
-                } else {
-                    0.0
-                }
-
-                // For V coordinate (vertical position)
-                // Calculate height ratio based on max wall height
-                val bottomY = minOf(wall.start.y, wall.end.y)
-                val wallHeight = wall.height
-
-                val heightRatio = if (transformedVertex.y >= topStart.y) {
-                    1.0  // At or above top
-                } else if (transformedVertex.y <= bottomStart.y) {
-                    0.0  // At or below bottom
-                } else {
-                    // Somewhere in the middle - calculate position
-                    (transformedVertex.y - bottomStart.y) / (topStart.y - bottomStart.y)
-                }
-
-                Pair(horzPos, heightRatio)
-            }
-
             renderQueue.add(RenderableObject.WallInfo(
                 distance,
                 screenPoints,
@@ -342,13 +289,13 @@ class Renderer(private val width: Int, private val height: Int) {
 
         try {
             // More stable texture mapping for complex polygons
-            val srcPoints = Array(screenPoints.size.coerceAtMost(3)) { i ->
-                val (u, v) = textureCoords[i]
+            val srcPoints = Array(screenPoints.size) { i ->
+                val (u, v) = textureCoords[i % textureCoords.size]
                 // Map texture coordinates directly to image dimensions
                 Point2D.Double(u * imageWidth, v * imageHeight)
             }
 
-            val dstPoints = Array(screenPoints.size.coerceAtMost(3)) { i ->
+            val dstPoints = Array(screenPoints.size) { i ->
                 val (x, y) = screenPoints[i]
                 Point2D.Double(x.toDouble(), y.toDouble())
             }
@@ -464,10 +411,21 @@ class Renderer(private val width: Int, private val height: Int) {
 
         // Interpolate texture coordinate if provided
         val clippedTex = if (tex1 != null && tex2 != null) {
-            Pair(
-                tex1.first + t * (tex2.first - tex1.first),
-                tex1.second + t * (tex2.second - tex1.second)
-            )
+            // If this is a vertical edge (top-bottom), preserve horizontal coordinate
+            if ((tex1.first == tex2.first) && (tex1.first == 0.0 || tex1.first == 1.0)) {
+                Pair(tex1.first, tex1.second + t * (tex2.second - tex1.second))
+            }
+            // If this is a horizontal edge (left-right), preserve vertical coordinate
+            else if ((tex1.second == tex2.second) && (tex1.second == 0.0 || tex1.second == 1.0)) {
+                Pair(tex1.first + t * (tex2.first - tex1.first), tex1.second)
+            }
+            // Otherwise do regular interpolation
+            else {
+                Pair(
+                    tex1.first + t * (tex2.first - tex1.first),
+                    tex1.second + t * (tex2.second - tex1.second)
+                )
+            }
         } else {
             null
         }
@@ -480,19 +438,26 @@ class Renderer(private val width: Int, private val height: Int) {
         }
     }
 
-    private fun clipPolygonToNearPlane(vertices: List<Vec3>): List<Vec3> {
-        if (vertices.isEmpty()) return emptyList()
+    private fun clipPolygonToNearPlane(
+        vertices: List<Vec3>,
+        texCoords: List<Pair<Double, Double>>
+    ): Pair<List<Vec3>, List<Pair<Double, Double>>> {
+        if (vertices.isEmpty()) return Pair(emptyList(), emptyList())
 
-        val result = mutableListOf<Vec3>()
+        val resultVerts = mutableListOf<Vec3>()
+        val resultTexCoords = mutableListOf<Pair<Double, Double>>()
 
         // For each edge in the polygon
         for (i in vertices.indices) {
             val current = vertices[i]
+            val currentTex = texCoords[i]
             val next = vertices[(i + 1) % vertices.size]
+            val nextTex = texCoords[(i + 1) % texCoords.size]
 
             // If current vertex is in front of near plane, include it
             if (current.z > nearPlane) {
-                result.add(current)
+                resultVerts.add(current)
+                resultTexCoords.add(currentTex)
             }
 
             // Check if edge crosses the near plane
@@ -506,11 +471,19 @@ class Renderer(private val width: Int, private val height: Int) {
                     current.y + t * (next.y - current.y),
                     nearPlane
                 )
-                result.add(intersect)
+
+                // Interpolate texture coordinates
+                val interpTex = Pair(
+                    currentTex.first + t * (nextTex.first - currentTex.first),
+                    currentTex.second + t * (nextTex.second - currentTex.second)
+                )
+
+                resultVerts.add(intersect)
+                resultTexCoords.add(interpTex)
             }
         }
 
-        return result
+        return Pair(resultVerts, resultTexCoords)
     }
 
     private fun projectPoint(point: Vec3): Pair<Int, Int> {

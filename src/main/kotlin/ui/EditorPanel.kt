@@ -85,6 +85,7 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
                     }
                     ObjectType.FLOOR -> {
                         gridEditor.setFloorTexture(entry.imageEntry)
+                        gridEditor.currentFloorTexture = entry.imageEntry
                         println("Listener: Applied floor texture '${entry.imageEntry.name}' to GridEditor")
                     }
                     // Handle other types
