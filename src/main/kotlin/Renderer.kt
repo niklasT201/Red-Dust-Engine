@@ -33,7 +33,8 @@ class Renderer(private val width: Int, private val height: Int) {
             override val color: Color,
             override val texture: ImageEntry?,
             override val textureCoords: List<Pair<Double, Double>>,
-            val floor: Floor
+            val floor: Floor,
+            val viewingFromBelow: Boolean  // Added this flag for tracking view direction
         ) : RenderableObject()
     }
 
@@ -54,19 +55,41 @@ class Renderer(private val width: Int, private val height: Int) {
             // Determine if we're viewing the floor from below (for texture orientation)
             val viewingFromBelow = (floor.y > camera.position.y)
 
-            // Adjust texture coordinates based on viewing direction
-            val texCoords = corners.map { vertex ->
-                val u = (vertex.x - floor.x1) / (floor.x2 - floor.x1)
-                val v = (vertex.z - floor.z1) / (floor.z2 - floor.z1)
+            // Create two sets of corners: in clockwise and counter-clockwise orders
+            val orderedCorners = if (!viewingFromBelow) {
+                // Default order for viewing from above (counter-clockwise)
+                corners
+            } else {
+                // Reversed order for viewing from below (clockwise)
+                listOf(corners[0], corners[3], corners[2], corners[1])
+            }
 
-                if (viewingFromBelow) Pair(u, 1.0 - v) else Pair(u, v)
+            // Transform the correctly ordered corners
+            val orderedTransformedCorners = orderedCorners.map { transformPoint(it, camera) }
+
+            // Adjust texture coordinates based on viewing direction
+            val texCoords = if (!viewingFromBelow) {
+                orderedCorners.map { vertex ->
+                    val u = (vertex.x - floor.x1) / (floor.x2 - floor.x1)
+                    val v = (vertex.z - floor.z1) / (floor.z2 - floor.z1)
+                    Pair(u, v)
+                }
+            } else {
+                // When viewing from below, we need to adjust the texture coordinates
+                // to prevent the texture from appearing mirrored
+                orderedCorners.map { vertex ->
+                    val u = (vertex.x - floor.x1) / (floor.x2 - floor.x1)
+                    val v = (vertex.z - floor.z1) / (floor.z2 - floor.z1)
+                    // Flip the v-coordinate
+                    Pair(u, 1.0 - v)
+                }
             }
 
             // More robust near plane checking - if any point is in front of the near plane, process the floor
-            if (transformedCorners.none { it.z > nearPlane }) continue
+            if (orderedTransformedCorners.none { it.z > nearPlane }) continue
 
             // Clip the floor polygon against the near plane if needed
-            val (clippedCorners, clippedTexCoords) = clipPolygonToNearPlane(transformedCorners, texCoords)
+            val (clippedCorners, clippedTexCoords) = clipPolygonToNearPlane(orderedTransformedCorners, texCoords)
             if (clippedCorners.isEmpty()) continue
 
             val screenPoints = clippedCorners.map { projectPoint(it) }
@@ -111,7 +134,8 @@ class Renderer(private val width: Int, private val height: Int) {
                 floor.color,
                 floor.texture,
                 clippedTexCoords,  // Use the clipped texture coordinates
-                floor
+                floor,
+                viewingFromBelow  // Pass the viewing direction flag
             ))
         }
 
