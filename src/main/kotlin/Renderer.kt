@@ -119,6 +119,18 @@ class Renderer(private val width: Int, private val height: Int) {
 
         // Process walls
         for (wall in walls) {
+            // Calculate texture coordinates in world space before any transformations
+            val wallLength = sqrt(
+                (wall.end.x - wall.start.x).pow(2) +
+                        (wall.end.z - wall.start.z).pow(2)
+            )
+
+            // Calculate texture coordinates for the four corners
+            val bottomStartTex = Pair(0.0, 0.0)
+            val bottomEndTex = Pair(1.0, 0.0)
+            val topStartTex = Pair(0.0, 1.0)
+            val topEndTex = Pair(1.0, 1.0)
+
             // Transform the wall's four corners
             val bottomStart = transformPoint(wall.start, camera)
             val bottomEnd = transformPoint(wall.end, camera)
@@ -130,22 +142,55 @@ class Renderer(private val width: Int, private val height: Int) {
                 continue
             }
 
+            // Storage for clipped vertices and their texture coordinates
+            val clippedVertices = mutableListOf<Vec3>()
+            val clippedTexCoords = mutableListOf<Pair<Double, Double>>()
+
             // Clip each edge of the wall against the near plane
-            val clippedEdges = mutableListOf<Pair<Vec3, Vec3>>()
-
-            // Try to clip each edge
-            clipLineToNearPlane(bottomStart, bottomEnd)?.let { clippedEdges.add(it) }
-            clipLineToNearPlane(bottomEnd, topEnd)?.let { clippedEdges.add(it) }
-            clipLineToNearPlane(topEnd, topStart)?.let { clippedEdges.add(it) }
-            clipLineToNearPlane(topStart, bottomStart)?.let { clippedEdges.add(it) }
-
-            // If we have no edges after clipping, skip this wall
-            if (clippedEdges.isEmpty()) {
-                continue
+            clipLineToNearPlane(bottomStart, bottomEnd, bottomStartTex, bottomEndTex)?.let { (p1, p2, texPair) ->
+                clippedVertices.add(p1)
+                clippedVertices.add(p2)
+                texPair.first?.let { clippedTexCoords.add(it) }
+                texPair.second?.let { clippedTexCoords.add(it) }
             }
 
-            // Collect all unique vertices after clipping
-            val clippedVertices = clippedEdges.flatMap { listOf(it.first, it.second) }.distinctBy { Triple(it.x, it.y, it.z) }
+            clipLineToNearPlane(bottomEnd, topEnd, bottomEndTex, topEndTex)?.let { (p1, p2, texPair) ->
+                if (!clippedVertices.contains(p1)) {
+                    clippedVertices.add(p1)
+                    texPair.first?.let { clippedTexCoords.add(it) }
+                }
+                if (!clippedVertices.contains(p2)) {
+                    clippedVertices.add(p2)
+                    texPair.second?.let { clippedTexCoords.add(it) }
+                }
+            }
+
+            clipLineToNearPlane(topEnd, topStart, topEndTex, topStartTex)?.let { (p1, p2, texPair) ->
+                if (!clippedVertices.contains(p1)) {
+                    clippedVertices.add(p1)
+                    texPair.first?.let { clippedTexCoords.add(it) }
+                }
+                if (!clippedVertices.contains(p2)) {
+                    clippedVertices.add(p2)
+                    texPair.second?.let { clippedTexCoords.add(it) }
+                }
+            }
+
+            clipLineToNearPlane(topStart, bottomStart, topStartTex, bottomStartTex)?.let { (p1, p2, texPair) ->
+                if (!clippedVertices.contains(p1)) {
+                    clippedVertices.add(p1)
+                    texPair.first?.let { clippedTexCoords.add(it) }
+                }
+                if (!clippedVertices.contains(p2)) {
+                    clippedVertices.add(p2)
+                    texPair.second?.let { clippedTexCoords.add(it) }
+                }
+            }
+
+            // If we have no vertices after clipping, skip this wall
+            if (clippedVertices.size < 3 || clippedTexCoords.size < 3) {
+                continue
+            }
 
             // Project the clipped vertices to screen coordinates
             val screenPoints = clippedVertices.map { projectPoint(it) }
@@ -195,29 +240,55 @@ class Renderer(private val width: Int, private val height: Int) {
             )
             */
 
-            // Calculate texture coordinates based on wall dimensions
-            val wallLength = sqrt(
-                (wall.end.x - wall.start.x).pow(2) +
-                        (wall.end.z - wall.start.z).pow(2)
-            )
-
             // Texture coordinates for wall
-            val textureCoords = clippedVertices.map { vertex ->
+            val textureCoords = clippedVertices.map { transformedVertex ->
                 // Calculate relative position within the wall
-                val horzPos = if (wall.end.x != wall.start.x || wall.end.z != wall.start.z) {
-                    val wallVec = Vec3(wall.end.x - wall.start.x, 0.0, wall.end.z - wall.start.z)
-                    val pointVec = Vec3(vertex.x - wall.start.x, 0.0, vertex.z - wall.start.z)
-                    val wallLength = sqrt(wallVec.x * wallVec.x + wallVec.z * wallVec.z)
-                    val projection = (pointVec.x * wallVec.x + pointVec.z * wallVec.z) / wallLength
-                    projection / wallLength
+                val wallVector = Vec3(
+                    wall.end.x - wall.start.x,
+                    0.0,
+                    wall.end.z - wall.start.z
+                )
+
+                // Calculate texture coordinates based on wall dimensions
+                val wallLength = sqrt(wallVector.x * wallVector.x + wallVector.z * wallVector.z)
+
+                val distToStart = sqrt(
+                    (transformedVertex.x - bottomStart.x).pow(2) +
+                            (transformedVertex.z - bottomStart.z).pow(2)
+                )
+
+                val distToEnd = sqrt(
+                    (transformedVertex.x - bottomEnd.x).pow(2) +
+                            (transformedVertex.z - bottomEnd.z).pow(2)
+                )
+
+                val totalDist = sqrt(
+                    (bottomEnd.x - bottomStart.x).pow(2) +
+                            (bottomEnd.z - bottomStart.z).pow(2)
+                )
+
+                // Approximate horizontal position from 0 to 1 along the wall's length
+                val horzPos = if (totalDist > 0.001) {
+                    distToStart / (distToStart + distToEnd)
                 } else {
                     0.0
                 }
 
-                // Calculate vertical position (0 at bottom, 1 at top)
-                val vertPos = (vertex.y - wall.start.y) / wall.height
+                // For V coordinate (vertical position)
+                // Calculate height ratio based on max wall height
+                val bottomY = minOf(wall.start.y, wall.end.y)
+                val wallHeight = wall.height
 
-                Pair(horzPos, vertPos)
+                val heightRatio = if (transformedVertex.y >= topStart.y) {
+                    1.0  // At or above top
+                } else if (transformedVertex.y <= bottomStart.y) {
+                    0.0  // At or below bottom
+                } else {
+                    // Somewhere in the middle - calculate position
+                    (transformedVertex.y - bottomStart.y) / (topStart.y - bottomStart.y)
+                }
+
+                Pair(horzPos, heightRatio)
             }
 
             renderQueue.add(RenderableObject.WallInfo(
@@ -225,7 +296,7 @@ class Renderer(private val width: Int, private val height: Int) {
                 screenPoints,
                 wall.color,
                 wall.texture,
-                textureCoords,
+                clippedTexCoords,  // Use our pre-calculated and correctly interpolated texture coordinates
                 wall
             ))
         }
@@ -366,10 +437,14 @@ class Renderer(private val width: Int, private val height: Int) {
         )
     }
 
-    private fun clipLineToNearPlane(p1: Vec3, p2: Vec3): Pair<Vec3, Vec3>? {
+    private fun clipLineToNearPlane(
+        p1: Vec3, p2: Vec3,
+        tex1: Pair<Double, Double>? = null,
+        tex2: Pair<Double, Double>? = null
+    ): Triple<Vec3, Vec3, Pair<Pair<Double, Double>?, Pair<Double, Double>?>>? {
         // If both points are in front of near plane, no clipping needed
         if (p1.z > nearPlane && p2.z > nearPlane) {
-            return Pair(p1, p2)
+            return Triple(p1, p2, Pair(tex1, tex2))
         }
 
         // If both points are behind near plane, line is not visible
@@ -387,11 +462,21 @@ class Renderer(private val width: Int, private val height: Int) {
             nearPlane // Set exactly to near plane
         )
 
+        // Interpolate texture coordinate if provided
+        val clippedTex = if (tex1 != null && tex2 != null) {
+            Pair(
+                tex1.first + t * (tex2.first - tex1.first),
+                tex1.second + t * (tex2.second - tex1.second)
+            )
+        } else {
+            null
+        }
+
         // Return the clipped line - ensure in front point is first
         return if (p1.z > nearPlane) {
-            Pair(p1, clippedPoint)
+            Triple(p1, clippedPoint, Pair(tex1, clippedTex))
         } else {
-            Pair(clippedPoint, p2)
+            Triple(clippedPoint, p2, Pair(clippedTex, tex2))
         }
     }
 
