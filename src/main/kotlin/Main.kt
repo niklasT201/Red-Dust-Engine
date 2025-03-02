@@ -24,7 +24,7 @@ fun main() {
 // maybe fix player map offset 1
 // pressing gui, wall direction isnt working
 // fix visible floor tile border
-// objects arent straight when bigger screen bc of mouse movement
+// objects arent straight when bigger screen bc of mouse movementz
 // adding save system
 // adding physics
 

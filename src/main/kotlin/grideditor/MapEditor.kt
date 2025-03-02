@@ -42,8 +42,8 @@ class GridEditor : JPanel() {
     private var currentFloor = 0
 
     // Texture management
-    var resourceManager: ResourceManager? = null
-    var textureManagerPanel: TextureManagerPanel? = null
+    private var resourceManager: ResourceManager? = null
+    private var textureManagerPanel: TextureManagerPanel? = null
     var currentWallTexture: ImageEntry? = null
     var currentFloorTexture: ImageEntry? = null
 

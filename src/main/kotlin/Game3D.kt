@@ -54,31 +54,7 @@ class Game3D : JPanel() {
             renderPanel.repaint()
         }
 
-        //textureManager.gridEditor = gridEditor
         editorPanel.gridEditor = gridEditor
-        //textureManager.setEditorPanel(editorPanel)
-
-        editorPanel.setColorChangeListener { color ->
-            gridEditor.setWallColor(color)
-            val newWalls = gridEditor.generateWalls()
-            updateWalls(newWalls)
-        }
-
-        // Initialize floor grid
-        for (x in -1..1) {
-            for (z in -1..1) {
-                floors.add(
-                    Floor(
-                        x1 = x.toDouble() * 2.0,
-                        z1 = z.toDouble() * 2.0,
-                        x2 = (x + 1).toDouble() * 2.0,
-                        z2 = (z + 1).toDouble() * 2.0,
-                        y = 0.0,
-                        color = if ((x + z) % 2 == 0) Color(100, 100, 100) else Color(150, 150, 150)
-                    )
-                )
-            }
-        }
 
         // Setup render panel
         renderPanel.apply {
@@ -89,9 +65,6 @@ class Game3D : JPanel() {
 
         // Set initial size for editor panel
         editorPanel.preferredSize = Dimension(250, height)
-
-        //val textureManager = editorPanel.textureManager // Get reference from EditorPanel instead of creating new
-        //textureManager.setEditorPanel(editorPanel)
 
         // Create menu bar
         menuSystem = MenuSystem(

@@ -5,6 +5,7 @@ import WallObject
 import grideditor.GridEditor
 import texturemanager.ResourceManager
 import texturemanager.TextureManagerPanel
+import ui.components.WallPropertiesPanel
 import java.awt.*
 import javax.swing.*
 import javax.swing.border.TitledBorder
@@ -12,16 +13,15 @@ import javax.swing.border.TitledBorder
 class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
     var gridEditor = GridEditor()
     private val resourceManager = ResourceManager()
-    val textureManager = TextureManagerPanel(resourceManager)
+    private val textureManager = TextureManagerPanel(resourceManager)
     val sectionChooser = FloorSelectorPanel()
     private val modeButton = JButton("Editor Mode")
     private val mainPanel = JPanel()
     private val wallStyleGroup = ButtonGroup()
     private var onWallStyleChange: ((Boolean) -> Unit)? = null
-    private var currentWallColor = Color(150, 0, 0)  // Default wall color
-    private var onColorChange: ((Color) -> Unit)? = null
-    private var currentWallHeight = 3.0
-    private var currentWallWidth = 2.0
+
+    // NEW: Wall properties panel
+    private val wallPropertiesPanel = WallPropertiesPanel()
 
     // Store references to object type buttons
     private lateinit var addWallButton: JButton
@@ -33,9 +33,6 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
     private val selectedButtonColor = Color(100, 100, 255)
 
     // Reference to wall property buttons for updating
-    private var colorButton: JButton
-    private var heightButton: JButton
-    private var widthButton: JButton
     private var selectButton: JButton
     private var moveButton: JButton
     private var rotateButton: JButton
@@ -47,11 +44,15 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
         setupModeButton()
         setupMainPanel()
         setupSelectionHandling()
+        setupWallPropertiesPanel()
 
         // Initialize the components with each other
         gridEditor.initializeResourceManager(resourceManager)
         gridEditor.initializeTextureManagerPanel(textureManager)
         textureManager.gridEditor = gridEditor
+
+        // NEW: Connect wall properties panel to grid editor
+        wallPropertiesPanel.setGridEditor(gridEditor)
 
         // Create sections container
         val sectionsPanel = JPanel().apply {
@@ -142,15 +143,9 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             addComponent(visualizationToggle)
         }
 
+        // NEW: Wall properties section
         val wallPropertiesSection = CollapsibleSection("Wall Properties").apply {
-            val (colorBtn, heightBtn, widthBtn) = createWallPropertiesButtons()
-            colorButton = colorBtn
-            heightButton = heightBtn
-            widthButton = widthBtn
-
-            addComponent(colorBtn)
-            addComponent(heightBtn)
-            addComponent(widthBtn)
+            addComponent(wallPropertiesPanel)
         }
 
         val toolsSection = CollapsibleSection("Tools").apply {
@@ -240,6 +235,23 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
         add(scrollPane, BorderLayout.CENTER)
     }
 
+    private fun setupWallPropertiesPanel() {
+        // Connect wall properties panel with EditorPanel via listener
+        wallPropertiesPanel.setWallPropertyChangeListener(object : WallPropertiesPanel.WallPropertyChangeListener {
+            override fun onWallColorChanged(color: Color) {
+                gridEditor.setWallColor(color)
+            }
+
+            override fun onWallHeightChanged(height: Double) {
+                gridEditor.setWallHeight(height)
+            }
+
+            override fun onWallWidthChanged(width: Double) {
+                gridEditor.setWallWidth(width)
+            }
+        })
+    }
+
     private fun handleToolButtonClick(button: JButton, mode: GridEditor.EditMode) {
         if (button.background == Color(60, 63, 65)) {
             updateToolButtonStates(button)
@@ -250,23 +262,12 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
         }
     }
 
-    private fun createWallPropertiesButtons(): Triple<JButton, JButton, JButton> {
-        val colorBtn = createColorButton("Wall Color", currentWallColor)
-        val heightBtn = createHeightButton()
-        val widthBtn = createWidthButton()
-        return Triple(colorBtn, heightBtn, widthBtn)
-    }
-
     fun setModeButtonText(text: String) {
         modeButton.text = text
     }
 
     fun setWallStyleChangeListener(listener: (Boolean) -> Unit) {
         onWallStyleChange = listener
-    }
-
-    fun setColorChangeListener(listener: (Color) -> Unit) {
-        onColorChange = listener
     }
 
     private fun setupSelectionHandling() {
@@ -279,12 +280,12 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
                 val wallObject = currentFloorObjects.filterIsInstance<WallObject>().firstOrNull()
 
                 wallObject?.let {
-                    colorButton.background = it.color
-                    heightButton.text = "Wall Height: ${it.height}"
-                    widthButton.text = "Wall Width: ${it.width}"
-                    currentWallColor = it.color
-                    currentWallHeight = it.height
-                    currentWallWidth = it.width
+                    // NEW: Update wall properties panel instead of individual buttons
+                    wallPropertiesPanel.updateProperties(
+                        color = it.color,
+                        height = it.height,
+                        width = it.width
+                    )
                 }
             }
         }
@@ -409,16 +410,7 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
 
             add(Box.createVerticalStrut(10))
 
-            // Updated Wall Properties section with stored references
-            val (propPanel, buttons) = createWallPropertiesPanel()
-            add(propPanel)
-            colorButton = buttons.first
-            heightButton = buttons.second
-            widthButton = buttons.third
-
-            add(Box.createVerticalStrut(10))
-
-            // Updated Tools section with Select button
+            // Tools section
             selectButton = createButton("Select").apply {
                 addActionListener {
                     if (background == Color(60, 63, 65)) {
@@ -510,110 +502,6 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
                 button.background = Color(100, 100, 255)
             } else {
                 button.background = Color(60, 63, 65)
-            }
-        }
-    }
-
-    private fun createWallPropertiesPanel(): Pair<JPanel, Triple<JButton, JButton, JButton>> {
-        val colorBtn = createColorButton("Wall Color", currentWallColor)
-        val heightBtn = createHeightButton()
-        val widthBtn = createWidthButton()
-
-        val panel = createSection("Wall Properties", listOf(
-            colorBtn,
-            heightBtn,
-            widthBtn
-        ))
-
-        return Pair(panel, Triple(colorBtn, heightBtn, widthBtn))
-    }
-
-
-    private fun createColorButton(text: String, initialColor: Color): JButton {
-        return JButton(text).apply {
-            background = initialColor
-            foreground = Color.WHITE
-            isFocusPainted = false
-            maximumSize = Dimension(Int.MAX_VALUE, 30)
-            addActionListener {
-                val newColor = JColorChooser.showDialog(
-                    this,
-                    "Choose Wall Color",
-                    background
-                )
-                if (newColor != null) {
-                    background = newColor
-                    currentWallColor = newColor
-                    onColorChange?.invoke(newColor)
-                    // Update selected cell if in select mode
-                    gridEditor.updateSelectedCell(color = newColor)
-                }
-            }
-        }
-    }
-
-    private fun createHeightButton(): JButton {
-        return JButton("Wall Height: $currentWallHeight").apply {
-            background = Color(60, 63, 65)
-            foreground = Color.WHITE
-            isFocusPainted = false
-            maximumSize = Dimension(Int.MAX_VALUE, 30)
-            addActionListener {
-                val input = JOptionPane.showInputDialog(
-                    this,
-                    "Enter wall height (0.5 - 10.0):",
-                    currentWallHeight
-                )
-                try {
-                    val newHeight = input?.toDoubleOrNull()
-                    if (newHeight != null && newHeight in 0.5..10.0) {
-                        currentWallHeight = newHeight
-                        text = "Wall Height: $currentWallHeight"
-                        gridEditor.setWallHeight(currentWallHeight)
-                        // Update selected cell if in select mode
-                        gridEditor.updateSelectedCell(height = newHeight)
-                    }
-                } catch (e: NumberFormatException) {
-                    JOptionPane.showMessageDialog(
-                        this,
-                        "Please enter a valid number between 0.5 and 10.0",
-                        "Invalid Input",
-                        JOptionPane.ERROR_MESSAGE
-                    )
-                }
-            }
-        }
-    }
-
-    private fun createWidthButton(): JButton {
-        return JButton("Wall Width: $currentWallWidth").apply {
-            background = Color(60, 63, 65)
-            foreground = Color.WHITE
-            isFocusPainted = false
-            maximumSize = Dimension(Int.MAX_VALUE, 30)
-            addActionListener {
-                val input = JOptionPane.showInputDialog(
-                    this,
-                    "Enter wall width (0.5 - 5.0):",
-                    currentWallWidth
-                )
-                try {
-                    val newWidth = input?.toDoubleOrNull()
-                    if (newWidth != null && newWidth in 0.5..5.0) {
-                        currentWallWidth = newWidth
-                        text = "Wall Width: $currentWallWidth"
-                        gridEditor.setWallWidth(currentWallWidth)
-                        // Update selected cell if in select mode
-                        gridEditor.updateSelectedCell(width = newWidth)
-                    }
-                } catch (e: NumberFormatException) {
-                    JOptionPane.showMessageDialog(
-                        this,
-                        "Please enter a valid number between 0.5 and 5.0",
-                        "Invalid Input",
-                        JOptionPane.ERROR_MESSAGE
-                    )
-                }
             }
         }
     }
