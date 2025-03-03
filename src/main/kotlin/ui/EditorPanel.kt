@@ -20,7 +20,7 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
     private val wallStyleGroup = ButtonGroup()
     private var onWallStyleChange: ((Boolean) -> Unit)? = null
 
-    // NEW: Wall properties panel
+    //Wall properties panel
     private val wallPropertiesPanel = WallPropertiesPanel()
 
     // Store references to object type buttons
@@ -506,3 +506,9 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
         }
     }
 }
+
+/*
+can you help me with my kotlin boomer shooter engine?
+i have this editorpanel, and it works good, but it doesnt fit anymore so good, bc it has not really seperations for like walls, floors, player things, map things, images etc.
+i watched a video where someone also coded an engine, but not for boomer shooters. there was this thing with the gui, i really liked. maybe you can see what i mean in the image i send you. its like 6 buttons in two rows and when you press on it, the items in it then get visible under the two buttons rows. so these rows keep visible always. can you add this to my engine, but keep the collapse thing so this then just get visible. only adding the button rows, and dont change any other feature
+ */

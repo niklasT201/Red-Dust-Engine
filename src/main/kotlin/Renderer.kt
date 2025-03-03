@@ -50,8 +50,6 @@ class Renderer(private val width: Int, private val height: Int) {
                 Vec3(floor.x1, floor.y, floor.z2)
             )
 
-            val transformedCorners = corners.map { transformPoint(it, camera) }
-
             // Determine if we're viewing the floor from below (for texture orientation)
             val viewingFromBelow = (floor.y > camera.position.y)
 
@@ -107,8 +105,6 @@ class Renderer(private val width: Int, private val height: Int) {
 
             // Calculate view direction and normal dot product
             val viewY = camera.position.y - centerY
-            val viewLength = sqrt(dx * dx + dy * dy + dz * dz)
-            val dotProduct = viewY / viewLength
 
             /* Shading disabled as requested
             val shade = (1.0 / (1.0 + distance * 0.1)).coerceIn(0.3, 1.0)
@@ -141,11 +137,6 @@ class Renderer(private val width: Int, private val height: Int) {
 
         // Process walls
         for (wall in walls) {
-            // Calculate texture coordinates in world space before any transformations
-            val wallLength = sqrt(
-                (wall.end.x - wall.start.x).pow(2) +
-                        (wall.end.z - wall.start.z).pow(2)
-            )
 
             // Calculate texture coordinates for the four corners
             val bottomStartTex = Pair(0.0, 0.0)
@@ -232,23 +223,6 @@ class Renderer(private val width: Int, private val height: Int) {
                         (centerY - camera.position.y).pow(2) +
                         (centerZ - camera.position.z).pow(2)
             )
-
-            // Calculate wall normal and view direction for shading
-            val wallVector = Vec3(
-                wall.end.x - wall.start.x,
-                0.0,
-                wall.end.z - wall.start.z
-            )
-            val normal = Vec3(-wallVector.z, 0.0, wallVector.x).let {
-                // Normalize the normal vector
-                val length = sqrt(it.x * it.x + it.z * it.z)
-                Vec3(it.x / length, 0.0, it.z / length)
-            }
-
-            val toCameraX = camera.position.x - centerX
-            val toCameraZ = camera.position.z - centerZ
-            val viewLength = sqrt(toCameraX * toCameraX + toCameraZ * toCameraZ)
-            val dotProduct = (normal.x * toCameraX + normal.z * toCameraZ) / viewLength
 
             /* Shading disabled as requested
             val angleFactor = abs(dotProduct)
