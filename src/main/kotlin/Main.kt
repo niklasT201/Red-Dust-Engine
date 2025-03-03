@@ -27,6 +27,7 @@ fun main() {
 // objects arent straight when bigger screen bc of mouse movementz
 // adding save system
 // adding physics
+// fixing image sliding
 
 // optional shadows
 // weapon system
