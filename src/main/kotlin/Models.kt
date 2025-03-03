@@ -2,8 +2,15 @@ import java.awt.Color
 import java.awt.Image
 
 data class Vec3(var x: Double, var y: Double, var z: Double)
-data class Wall(val start: Vec3, val end: Vec3, val height: Double, val color: Color, val texture: ImageEntry? = null)
-data class Floor(val x1: Double, val z1: Double, val x2: Double, val z2: Double, val y: Double, val color: Color, val texture: ImageEntry? = null)
+data class Wall(val start: Vec3, val end: Vec3, val height: Double, val color: Color, val texture: ImageEntry? = null,  val textureMapping: TextureMapping = TextureMapping())
+data class Floor(val x1: Double, val z1: Double, val x2: Double, val z2: Double, val y: Double, val color: Color, val texture: ImageEntry? = null,  val textureMapping: TextureMapping = TextureMapping())
+
+data class TextureMapping(
+    val scale: Double = 1.0,
+    val offsetU: Double = 0.0,
+    val offsetV: Double = 0.0,
+    val rotation: Double = 0.0
+)
 
 data class ImageEntry(
     val name: String,

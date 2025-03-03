@@ -137,7 +137,6 @@ class Renderer(private val width: Int, private val height: Int) {
 
         // Process walls
         for (wall in walls) {
-
             // Calculate texture coordinates for the four corners
             val bottomStartTex = Pair(0.0, 0.0)
             val bottomEndTex = Pair(1.0, 0.0)
@@ -286,76 +285,139 @@ class Renderer(private val width: Int, private val height: Int) {
         g2.clip = polygon
 
         try {
-            // More stable texture mapping for complex polygons
-            val srcPoints = Array(screenPoints.size) { i ->
-                val (u, v) = textureCoords[i % textureCoords.size]
-                // Map texture coordinates directly to image dimensions
-                Point2D.Double(u * imageWidth, v * imageHeight)
+            // Create a new triangular mesh for more stable texture mapping
+            val triangles = triangulatePolygon(screenPoints)
+
+            for (triangle in triangles) {
+                val p1 = triangle[0]
+                val p2 = triangle[1]
+                val p3 = triangle[2]
+
+                // Find corresponding texture coordinates
+                val idx1 = screenPoints.indexOf(Pair(p1.first, p1.second))
+                val idx2 = screenPoints.indexOf(Pair(p2.first, p2.second))
+                val idx3 = screenPoints.indexOf(Pair(p3.first, p3.second))
+
+                if (idx1 >= 0 && idx2 >= 0 && idx3 >= 0) {
+                    val t1 = textureCoords[idx1]
+                    val t2 = textureCoords[idx2]
+                    val t3 = textureCoords[idx3]
+
+                    // Create texture triangles
+                    val srcPoints = Array(3) { i ->
+                        when (i) {
+                            0 -> Point2D.Double(t1.first * imageWidth, t1.second * imageHeight)
+                            1 -> Point2D.Double(t2.first * imageWidth, t2.second * imageHeight)
+                            else -> Point2D.Double(t3.first * imageWidth, t3.second * imageHeight)
+                        }
+                    }
+
+                    val dstPoints = Array(3) { i ->
+                        when (i) {
+                            0 -> Point2D.Double(p1.first.toDouble(), p1.second.toDouble())
+                            1 -> Point2D.Double(p2.first.toDouble(), p2.second.toDouble())
+                            else -> Point2D.Double(p3.first.toDouble(), p3.second.toDouble())
+                        }
+                    }
+
+                    val transform = perspectiveTransform(srcPoints, dstPoints)
+
+                    // Create a triangle for this specific part
+                    val trianglePoly = Polygon(
+                        intArrayOf(p1.first, p2.first, p3.first),
+                        intArrayOf(p1.second, p2.second, p3.second),
+                        3
+                    )
+
+                    // Save the current clip and set it to this triangle
+                    val triangleClip = g2.clip
+                    g2.clip = trianglePoly
+
+                    // Draw the transformed image for this triangle
+                    g2.drawImage(
+                        image,
+                        AffineTransform(
+                            transform[0], transform[3],
+                            transform[1], transform[4],
+                            transform[2], transform[5]
+                        ),
+                        null
+                    )
+
+                    // Restore the clip
+                    g2.clip = triangleClip
+                }
             }
-
-            val dstPoints = Array(screenPoints.size) { i ->
-                val (x, y) = screenPoints[i]
-                Point2D.Double(x.toDouble(), y.toDouble())
-            }
-
-            val transform = createTransform(srcPoints, dstPoints)
-
-            // Draw the transformed image
-            g2.drawImage(
-                image,
-                AffineTransform(
-                    transform[0], transform[3],
-                    transform[1], transform[4],
-                    transform[2], transform[5]
-                ),
-                null
-            )
         } finally {
             // Restore original clip
             g2.clip = originalClip
         }
     }
 
-    // Create a transform matrix from source to destination points
-    private fun createTransform(src: Array<Point2D.Double>, dst: Array<Point2D.Double>): DoubleArray {
+    // Helper function to triangulate a polygon
+    private fun triangulatePolygon(points: List<Pair<Int, Int>>): List<List<Pair<Int, Int>>> {
+        val triangles = mutableListOf<List<Pair<Int, Int>>>()
+
+        // Simple ear-clipping algorithm for convex polygons
+        if (points.size == 3) {
+            triangles.add(points)
+        } else if (points.size > 3) {
+            // Create a fan triangulation from the first point
+            for (i in 1..<points.size - 1) {
+                triangles.add(listOf(points[0], points[i], points[i + 1]))
+            }
+        }
+
+        return triangles
+    }
+
+    // Improved perspective transform calculation
+    private fun perspectiveTransform(src: Array<Point2D.Double>, dst: Array<Point2D.Double>): DoubleArray {
+        // Use a more robust algorithm for perspective transform
         val matrix = DoubleArray(6)
 
-        val x1 = src[0].x
-        val y1 = src[0].y
-        val x2 = src[1].x
-        val y2 = src[1].y
-        val x3 = src[2].x
-        val y3 = src[2].y
+        try {
+            // Get the points
+            val x1 = src[0].x
+            val y1 = src[0].y
+            val x2 = src[1].x
+            val y2 = src[1].y
+            val x3 = src[2].x
+            val y3 = src[2].y
 
-        val u1 = dst[0].x
-        val v1 = dst[0].y
-        val u2 = dst[1].x
-        val v2 = dst[1].y
-        val u3 = dst[2].x
-        val v3 = dst[2].y
+            val u1 = dst[0].x
+            val v1 = dst[0].y
+            val u2 = dst[1].x
+            val v2 = dst[1].y
+            val u3 = dst[2].x
+            val v3 = dst[2].y
 
-        // Compute the adjoint matrix
-        val det = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3)
-        if (abs(det) < 1e-10) {
-            // Determinant too small, use identity transform
+            // Compute the coefficients
+            val a = ((u2 - u1) * (y3 - y1) - (u3 - u1) * (y2 - y1)) /
+                    ((x2 - x1) * (y3 - y1) - (x3 - x1) * (y2 - y1))
+            val b = ((u2 - u1) - a * (x2 - x1)) / (y2 - y1)
+            val c = u1 - a * x1 - b * y1
+
+            val d = ((v2 - v1) * (y3 - y1) - (v3 - v1) * (y2 - y1)) /
+                    ((x2 - x1) * (y3 - y1) - (x3 - x1) * (y2 - y1))
+            val e = ((v2 - v1) - d * (x2 - x1)) / (y2 - y1)
+            val f = v1 - d * x1 - e * y1
+
+            matrix[0] = a
+            matrix[1] = b
+            matrix[2] = c
+            matrix[3] = d
+            matrix[4] = e
+            matrix[5] = f
+        } catch (e: Exception) {
+            // Fallback to identity transform if calculation fails
             matrix[0] = 1.0
             matrix[1] = 0.0
             matrix[2] = 0.0
             matrix[3] = 0.0
             matrix[4] = 1.0
             matrix[5] = 0.0
-            return matrix
         }
-
-        val invDet = 1.0 / det
-
-        // Compute matrix elements
-        matrix[0] = ((y2 - y3) * (u1 - u3) + (u3 - u2) * (y1 - y3)) * invDet
-        matrix[1] = ((x3 - x2) * (u1 - u3) + (u2 - u3) * (x1 - x3)) * invDet
-        matrix[2] = u1
-        matrix[3] = ((y2 - y3) * (v1 - v3) + (v3 - v2) * (y1 - y3)) * invDet
-        matrix[4] = ((x3 - x2) * (v1 - v3) + (v2 - v3) * (x1 - x3)) * invDet
-        matrix[5] = v1
 
         return matrix
     }
@@ -495,3 +557,11 @@ class Renderer(private val width: Int, private val height: Int) {
         )
     }
 }
+
+
+/*
+can you help me with my kotlin boomer shooter engine? i have this image rendering for walls and floors. the images appear, but for both objects, they are completely broken. the images will not stay at the image, instead they weirdly move when i move my mouse/camera. i made a screenshot. maybe this helps you to get what i mean. the yellow texture is the floor and the dark blue are walls.
+is it helpful, that i added a texture mapping class for the objects?
+
+Add Debug Visualization: Create a debug mode that draws texture coordinate grids or wireframes to help you visualize the mapping.
+ */
