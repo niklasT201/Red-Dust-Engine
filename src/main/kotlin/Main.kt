@@ -24,10 +24,12 @@ fun main() {
 // maybe fix player map offset 1
 // pressing gui, wall direction isnt working
 // fix visible floor tile border
-// objects arent straight when bigger screen bc of mouse movementz
 // adding save system
 // adding physics
 // fixing image sliding
+
+// Object List:
+// Pillar, breakable walls and floors, PropObject, Doors, Triggers, Elevator, Light Sources, Items, 3D Object Support
 
 // optional shadows
 // weapon system
@@ -61,7 +63,6 @@ fun main() {
 // simple shading based on wall orientation
 // texture mipmapping for better quality at distances
 
-// support for sectors with different floor/ceiling heights
 // simple physics system
 // support for doors and animated walls
 // support for transparent textures

@@ -4,7 +4,16 @@ import java.awt.geom.AffineTransform
 import java.awt.geom.Point2D
 import kotlin.math.*
 
-class Renderer(private val width: Int, private val height: Int) {
+class Renderer(
+    private var width: Int,
+    private var height: Int
+) {
+    // Add a method to update dimensions
+    fun updateDimensions(newWidth: Int, newHeight: Int) {
+        this.width = newWidth
+        this.height = newHeight
+    }
+
     private val fov = PI/3
     private val scale = 1.0 / tan(fov/2)
     private val nearPlane = 0.1

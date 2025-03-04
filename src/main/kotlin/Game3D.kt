@@ -111,6 +111,12 @@ class Game3D : JPanel() {
             }
         }
 
+        addComponentListener(object : ComponentAdapter() {
+            override fun componentResized(e: ComponentEvent) {
+                renderer.updateDimensions(renderPanel.width, renderPanel.height)
+            }
+        })
+
         add(menuSystem.createMenuBar(), BorderLayout.NORTH)
 
         // split pane to the main panel
