@@ -19,6 +19,8 @@ class Game3D : JPanel() {
     private val floors = mutableListOf<Floor>()
     private var isEditorMode = true
 
+    private var isDebugInfoVisible = true
+
     // Right panel with card layout to switch between grid editor and game view
     private val rightPanel = JPanel(CardLayout()).apply {
         add(gridEditor, "editor")
@@ -38,7 +40,7 @@ class Game3D : JPanel() {
         layout = BorderLayout()
 
         // Add property change listener to GridEditor
-        gridEditor.addPropertyChangeListener("gridChanged") { evt ->
+        gridEditor.addPropertyChangeListener("gridChanged") {
             // Convert grid to walls
             val newWalls = gridEditor.generateWalls()
             updateWalls(newWalls)
@@ -234,23 +236,32 @@ class Game3D : JPanel() {
                 g2.drawLine(width/2 - 10, height/2, width/2 + 10, height/2)
                 g2.drawLine(width/2, height/2 - 10, width/2, height/2 + 10)
 
-                // Draw direction indicator
-                g2.font = Font("Monospace", Font.BOLD, 14)
+                // Conditionally draw debug information
+                if (isDebugInfoVisible) {
+                    // Get cardinal direction from player
+                    val direction = player.getCardinalDirection()
 
-                // Get cardinal direction from player
-                val direction = player.getCardinalDirection()
+                    // Get angles in degrees for display
+                    val yawDegrees = player.getYawDegrees()
 
-                // Get angles in degrees for display
-                val yawDegrees = player.getYawDegrees()
-                val pitchDegrees = player.getPitchDegrees()
-
-                // Draw debug information
-                g2.color = Color.WHITE
-                g2.drawString("Direction: $direction (${yawDegrees}°)", 10, 20)
-                g2.drawString("Position: (${String.format("%.1f", player.position.x)}, ${String.format("%.1f", player.position.y)}, ${String.format("%.1f", player.position.z)})", 10, 40)
+                    // Draw debug information
+                    g2.font = Font("Monospace", Font.BOLD, 14)
+                    g2.color = Color.WHITE
+                    g2.drawString("Direction: $direction (${yawDegrees}°)", 10, 20)
+                    g2.drawString("Position: (${String.format("%.1f", player.position.x)}, ${String.format("%.1f", player.position.y)}, ${String.format("%.1f", player.position.z)})", 10, 40)
+                }
             }
         }
     }
+
+    // Method to toggle debug info visibility
+    fun setDebugInfoVisible(visible: Boolean) {
+        isDebugInfoVisible = visible
+        renderPanel.repaint()
+    }
+
+    // Method to check current debug info visibility
+    fun isDebugInfoVisible(): Boolean = isDebugInfoVisible
 
     fun update() {
         if (!isEditorMode) {
