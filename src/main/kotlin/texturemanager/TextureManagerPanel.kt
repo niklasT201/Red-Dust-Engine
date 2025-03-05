@@ -211,9 +211,10 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
 
             for (file in files) {
                 try {
-                    val image = ImageIO.read(file)
-                    if (image != null) {
-                        addTextureFromImage(file.name, file.path, image)
+                    // Load image and store it in the resource manager
+                    val imageEntry = resourceManager.loadImageFromFile(file)
+                    if (imageEntry != null) {
+                        addTextureEntry(imageEntry)
                     } else {
                         JOptionPane.showMessageDialog(this, "Could not load image: ${file.name}", "Error", JOptionPane.ERROR_MESSAGE)
                     }
@@ -235,23 +236,16 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
             lastDirectory = fileChooser.selectedFile
             val directory = fileChooser.selectedFile
 
-            val imageFilter = FileNameExtensionFilter("Image files", "jpg", "jpeg", "png", "gif", "bmp")
-            val files = directory.listFiles { file ->
-                file.isFile && imageFilter.accept(file)
-            } ?: return
+            // Use ResourceManager to load textures from directory
+            val loadedImages = resourceManager.loadTexturesFromDirectory(directory)
 
             var loadedCount = 0
             var errorCount = 0
 
-            for (file in files) {
+            for (imageEntry in loadedImages) {
                 try {
-                    val image = ImageIO.read(file)
-                    if (image != null) {
-                        addTextureFromImage(file.name, file.path, image)
-                        loadedCount++
-                    } else {
-                        errorCount++
-                    }
+                    addTextureEntry(imageEntry)
+                    loadedCount++
                 } catch (e: Exception) {
                     errorCount++
                 }
@@ -268,13 +262,10 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
         }
     }
 
-    private fun addTextureFromImage(name: String, path: String, image: Image) {
-        // Add to resource manager
-        val id = resourceManager.addImage(name, path, image)
-
+    private fun addTextureEntry(imageEntry: ImageEntry) {
         // Create texture entry
         val selectedType = objectTypeComboBox.selectedItem as ObjectType
-        val textureEntry = TextureEntry(selectedType, ImageEntry(name, path, image))
+        val textureEntry = TextureEntry(selectedType, imageEntry)
 
         // Add to type-specific list
         texturesByType.getOrPut(selectedType) { mutableListOf() }.add(textureEntry)
@@ -336,11 +327,14 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
     }
 
     fun loadTexturesFromResourceManager() {
+        // Clear existing entries first
+        texturesByType.clear()
+
         for (entry in resourceManager.getAllImages()) {
             val (id, imageEntry) = entry
 
             // Attempt to determine object type from file name patterns
-            val filename = imageEntry.name.toLowerCase()
+            val filename = imageEntry.name.lowercase()
             val objectType = when {
                 filename.contains("wall") || filename.contains("brick") ||
                         filename.contains("wood") || filename.contains("stone") -> ObjectType.WALL
@@ -359,6 +353,7 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
             val textureEntry = TextureEntry(objectType, imageEntry)
             texturesByType.getOrPut(objectType) { mutableListOf() }.add(textureEntry)
         }
+
         updateTextureList()
     }
 }

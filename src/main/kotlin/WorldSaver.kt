@@ -48,11 +48,14 @@ class WorldSaver {
                         outputStream.writeDouble(gameObject.width)
                         outputStream.writeInt(gameObject.direction.ordinal)
 
-                        // Write texture name or null marker
-                        val textureName = gameObject.texture?.name
-                        outputStream.writeBoolean(textureName != null)
-                        if (textureName != null) {
-                            outputStream.writeUTF(textureName)
+                        // Write texture name and path (if exists)
+                        val hasTexture = gameObject.texture != null
+                        outputStream.writeBoolean(hasTexture)
+
+                        if (hasTexture) {
+                            val texture = gameObject.texture!!
+                            outputStream.writeUTF(texture.name)
+                            outputStream.writeUTF(texture.path)
                         }
 
                         // Write specific object type properties
@@ -152,12 +155,28 @@ class WorldSaver {
 
                         // Read texture
                         val hasTexture = inputStream.readBoolean()
-                        val textureName = if (hasTexture) inputStream.readUTF() else null
+                        var texture: ImageEntry? = null
 
-                        // Find the texture by name if it exists
-                        val texture = if (textureName != null) {
-                            gridEditor.resourceManager?.getImageByName(textureName)
-                        } else null
+                        if (hasTexture) {
+                            val textureName = inputStream.readUTF()
+                            val texturePath = inputStream.readUTF()
+
+                            // First try to find the texture by name in the resource manager
+                            texture = gridEditor.resourceManager?.getImageByName(textureName)
+
+                            // If not found and the path exists, try to load it directly
+                            if (texture == null) {
+                                val file = File(texturePath)
+                                if (file.exists()) {
+                                    val image = javax.imageio.ImageIO.read(file)
+                                    if (image != null) {
+                                        // Add the texture to resource manager
+                                        texture = ImageEntry(textureName, texturePath, image)
+                                        gridEditor.resourceManager?.addImage(textureName, texturePath, image)
+                                    }
+                                }
+                            }
+                        }
 
                         // Create the appropriate GameObject based on type
                         val gameObject = when (objectType) {

@@ -5,6 +5,10 @@ import java.awt.Image
 import java.io.File
 import javax.imageio.ImageIO
 import java.awt.image.BufferedImage
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
@@ -12,17 +16,74 @@ class ResourceManager {
     private val images = ConcurrentHashMap<String, ImageEntry>()
     private val textureCache = ConcurrentHashMap<String, BufferedImage>()
 
+    // Directory where textures will be stored locally
+    private val texturesDirectory = "assets/textures"
+
+    init {
+        // Create textures directory if it doesn't exist
+        val directory = File(texturesDirectory)
+        if (!directory.exists()) {
+            directory.mkdirs()
+        }
+
+        // Load all textures from the textures directory on startup
+        loadAllLocalTextures()
+    }
+
+    /**
+     * Adds an image to the resource manager and copies it to the local textures directory
+     */
     fun addImage(name: String, path: String, image: Image): String {
-        val id = "img_${System.currentTimeMillis()}_${images.size}" // Generate a unique ID
-        images[id] = ImageEntry(name, path, image)
+        // Generate unique ID for the image
+        val id = "img_${System.currentTimeMillis()}_${images.size}"
+
+        // Copy the image to our local textures directory
+        val localPath = copyImageToLocalStorage(path, name)
+
+        // Store the entry with the local path
+        images[id] = ImageEntry(name, localPath, image)
         return id
     }
 
+    /**
+     * Copies an image file to the local textures directory
+     * @return The path to the local copy
+     */
+    private fun copyImageToLocalStorage(originalPath: String, originalName: String): String {
+        try {
+            val sourceFile = File(originalPath)
+            if (!sourceFile.exists()) return originalPath
+
+            // Extract file extension
+            val extension = originalPath.substringAfterLast(".", "png")
+
+            // Create a unique filename based on the original name to avoid conflicts
+            val uniqueFileName = "${originalName.substringBeforeLast(".")}_${System.currentTimeMillis()}.$extension"
+            val targetPath = Paths.get(texturesDirectory, uniqueFileName)
+
+            // Copy the file
+            Files.copy(sourceFile.toPath(), targetPath, StandardCopyOption.REPLACE_EXISTING)
+
+            return targetPath.toString()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // Return original path if copy fails
+            return originalPath
+        }
+    }
+
+    /**
+     * Loads an image from a file and adds it to the resource manager
+     */
     fun loadImageFromFile(file: File): ImageEntry? {
         try {
             val image = ImageIO.read(file)
             if (image != null) {
-                return ImageEntry(file.name, file.absolutePath, image)
+                val localPath = copyImageToLocalStorage(file.absolutePath, file.name)
+                val entry = ImageEntry(file.name, localPath, image)
+                // Add to our resource manager
+                addImage(entry.name, entry.path, entry.image)
+                return entry
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -30,6 +91,9 @@ class ResourceManager {
         return null
     }
 
+    /**
+     * Loads all textures from a directory and adds them to the resource manager
+     */
     fun loadTexturesFromDirectory(directory: File): List<ImageEntry> {
         val result = mutableListOf<ImageEntry>()
         if (!directory.isDirectory) return result
@@ -49,6 +113,30 @@ class ResourceManager {
         return result
     }
 
+    /**
+     * Loads all textures from the local textures directory
+     */
+    private fun loadAllLocalTextures() {
+        val directory = File(texturesDirectory)
+        if (!directory.exists()) return
+
+        val imageExtensions = listOf("jpg", "jpeg", "png", "gif", "bmp")
+
+        directory.listFiles()?.forEach { file ->
+            if (file.isFile && imageExtensions.contains(file.extension.lowercase(Locale.getDefault()))) {
+                try {
+                    val image = ImageIO.read(file)
+                    if (image != null) {
+                        val id = "img_${System.currentTimeMillis()}_${images.size}"
+                        images[id] = ImageEntry(file.name, file.absolutePath, image)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
+
     fun getImage(id: String): ImageEntry? {
         return images[id]
     }
@@ -61,14 +149,29 @@ class ResourceManager {
         return images
     }
 
-    // Get a cached texture or load it if needed
+    /**
+     * Gets a cached texture or loads it from the local path if needed
+     */
     fun getTexture(path: String): BufferedImage? {
         return textureCache.getOrPut(path) {
             try {
-                ImageIO.read(File(path))
+                // First try to load directly from the path
+                val file = File(path)
+                if (file.exists()) {
+                    ImageIO.read(file)
+                } else {
+                    // If not found, try to find it in the textures directory
+                    val fileName = path.substringAfterLast(File.separator)
+                    val localFile = File(texturesDirectory, fileName)
+                    if (localFile.exists()) {
+                        ImageIO.read(localFile)
+                    } else {
+                        null
+                    }
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
-                return null
+                null
             }
         }
     }
