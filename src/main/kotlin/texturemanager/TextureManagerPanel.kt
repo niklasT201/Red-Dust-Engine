@@ -106,7 +106,7 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
             add(createButton("Add Folder") { addTextureFolder() })
             add(createButton("Remove") { removeSelectedTexture() })
             add(createButton("Set Default") {
-                val selectedEntry = textureList.selectedValue as? TextureEntry
+                val selectedEntry = textureList.selectedValue
                 if (selectedEntry != null) {
                     val objectType = selectedEntry.objectType
                     // Mark as default in our manager
@@ -132,6 +132,8 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
         // Event Listeners
         objectTypeComboBox.addActionListener { updateTextureList() }
         textureList.addListSelectionListener { updatePreview() }
+
+        loadTexturesFromResourceManager()
     }
 
     interface TextureSelectionListener {
@@ -277,11 +279,7 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
         updateTextureList()
     }
 
-    fun getSelectedObjectType(): ObjectType {
-        return objectTypeComboBox.selectedItem as ObjectType
-    }
-
-    fun setAsDefault(entry: TextureEntry, objectType: ObjectType) {
+    private fun setAsDefault(entry: TextureEntry, objectType: ObjectType) {
         // Remove default flag from all textures of this type
         texturesByType[objectType]?.forEachIndexed { index, texture ->
             texturesByType[objectType]!![index] = texture.copy(isDefault = texture == entry)
@@ -310,10 +308,6 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
         }
     }
 
-    fun getAllTexturesForType(type: ObjectType): List<ImageEntry> {
-        return texturesByType[type]?.map { it.imageEntry } ?: emptyList()
-    }
-
     fun getDefaultTextureForType(type: ObjectType): ImageEntry? {
         return texturesByType[type]?.find { it.isDefault }?.imageEntry
     }
@@ -322,16 +316,12 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
         return texturesByType[type]?.map { it.imageEntry } ?: emptyList()
     }
 
-    fun getSelectedTextureEntry(): TextureEntry? {
-        return textureList.selectedValue
-    }
-
-    fun loadTexturesFromResourceManager() {
+    private fun loadTexturesFromResourceManager() {
         // Clear existing entries first
         texturesByType.clear()
 
         for (entry in resourceManager.getAllImages()) {
-            val (id, imageEntry) = entry
+            val (_, imageEntry) = entry
 
             // Attempt to determine object type from file name patterns
             val filename = imageEntry.name.lowercase()

@@ -21,10 +21,11 @@ fun main() {
     }
 }
 
-// maybe fix player map offset 1
+// maybe fix player spawnpoint placing
 // pressing gui, wall direction isnt working
 // fix visible floor tile border
-// adding save system
+// add settings file to save values
+// visual for number of placed objects
 // adding physics
 // fixing image sliding
 
