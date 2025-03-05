@@ -82,9 +82,9 @@ class GridConverter(private val editor: GridEditor) {
                         // Flat walls with rotation support
                         val coords = when (obj.direction) {
                             Direction.NORTH -> WallCoords(gameX, gameZ, gameX + obj.width, gameZ)
-                            Direction.WEST -> WallCoords(gameX, gameZ, gameX, gameZ + obj.width)
+                            Direction.EAST -> WallCoords(gameX, gameZ, gameX, gameZ + obj.width)
                             Direction.SOUTH -> WallCoords(gameX, gameZ + obj.width, gameX + obj.width, gameZ + obj.width)
-                            Direction.EAST -> WallCoords(gameX + obj.width, gameZ, gameX + obj.width, gameZ + obj.width)
+                            Direction.WEST -> WallCoords(gameX + obj.width, gameZ, gameX + obj.width, gameZ + obj.width)
                         }
 
                         walls.add(
