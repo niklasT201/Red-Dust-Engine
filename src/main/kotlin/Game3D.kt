@@ -68,7 +68,7 @@ class Game3D : JPanel() {
         // Set initial size for editor panel
         editorPanel.preferredSize = Dimension(250, height)
 
-        // Create menu bar
+        // Create menu bar with reference to GridEditor for save/load functionality
         menuSystem = MenuSystem(
             onFloorSelected = { level ->
                 // Update editor panel's floor selector
@@ -97,7 +97,8 @@ class Game3D : JPanel() {
                     editorPanel.sectionChooser.findFloorsPanel()
                 )
                 renderPanel.repaint()
-            }
+            },
+            gridEditor = gridEditor  // Pass the GridEditor reference to MenuSystem
         )
 
         // Add listeners to keep menu and section chooser in sync

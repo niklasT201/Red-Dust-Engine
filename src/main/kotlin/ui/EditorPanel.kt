@@ -228,7 +228,7 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             addMouseWheelListener { e ->
                 val scrollBar = verticalScrollBar
                 val increment = if (e.wheelRotation > 0) 30 else -30
-                scrollBar.value = scrollBar.value + increment
+                scrollBar.value += increment
             }
         }
 
@@ -495,7 +495,7 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
         }
     }
 
-    fun updateToolButtonStates(activeButton: JButton) {
+    private fun updateToolButtonStates(activeButton: JButton) {
         val toolButtons = listOf(selectButton, moveButton, rotateButton)
         toolButtons.forEach { button ->
             if (button == activeButton) {
