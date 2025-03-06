@@ -54,11 +54,25 @@ class ResourceManager {
             val sourceFile = File(originalPath)
             if (!sourceFile.exists()) return originalPath
 
-            // Extract file extension
+            // Extract file extension and base name
             val extension = originalPath.substringAfterLast(".", "png")
+            val baseName = originalName.substringBeforeLast(".")
 
-            // Create a unique filename based on the original name to avoid conflicts
-            val uniqueFileName = "${originalName.substringBeforeLast(".")}_${System.currentTimeMillis()}.$extension"
+            // Check if file with same base name exists
+            val directory = File(texturesDirectory)
+            val existingFiles = directory.listFiles { file ->
+                file.nameWithoutExtension.startsWith(baseName) &&
+                        file.extension.lowercase() == extension.lowercase()
+            }
+
+            if (existingFiles?.isNotEmpty() == true) {
+                // Return the path to the first matching file
+                return existingFiles[0].absolutePath
+            }
+
+            // If no matching file exists, create with a unique ID instead of timestamp
+            val uniqueID = UUID.randomUUID().toString().substring(0, 8)
+            val uniqueFileName = "${baseName}_${uniqueID}.$extension"
             val targetPath = Paths.get(texturesDirectory, uniqueFileName)
 
             // Copy the file

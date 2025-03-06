@@ -26,6 +26,7 @@ fun main() {
 // fix visible floor tile border
 // add settings file to save values
 // visual for number of placed objects
+// default value saving
 // adding physics
 // fixing image sliding
 
