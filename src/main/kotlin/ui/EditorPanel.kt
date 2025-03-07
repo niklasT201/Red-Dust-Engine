@@ -187,13 +187,53 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
         }
 
         val displayOptionsSection = CollapsibleSection("Display Options").apply {
-            addComponent(JCheckBox("Show Editor Labels").apply {
-                isSelected = true  // Default to visible
+            addComponent(JCheckBox("Show Mode Label").apply {
+                isSelected = true
                 background = Color(40, 44, 52)
                 foreground = Color.WHITE
                 alignmentX = Component.LEFT_ALIGNMENT
                 addActionListener {
-                    gridEditor.updateShowLabels(isSelected)
+                    gridEditor.updateLabelVisibility("mode", isSelected)
+                }
+            })
+
+            addComponent(JCheckBox("Show Direction Label").apply {
+                isSelected = true
+                background = Color(40, 44, 52)
+                foreground = Color.WHITE
+                alignmentX = Component.LEFT_ALIGNMENT
+                addActionListener {
+                    gridEditor.updateLabelVisibility("direction", isSelected)
+                }
+            })
+
+            addComponent(JCheckBox("Show Texture Info").apply {
+                isSelected = true
+                background = Color(40, 44, 52)
+                foreground = Color.WHITE
+                alignmentX = Component.LEFT_ALIGNMENT
+                addActionListener {
+                    gridEditor.updateLabelVisibility("texture", isSelected)
+                }
+            })
+
+            addComponent(JCheckBox("Show Object Stats").apply {
+                isSelected = true
+                background = Color(40, 44, 52)
+                foreground = Color.WHITE
+                alignmentX = Component.LEFT_ALIGNMENT
+                addActionListener {
+                    gridEditor.updateLabelVisibility("stats", isSelected)
+                }
+            })
+
+            addComponent(JCheckBox("Show Player Position").apply {
+                isSelected = true
+                background = Color(40, 44, 52)
+                foreground = Color.WHITE
+                alignmentX = Component.LEFT_ALIGNMENT
+                addActionListener {
+                    gridEditor.updateLabelVisibility("player", isSelected)
                 }
             })
         }

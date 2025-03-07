@@ -41,7 +41,14 @@ class GridEditor : JPanel() {
     var currentFloorHeight = 0.0
     private var currentFloor = 0
 
-    var showLabels = true
+    var labelVisibility = mutableMapOf(
+        "mode" to true,
+        "direction" to true,
+        "texture" to true,
+        "stats" to true,
+        "player" to true
+    )
+
     var objectStats = mutableMapOf<ObjectType, Int>()
 
     // Texture management
@@ -226,12 +233,12 @@ class GridEditor : JPanel() {
         return converter.generateFloors()
     }
 
-    fun updateShowLabels(show: Boolean) {
-        showLabels = show
+    fun updateLabelVisibility(labelType: String, isVisible: Boolean) {
+        labelVisibility[labelType] = isVisible
         repaint()
     }
 
-    fun updateObjectStats() {
+    private fun updateObjectStats() {
         objectStats.clear()
         for (cell in grid.values) {
             for (obj in cell.getAllObjects()) {
