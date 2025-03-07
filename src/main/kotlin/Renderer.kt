@@ -596,11 +596,3 @@ class Renderer(
         )
     }
 }
-
-
-/*
-can you help me with my kotlin boomer shooter engine? i have this image rendering for walls and floors. the images appear, but for both objects, they are completely broken. the images will not stay at the image, instead they weirdly move when i move my mouse/camera. i made a screenshot. maybe this helps you to get what i mean. the yellow texture is the floor and the dark blue are walls.
-is it helpful, that i added a texture mapping class for the objects?
-
-Add Debug Visualization: Create a debug mode that draws texture coordinate grids or wireframes to help you visualize the mapping.
- */

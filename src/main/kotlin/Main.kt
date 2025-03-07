@@ -21,7 +21,6 @@ fun main() {
     }
 }
 
-// maybe fix player spawnpoint placing
 // pressing gui, wall direction isnt working
 // fix visible floor tile border
 // add settings file to save values
@@ -29,6 +28,7 @@ fun main() {
 // default value saving
 // adding physics
 // fixing image sliding
+// optional border around objects
 
 // Object List:
 // Pillar, breakable walls and floors, PropObject, Doors, Triggers, Elevator, Light Sources, Items, 3D Object Support

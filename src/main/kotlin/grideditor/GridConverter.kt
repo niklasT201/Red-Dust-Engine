@@ -6,8 +6,6 @@ import Vec3
 import Wall
 import WallCoords
 import WallObject
-import java.awt.Color
-import kotlin.math.floor
 
 /**
  * Handles conversion between grid data and game world objects
