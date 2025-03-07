@@ -5,13 +5,13 @@ import WallObject
 import grideditor.GridEditor
 import texturemanager.ResourceManager
 import texturemanager.TextureManagerPanel
+import ui.components.DisplayOptionsPanel
 import ui.components.WallPropertiesPanel
 import java.awt.*
 import javax.swing.*
 import javax.swing.border.TitledBorder
 
-class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
-    var gridEditor = GridEditor()
+class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Unit) : JPanel() {
     private val resourceManager = ResourceManager()
     private val textureManager = TextureManagerPanel(resourceManager)
     val sectionChooser = FloorSelectorPanel()
@@ -41,15 +41,15 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
         layout = BorderLayout()
         background = Color(40, 44, 52)
 
-        setupModeButton()
-        setupMainPanel()
-        setupSelectionHandling()
-        setupWallPropertiesPanel()
-
         // Initialize the components with each other
         gridEditor.initializeResourceManager(resourceManager)
         gridEditor.initializeTextureManagerPanel(textureManager)
         textureManager.gridEditor = gridEditor
+
+        setupModeButton()
+        setupMainPanel()
+        setupSelectionHandling()
+        setupWallPropertiesPanel()
 
         // NEW: Connect wall properties panel to grid editor
         wallPropertiesPanel.setGridEditor(gridEditor)
@@ -143,7 +143,7 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             addComponent(visualizationToggle)
         }
 
-        // NEW: Wall properties section
+        // Wall properties section
         val wallPropertiesSection = CollapsibleSection("Wall Properties").apply {
             addComponent(wallPropertiesPanel)
         }
@@ -186,56 +186,9 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             addComponent(textureManager)
         }
 
+        val displayOptionsPanel = DisplayOptionsPanel(gridEditor)
         val displayOptionsSection = CollapsibleSection("Display Options").apply {
-            addComponent(JCheckBox("Show Mode Label").apply {
-                isSelected = true
-                background = Color(40, 44, 52)
-                foreground = Color.WHITE
-                alignmentX = Component.LEFT_ALIGNMENT
-                addActionListener {
-                    gridEditor.updateLabelVisibility("mode", isSelected)
-                }
-            })
-
-            addComponent(JCheckBox("Show Direction Label").apply {
-                isSelected = true
-                background = Color(40, 44, 52)
-                foreground = Color.WHITE
-                alignmentX = Component.LEFT_ALIGNMENT
-                addActionListener {
-                    gridEditor.updateLabelVisibility("direction", isSelected)
-                }
-            })
-
-            addComponent(JCheckBox("Show Texture Info").apply {
-                isSelected = true
-                background = Color(40, 44, 52)
-                foreground = Color.WHITE
-                alignmentX = Component.LEFT_ALIGNMENT
-                addActionListener {
-                    gridEditor.updateLabelVisibility("texture", isSelected)
-                }
-            })
-
-            addComponent(JCheckBox("Show Object Stats").apply {
-                isSelected = true
-                background = Color(40, 44, 52)
-                foreground = Color.WHITE
-                alignmentX = Component.LEFT_ALIGNMENT
-                addActionListener {
-                    gridEditor.updateLabelVisibility("stats", isSelected)
-                }
-            })
-
-            addComponent(JCheckBox("Show Player Position").apply {
-                isSelected = true
-                background = Color(40, 44, 52)
-                foreground = Color.WHITE
-                alignmentX = Component.LEFT_ALIGNMENT
-                addActionListener {
-                    gridEditor.updateLabelVisibility("player", isSelected)
-                }
-            })
+            addComponent(displayOptionsPanel)
         }
 
         // Add sections to the panel
