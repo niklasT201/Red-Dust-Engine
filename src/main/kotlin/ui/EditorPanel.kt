@@ -375,6 +375,7 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
                 addActionListener {
                     gridEditor.setObjectType(ObjectType.WALL)
                     updateButtonStates(ObjectType.WALL)
+                    restoreFocusToGridEditor() // Add this line
                 }
             }
 
@@ -382,6 +383,7 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
                 addActionListener {
                     gridEditor.setObjectType(ObjectType.FLOOR)
                     updateButtonStates(ObjectType.FLOOR)
+                    restoreFocusToGridEditor()
                 }
             }
 
@@ -389,6 +391,7 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
                 addActionListener {
                     gridEditor.setObjectType(ObjectType.PLAYER_SPAWN)
                     updateButtonStates(ObjectType.PLAYER_SPAWN)
+                    restoreFocusToGridEditor()
                 }
             }
 
@@ -503,6 +506,12 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             } else {
                 button.background = Color(60, 63, 65)
             }
+        }
+    }
+
+    private fun restoreFocusToGridEditor() {
+        SwingUtilities.invokeLater {
+            gridEditor.requestFocusInWindow()
         }
     }
 }
