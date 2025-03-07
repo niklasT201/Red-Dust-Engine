@@ -231,12 +231,14 @@ class GridEditor : JPanel() {
         repaint()
     }
 
-    // Add this method to GridEditor class
     fun updateObjectStats() {
         objectStats.clear()
         for (cell in grid.values) {
             for (obj in cell.getAllObjects()) {
-                objectStats[obj.type] = objectStats.getOrDefault(obj.type, 0) + 1
+                // Skip PLAYER_SPAWN objects in the count
+                if (obj.type != ObjectType.PLAYER_SPAWN) {
+                    objectStats[obj.type] = objectStats.getOrDefault(obj.type, 0) + 1
+                }
             }
         }
     }
