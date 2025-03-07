@@ -57,6 +57,11 @@ data class GridCell(
             objectsByFloor.remove(floor)
         }
     }
+
+    // Method to get all objects across all floors
+    fun getAllObjects(): List<GameObject> {
+        return objectsByFloor.values.flatten()
+    }
 }
 
 sealed class GameObject {

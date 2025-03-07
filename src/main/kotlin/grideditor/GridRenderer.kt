@@ -207,6 +207,7 @@ class GridRenderer(private val editor: GridEditor) {
             )
         }
 
+        if (editor.showLabels) {
         // Draw current object type text
         g2.color = Color.WHITE
         g2.font = Font("Monospace", Font.BOLD, 12)
@@ -236,6 +237,28 @@ class GridRenderer(private val editor: GridEditor) {
             10,
             45  // Position it below the direction text
         )
+
+        // Add new stats label
+        val statsText = StringBuilder("Objects: ")
+        editor.objectStats.forEach { (type, count) ->
+            statsText.append("${type.name}: $count, ")
+        }
+        // Trim the last comma and space
+        if (statsText.length > 9) {
+            statsText.setLength(statsText.length - 2)
+        }
+        g2.drawString(statsText.toString(), 10, 60)
+
+        editor.cameraRef?.let { camera ->
+            g2.drawString(
+                "Player: (${String.format("%.2f", camera.position.x)}, " +
+                        "${String.format("%.2f", camera.position.y)}, " +
+                        "${String.format("%.2f", camera.position.z)})",
+                10,
+                75
+            )
+        }
+    }
 
         // Draw direction letters on wall tiles
         editor.grid.forEach { (pos, cell) ->

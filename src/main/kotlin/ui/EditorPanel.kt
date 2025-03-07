@@ -186,6 +186,18 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
             addComponent(textureManager)
         }
 
+        val displayOptionsSection = CollapsibleSection("Display Options").apply {
+            addComponent(JCheckBox("Show Editor Labels").apply {
+                isSelected = true  // Default to visible
+                background = Color(40, 44, 52)
+                foreground = Color.WHITE
+                alignmentX = Component.LEFT_ALIGNMENT
+                addActionListener {
+                    gridEditor.updateShowLabels(isSelected)
+                }
+            })
+        }
+
         // Add sections to the panel
         sectionsPanel.add(topPanel)
         sectionsPanel.add(quickActionsSection)
@@ -195,6 +207,8 @@ class EditorPanel(private val onModeSwitch: () -> Unit) : JPanel() {
         sectionsPanel.add(wallPropertiesSection)
         sectionsPanel.add(Box.createVerticalStrut(10))
         sectionsPanel.add(toolsSection)
+        sectionsPanel.add(Box.createVerticalStrut(10))
+        sectionsPanel.add(displayOptionsSection)
         sectionsPanel.add(Box.createVerticalStrut(10))
         sectionsPanel.add(imageSection)
 

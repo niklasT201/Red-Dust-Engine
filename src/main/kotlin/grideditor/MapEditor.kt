@@ -41,6 +41,9 @@ class GridEditor : JPanel() {
     var currentFloorHeight = 0.0
     private var currentFloor = 0
 
+    var showLabels = true
+    var objectStats = mutableMapOf<ObjectType, Int>()
+
     // Texture management
     var resourceManager: ResourceManager? = null
     private var textureManagerPanel: TextureManagerPanel? = null
@@ -71,6 +74,7 @@ class GridEditor : JPanel() {
 
         // Setup input handlers
         inputHandler.setupListeners()
+        updateObjectStats()
 
         isFocusable = true
     }
@@ -222,12 +226,29 @@ class GridEditor : JPanel() {
         return converter.generateFloors()
     }
 
+    fun updateShowLabels(show: Boolean) {
+        showLabels = show
+        repaint()
+    }
+
+    // Add this method to GridEditor class
+    fun updateObjectStats() {
+        objectStats.clear()
+        for (cell in grid.values) {
+            for (obj in cell.getAllObjects()) {
+                objectStats[obj.type] = objectStats.getOrDefault(obj.type, 0) + 1
+            }
+        }
+    }
+
     fun notifyGridChanged() {
+        updateObjectStats()
         firePropertyChange("gridChanged", null, grid)
     }
 
     fun clearGrid() {
         grid.clear()
+        objectStats.clear()
         repaint()
         // Notify listeners that the grid has changed
         firePropertyChange("gridChanged", null, grid)
