@@ -6,6 +6,7 @@ import grideditor.GridEditor
 import texturemanager.ResourceManager
 import texturemanager.TextureManagerPanel
 import ui.components.DisplayOptionsPanel
+import ui.components.ToolsPanel
 import ui.components.WallPropertiesPanel
 import java.awt.*
 import javax.swing.*
@@ -32,10 +33,8 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
     private val defaultButtonColor = Color(60, 63, 65)
     private val selectedButtonColor = Color(100, 100, 255)
 
-    // Reference to wall property buttons for updating
-    private var selectButton: JButton
-    private var moveButton: JButton
-    private var rotateButton: JButton
+    // Tools panel reference
+    private val toolsPanel: ToolsPanel
 
     init {
         layout = BorderLayout()
@@ -45,6 +44,9 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
         gridEditor.initializeResourceManager(resourceManager)
         gridEditor.initializeTextureManagerPanel(textureManager)
         textureManager.gridEditor = gridEditor
+
+        // Initialize tools panel
+        toolsPanel = ToolsPanel(gridEditor)
 
         setupModeButton()
         setupMainPanel()
@@ -148,28 +150,9 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
             addComponent(wallPropertiesPanel)
         }
 
+        // Tools section (using the new ToolsPanel)
         val toolsSection = CollapsibleSection("Tools").apply {
-            selectButton = createButton("Select").apply {
-                addActionListener {
-                    handleToolButtonClick(this, GridEditor.EditMode.SELECT)
-                }
-            }
-
-            moveButton = createButton("Move").apply {
-                addActionListener {
-                    handleToolButtonClick(this, GridEditor.EditMode.MOVE)
-                }
-            }
-
-            rotateButton = createButton("Rotate").apply {
-                addActionListener {
-                    handleToolButtonClick(this, GridEditor.EditMode.ROTATE)
-                }
-            }
-
-            addComponent(selectButton)
-            addComponent(moveButton)
-            addComponent(rotateButton)
+            addComponent(toolsPanel)
         }
 
         sectionChooser.addPropertyChangeListener { evt ->
@@ -257,16 +240,6 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
                 gridEditor.setWallWidth(width)
             }
         })
-    }
-
-    private fun handleToolButtonClick(button: JButton, mode: GridEditor.EditMode) {
-        if (button.background == Color(60, 63, 65)) {
-            updateToolButtonStates(button)
-            gridEditor.setEditMode(mode)
-        } else {
-            button.background = Color(60, 63, 65)
-            gridEditor.setEditMode(GridEditor.EditMode.DRAW)
-        }
     }
 
     fun setModeButtonText(text: String) {
@@ -417,57 +390,6 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
             add(Box.createVerticalStrut(10))
 
             add(createWallStylePanel())
-
-            add(Box.createVerticalStrut(10))
-
-            // Tools section
-            selectButton = createButton("Select").apply {
-                addActionListener {
-                    if (background == Color(60, 63, 65)) {
-                        // Activate selection mode
-                        updateToolButtonStates(this)
-                        gridEditor.setEditMode(GridEditor.EditMode.SELECT)
-                    } else {
-                        // Deactivate selection mode
-                        background = Color(60, 63, 65)
-                        gridEditor.setEditMode(GridEditor.EditMode.DRAW)
-                    }
-                }
-            }
-
-            moveButton = createButton("Move").apply {
-                addActionListener {
-                    if (background == Color(60, 63, 65)) {
-                        // Activate move mode
-                        updateToolButtonStates(this)
-                        gridEditor.setEditMode(GridEditor.EditMode.MOVE)
-                    } else {
-                        // Deactivate move mode
-                        background = Color(60, 63, 65)
-                        gridEditor.setEditMode(GridEditor.EditMode.DRAW)
-                    }
-                }
-            }
-
-            rotateButton = createButton("Rotate").apply {
-                addActionListener {
-                    if (background == Color(60, 63, 65)) {
-                        // Activate rotate mode
-                        updateToolButtonStates(this)
-                        gridEditor.setEditMode(GridEditor.EditMode.ROTATE)
-                    } else {
-                        // Deactivate rotate mode
-                        background = Color(60, 63, 65)
-                        gridEditor.setEditMode(GridEditor.EditMode.DRAW)
-                    }
-                }
-            }
-
-            add(createSection("Tools", listOf(
-                selectButton,
-                moveButton,
-                rotateButton,
-            )))
         }
     }
 
@@ -502,17 +424,6 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
             foreground = Color.WHITE
             isFocusPainted = false
             maximumSize = Dimension(Int.MAX_VALUE, 30)
-        }
-    }
-
-    private fun updateToolButtonStates(activeButton: JButton) {
-        val toolButtons = listOf(selectButton, moveButton, rotateButton)
-        toolButtons.forEach { button ->
-            if (button == activeButton) {
-                button.background = Color(100, 100, 255)
-            } else {
-                button.background = Color(60, 63, 65)
-            }
         }
     }
 
