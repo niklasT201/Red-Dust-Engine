@@ -143,10 +143,10 @@ class GridInputHandler(private val editor: GridEditor) {
         editor.inputMap.put(KeyStroke.getKeyStroke(KeyBindings.ROTATE_EAST, 0), "rotate_east")
 
         // Object type key bindings
-        val focusedInputMap = editor.getInputMap(JComponent.WHEN_FOCUSED)
-        focusedInputMap.put(KeyStroke.getKeyStroke(KeyBindings.WALL_SHORTCUT, 0), "select_wall")
-        focusedInputMap.put(KeyStroke.getKeyStroke(KeyBindings.FLOOR_SHORTCUT, 0), "select_floor")
-        focusedInputMap.put(KeyStroke.getKeyStroke(KeyBindings.PLAYER_SPAWN_SHORTCUT, 0), "select_player_spawn")
+        val windowInputMap = editor.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+        windowInputMap.put(KeyStroke.getKeyStroke(KeyBindings.WALL_SHORTCUT, 0), "select_wall")
+        windowInputMap.put(KeyStroke.getKeyStroke(KeyBindings.FLOOR_SHORTCUT, 0), "select_floor")
+        windowInputMap.put(KeyStroke.getKeyStroke(KeyBindings.PLAYER_SPAWN_SHORTCUT, 0), "select_player_spawn")
 
         // Direction actions
         editor.actionMap.put("rotate_north", object : AbstractAction() {
