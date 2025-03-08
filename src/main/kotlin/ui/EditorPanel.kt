@@ -6,6 +6,7 @@ import grideditor.GridEditor
 import texturemanager.ResourceManager
 import texturemanager.TextureManagerPanel
 import ui.components.DisplayOptionsPanel
+import ui.components.QuickActionsPanel
 import ui.components.ToolsPanel
 import ui.components.WallPropertiesPanel
 import java.awt.*
@@ -21,20 +22,10 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
     private val wallStyleGroup = ButtonGroup()
     private var onWallStyleChange: ((Boolean) -> Unit)? = null
 
-    //Wall properties panel
+    // Component panels
     private val wallPropertiesPanel = WallPropertiesPanel()
-
-    // Store references to object type buttons
-    private lateinit var addWallButton: JButton
-    private lateinit var addFloorButton: JButton
-    private lateinit var addPlayerSpawnButton: JButton
-
-    // Colors for button states
-    private val defaultButtonColor = Color(60, 63, 65)
-    private val selectedButtonColor = Color(100, 100, 255)
-
-    // Tools panel reference
     private val toolsPanel: ToolsPanel
+    private val quickActionsPanel: QuickActionsPanel
 
     init {
         layout = BorderLayout()
@@ -45,15 +36,16 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
         gridEditor.initializeTextureManagerPanel(textureManager)
         textureManager.gridEditor = gridEditor
 
-        // Initialize tools panel
+        // Initialize component panels
         toolsPanel = ToolsPanel(gridEditor)
+        quickActionsPanel = QuickActionsPanel(gridEditor)
 
         setupModeButton()
         setupMainPanel()
         setupSelectionHandling()
         setupWallPropertiesPanel()
 
-        // NEW: Connect wall properties panel to grid editor
+        // Connect wall properties panel to grid editor
         wallPropertiesPanel.setGridEditor(gridEditor)
 
         // Create sections container
@@ -101,14 +93,7 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
 
         // Create collapsible sections
         val quickActionsSection = CollapsibleSection("Quick Actions").apply {
-            addComponent(addWallButton)
-            addComponent(addFloorButton)
-            addComponent(addPlayerSpawnButton)
-            addComponent(createButton("Clear All").apply {
-                addActionListener {
-                    gridEditor.clearGrid()
-                }
-            })
+            addComponent(quickActionsPanel)
         }
 
         val wallStyleSection = CollapsibleSection("Wall Style").apply {
@@ -150,7 +135,7 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
             addComponent(wallPropertiesPanel)
         }
 
-        // Tools section (using the new ToolsPanel)
+        // Tools section
         val toolsSection = CollapsibleSection("Tools").apply {
             addComponent(toolsPanel)
         }
@@ -260,7 +245,7 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
                 val wallObject = currentFloorObjects.filterIsInstance<WallObject>().firstOrNull()
 
                 wallObject?.let {
-                    // NEW: Update wall properties panel instead of individual buttons
+                    // Update wall properties panel
                     wallPropertiesPanel.updateProperties(
                         color = it.color,
                         height = it.height,
@@ -269,12 +254,6 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
                 }
             }
         }
-    }
-
-    private fun updateButtonStates(selectedType: ObjectType) {
-        addWallButton.background = if (selectedType == ObjectType.WALL) selectedButtonColor else defaultButtonColor
-        addFloorButton.background = if (selectedType == ObjectType.FLOOR) selectedButtonColor else defaultButtonColor
-        addPlayerSpawnButton.background = if (selectedType == ObjectType.PLAYER_SPAWN) selectedButtonColor else defaultButtonColor
     }
 
     private fun setupModeButton() {
@@ -350,86 +329,7 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
             background = Color(40, 44, 52)
             border = BorderFactory.createEmptyBorder(5, 10, 5, 10)
 
-            // Create buttons with stored references
-            addWallButton = createButton("Add Wall").apply {
-                addActionListener {
-                    gridEditor.setObjectType(ObjectType.WALL)
-                    updateButtonStates(ObjectType.WALL)
-                    restoreFocusToGridEditor() // Add this line
-                }
-            }
-
-            addFloorButton = createButton("Add Floor").apply {
-                addActionListener {
-                    gridEditor.setObjectType(ObjectType.FLOOR)
-                    updateButtonStates(ObjectType.FLOOR)
-                    restoreFocusToGridEditor()
-                }
-            }
-
-            addPlayerSpawnButton = createButton("Add Player Spawn").apply {
-                addActionListener {
-                    gridEditor.setObjectType(ObjectType.PLAYER_SPAWN)
-                    updateButtonStates(ObjectType.PLAYER_SPAWN)
-                    restoreFocusToGridEditor()
-                }
-            }
-
-            // Quick Actions section
-            add(createSection("Quick Actions", listOf(
-                addWallButton,
-                addFloorButton,
-                addPlayerSpawnButton,
-                createButton("Clear All").apply {
-                    addActionListener {
-                        gridEditor.clearGrid()
-                    }
-                }
-            )))
-
-            add(Box.createVerticalStrut(10))
-
             add(createWallStylePanel())
-        }
-    }
-
-    private fun createSection(title: String, components: List<JComponent>): JPanel {
-        return JPanel().apply {
-            layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            background = Color(40, 44, 52)
-            border = BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(Color(70, 73, 75)),
-                title,
-                TitledBorder.LEFT,
-                TitledBorder.TOP,
-                null,
-                Color.WHITE
-            )
-
-            components.forEach { component ->
-                add(component)
-                add(Box.createVerticalStrut(5))
-            }
-
-            border = BorderFactory.createCompoundBorder(
-                border,
-                BorderFactory.createEmptyBorder(5, 5, 5, 5)
-            )
-        }
-    }
-
-    private fun createButton(text: String): JButton {
-        return JButton(text).apply {
-            background = Color(60, 63, 65)
-            foreground = Color.WHITE
-            isFocusPainted = false
-            maximumSize = Dimension(Int.MAX_VALUE, 30)
-        }
-    }
-
-    private fun restoreFocusToGridEditor() {
-        SwingUtilities.invokeLater {
-            gridEditor.requestFocusInWindow()
         }
     }
 }
