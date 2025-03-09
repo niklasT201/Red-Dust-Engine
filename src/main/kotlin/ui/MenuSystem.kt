@@ -13,11 +13,13 @@ import ui.components.DisplayOptionsPanel
 import java.io.File
 import java.util.*
 import javax.swing.Timer
+import Renderer
 
 class MenuSystem(
     onFloorSelected: (Int) -> Unit,
     onFloorAdded: (Boolean) -> Unit,
-    private val gridEditor: GridEditor
+    private val gridEditor: GridEditor,
+    private val renderer: Renderer
 ) {
     private val controlsMap = mutableMapOf<String, String>()
     private val floorLevelMenu = FloorLevelMenu(onFloorSelected, onFloorAdded)
@@ -469,12 +471,13 @@ class MenuSystem(
         val displayOptionsPanel = findDisplayOptionsPanel(frame)
 
         if (displayOptionsPanel != null) {
+            // Save display settings
             if (settingsSaver.saveDisplayOptions(displayOptionsPanel)) {
-                showNotification("Settings saved successfully")
+                showNotification("Display settings saved successfully")
             } else {
                 JOptionPane.showMessageDialog(
                     floorLevelMenu,
-                    "Failed to save settings.",
+                    "Failed to save display settings.",
                     "Save Error",
                     JOptionPane.ERROR_MESSAGE
                 )
@@ -484,6 +487,18 @@ class MenuSystem(
                 floorLevelMenu,
                 "Could not find display options panel.",
                 "Error",
+                JOptionPane.ERROR_MESSAGE
+            )
+        }
+
+        // Save renderer settings
+        if (settingsSaver.saveRendererSettings(renderer)) {
+            showNotification("Renderer settings saved successfully")
+        } else {
+            JOptionPane.showMessageDialog(
+                floorLevelMenu,
+                "Failed to save renderer settings.",
+                "Save Error",
                 JOptionPane.ERROR_MESSAGE
             )
         }
@@ -498,11 +513,11 @@ class MenuSystem(
 
         if (displayOptionsPanel != null) {
             if (settingsSaver.loadDisplayOptions(displayOptionsPanel)) {
-                showNotification("Settings loaded successfully")
+                showNotification("Display settings loaded successfully")
             } else {
                 JOptionPane.showMessageDialog(
                     floorLevelMenu,
-                    "Failed to load settings.",
+                    "Failed to load display settings.",
                     "Load Error",
                     JOptionPane.ERROR_MESSAGE
                 )
@@ -512,6 +527,18 @@ class MenuSystem(
                 floorLevelMenu,
                 "Could not find display options panel.",
                 "Error",
+                JOptionPane.ERROR_MESSAGE
+            )
+        }
+
+        // Load renderer settings
+        if (settingsSaver.loadRendererSettings(renderer)) {
+            showNotification("Renderer settings loaded successfully")
+        } else {
+            JOptionPane.showMessageDialog(
+                floorLevelMenu,
+                "Failed to load renderer settings.",
+                "Load Error",
                 JOptionPane.ERROR_MESSAGE
             )
         }

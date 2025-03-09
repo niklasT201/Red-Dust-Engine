@@ -14,10 +14,35 @@ class Renderer(
         this.height = newHeight
     }
 
-    private val fov = PI/3
-    private val scale = 1.0 / tan(fov/2)
-    private val nearPlane = 0.1
-    private val farPlane = 100.0
+    private var fov = PI/3
+    private var scale = 1.0 / tan(fov/2)
+    private var nearPlane = 0.1
+    private var farPlane = 100.0
+
+    // Add getters for the settings
+    fun getFov(): Double = fov
+    fun getScale(): Double = scale
+    fun getNearPlane(): Double = nearPlane
+    fun getFarPlane(): Double = farPlane
+
+    // Add setters for the settings
+    fun setFov(value: Double) {
+        fov = value
+        // Recalculate the scale when FOV changes
+        scale = 1.0 / tan(fov/2)
+    }
+
+    fun setScale(value: Double) {
+        scale = value
+    }
+
+    fun setNearPlane(value: Double) {
+        nearPlane = value
+    }
+
+    fun setFarPlane(value: Double) {
+        farPlane = value
+    }
 
     // Combined class to store rendering info for both walls and floors
     private sealed class RenderableObject {
@@ -308,13 +333,13 @@ class Renderer(
                     val screenPoint = triangle[i]
 
                     // Find the matching texture coordinate
-                    var texCoord: Pair<Double, Double>? = null
+                    var texCoord: Pair<Double, Double>?
                     val idx = screenPoints.indexOfFirst { it.first == screenPoint.first && it.second == screenPoint.second }
 
                     if (idx >= 0 && idx < textureCoords.size) {
                         texCoord = textureCoords[idx]
                     } else {
-                        // If precise match not found, find closest point
+                        // If precise match not found, find the closest point
                         var minDist = Double.MAX_VALUE
                         var closestIdx = -1
 

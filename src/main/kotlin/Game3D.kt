@@ -120,7 +120,8 @@ class Game3D : JPanel() {
                 // Notify of change
                 renderPanel.repaint()
             },
-            gridEditor = gridEditor  // Pass the GridEditor reference to MenuSystem
+            gridEditor = gridEditor,  // Pass the GridEditor reference to MenuSystem
+            renderer = renderer
         )
 
         addComponentListener(object : ComponentAdapter() {
