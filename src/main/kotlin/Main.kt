@@ -68,7 +68,3 @@ fun main() {
 // support for doors and animated walls
 // support for transparent textures
 // simple particle system
-
-/*
-can you help me with my kotlin boomer shooter engine? i have this saving system that saves objects and their values. now i want to also add saving for the editorpanel bc their are/will be things to change values like player height, gravity, if gravity is used, sky color etc. so could you check my files and look what is already there and only add saving for this values? please just add it to the save feature in my menu system and not creating a new button or something like this. save only things that are needed, so for example in my editorpanel is a wall properties section where you can select the wall color, this is already been saved so only save things that are beyond objects itself, like for example how many floor levels my engine has. what i can see, that needs to be saved, is the labels/checkbox for the display class and the show walls as line checkbox, so you dont have to change it for your taste always again. please create when possible a new file/class for the settings management
- */

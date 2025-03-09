@@ -87,17 +87,28 @@ class Game3D : JPanel() {
                 val currentFloors = getExistingFloors()
                 val currentFloor = gridEditor.getCurrentFloor()
 
-                // Calculate new floor level (relative to current floor, not just min/max)
-                val newLevel = if (isAbove) {
+                // Initial calculation of new level based on current floor
+                var newLevel = if (isAbove) {
                     currentFloor + 1
                 } else {
                     currentFloor - 1
                 }
 
+                // Check if the floor already exists, and if so, find the next available level
+                while (currentFloors.contains(newLevel)) {
+                    // If we're adding above, move up until we find an unused floor number
+                    if (isAbove) {
+                        newLevel++
+                    } else {
+                        // If we're adding below, move down until we find an unused floor number
+                        newLevel--
+                    }
+                }
+
                 // Add new floor to menu system
                 menuSystem.addFloor(newLevel)
 
-                // Important: Actually set the current floor to the new level
+                // Set the current floor to the new level
                 gridEditor.setCurrentFloor(newLevel)
 
                 // Update floor height in the grid editor

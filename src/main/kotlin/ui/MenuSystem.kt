@@ -1,5 +1,6 @@
 package ui
 
+import SettingsSaver
 import WorldSaver
 import javax.swing.*
 import java.awt.*
@@ -8,6 +9,7 @@ import java.awt.event.InputEvent
 import javax.swing.border.EmptyBorder
 import javax.swing.border.MatteBorder
 import grideditor.GridEditor
+import ui.components.DisplayOptionsPanel
 import java.io.File
 import java.util.*
 import javax.swing.Timer
@@ -188,6 +190,19 @@ class MenuSystem(
             })
 
             addSeparator()
+
+            // Settings section
+            add(createMenuItem("Save Settings").apply {
+                addActionListener {
+                    saveSettings()
+                }
+            })
+
+            add(createMenuItem("Load Settings").apply {
+                addActionListener {
+                    loadSettings()
+                }
+            })
 
             add(createMenuItem("Exit",
                 KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_DOWN_MASK)).apply {
@@ -443,6 +458,97 @@ class MenuSystem(
             controlsMap.entries.forEach { (action, key) ->
                 appendLine("$action: $key")
             }
+        }
+    }
+
+    private fun saveSettings() {
+        val settingsSaver = SettingsSaver()
+
+        // Find the DisplayOptionsPanel - you'll need to adjust this based on your actual UI structure
+        val frame = SwingUtilities.getWindowAncestor(floorLevelMenu) as? JFrame
+        val displayOptionsPanel = findDisplayOptionsPanel(frame)
+
+        if (displayOptionsPanel != null) {
+            if (settingsSaver.saveDisplayOptions(displayOptionsPanel)) {
+                showNotification("Settings saved successfully")
+            } else {
+                JOptionPane.showMessageDialog(
+                    floorLevelMenu,
+                    "Failed to save settings.",
+                    "Save Error",
+                    JOptionPane.ERROR_MESSAGE
+                )
+            }
+        } else {
+            JOptionPane.showMessageDialog(
+                floorLevelMenu,
+                "Could not find display options panel.",
+                "Error",
+                JOptionPane.ERROR_MESSAGE
+            )
+        }
+    }
+
+    private fun loadSettings() {
+        val settingsSaver = SettingsSaver()
+
+        // Find the DisplayOptionsPanel - you'll need to adjust this based on your actual UI structure
+        val frame = SwingUtilities.getWindowAncestor(floorLevelMenu) as? JFrame
+        val displayOptionsPanel = findDisplayOptionsPanel(frame)
+
+        if (displayOptionsPanel != null) {
+            if (settingsSaver.loadDisplayOptions(displayOptionsPanel)) {
+                showNotification("Settings loaded successfully")
+            } else {
+                JOptionPane.showMessageDialog(
+                    floorLevelMenu,
+                    "Failed to load settings.",
+                    "Load Error",
+                    JOptionPane.ERROR_MESSAGE
+                )
+            }
+        } else {
+            JOptionPane.showMessageDialog(
+                floorLevelMenu,
+                "Could not find display options panel.",
+                "Error",
+                JOptionPane.ERROR_MESSAGE
+            )
+        }
+    }
+
+    // Helper method to find the DisplayOptionsPanel in the component hierarchy
+    private fun findDisplayOptionsPanel(component: Component?): DisplayOptionsPanel? {
+        if (component == null) return null
+        if (component is DisplayOptionsPanel) return component
+
+        if (component is Container) {
+            for (i in 0 until component.componentCount) {
+                val result = findDisplayOptionsPanel(component.getComponent(i))
+                if (result != null) return result
+            }
+        }
+
+        return null
+    }
+
+    // Helper to show a small notification that auto-closes
+    private fun showNotification(message: String) {
+        val frame = SwingUtilities.getWindowAncestor(floorLevelMenu) as? JFrame
+        val notification = JDialog(frame, "Settings", false).apply {
+            layout = BorderLayout()
+            add(JLabel("  $message  ", JLabel.CENTER).apply {
+                border = EmptyBorder(10, 20, 10, 20)
+            }, BorderLayout.CENTER)
+            pack()
+            setLocationRelativeTo(frame)
+            isVisible = true
+        }
+
+        // Auto-close notification after 1.5 seconds
+        Timer(1500) { notification.dispose() }.apply {
+            isRepeats = false
+            start()
         }
     }
 }
