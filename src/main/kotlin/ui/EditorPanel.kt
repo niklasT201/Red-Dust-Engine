@@ -5,24 +5,20 @@ import WallObject
 import grideditor.GridEditor
 import texturemanager.ResourceManager
 import texturemanager.TextureManagerPanel
-import ui.components.DisplayOptionsPanel
-import ui.components.QuickActionsPanel
-import ui.components.ToolsPanel
-import ui.components.WallPropertiesPanel
+import ui.components.*
 import java.awt.*
 import javax.swing.*
-import javax.swing.border.TitledBorder
 
 class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Unit) : JPanel() {
     private val resourceManager = ResourceManager()
     private val textureManager = TextureManagerPanel(resourceManager)
     private val modeButton = JButton("Editor Mode")
     private val mainPanel = JPanel()
-    private val wallStyleGroup = ButtonGroup()
     private var onWallStyleChange: ((Boolean) -> Unit)? = null
 
     // Component panels
     private val wallPropertiesPanel = WallPropertiesPanel()
+    private val wallStylePanel = WallStylePanel(gridEditor)
     private val toolsPanel: ToolsPanel
     private val quickActionsPanel: QuickActionsPanel
 
@@ -43,6 +39,7 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
         setupMainPanel()
         setupSelectionHandling()
         setupWallPropertiesPanel()
+        setupWallStylePanel()
 
         // Connect wall properties panel to grid editor
         wallPropertiesPanel.setGridEditor(gridEditor)
@@ -96,37 +93,7 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
         }
 
         val wallStyleSection = CollapsibleSection("Wall Style").apply {
-            // Create wall style components
-            val flatWallRadio = JRadioButton("Flat Walls").apply {
-                isSelected = true
-                background = Color(40, 44, 52)
-                foreground = Color.WHITE
-                alignmentX = Component.LEFT_ALIGNMENT
-                addActionListener { onWallStyleChange?.invoke(false) }
-            }
-
-            val blockWallRadio = JRadioButton("Block Walls").apply {
-                background = Color(40, 44, 52)
-                foreground = Color.WHITE
-                alignmentX = Component.LEFT_ALIGNMENT
-                addActionListener { onWallStyleChange?.invoke(true) }
-            }
-
-            wallStyleGroup.add(flatWallRadio)
-            wallStyleGroup.add(blockWallRadio)
-
-            val visualizationToggle = JCheckBox("Show Flat Walls as Lines").apply {
-                background = Color(40, 44, 52)
-                foreground = Color.WHITE
-                alignmentX = Component.LEFT_ALIGNMENT
-                addActionListener {
-                    gridEditor.setFlatWallVisualization(isSelected)
-                }
-            }
-
-            addComponent(flatWallRadio)
-            addComponent(blockWallRadio)
-            addComponent(visualizationToggle)
+            addComponent(wallStylePanel)
         }
 
         // Wall properties section
@@ -216,12 +183,20 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
         })
     }
 
+    private fun setupWallStylePanel() {
+        // Connect the wall style change event
+        wallStylePanel.setWallStyleChangeListener { isBlockWall ->
+            onWallStyleChange?.invoke(isBlockWall)
+        }
+    }
+
     fun setModeButtonText(text: String) {
         modeButton.text = text
     }
 
     fun setWallStyleChangeListener(listener: (Boolean) -> Unit) {
         onWallStyleChange = listener
+        wallStylePanel.setWallStyleChangeListener(listener)
     }
 
     private fun setupSelectionHandling() {
@@ -257,68 +232,11 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
         }
     }
 
-    private fun createWallStylePanel(): JPanel {
-        return JPanel().apply {
-            layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            background = Color(40, 44, 52)
-            border = BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(Color(70, 73, 75)),
-                "Wall Style",
-                TitledBorder.LEFT,
-                TitledBorder.TOP,
-                null,
-                Color.WHITE
-            )
-
-            val flatWallRadio = JRadioButton("Flat Walls").apply {
-                isSelected = true
-                background = Color(40, 44, 52)
-                foreground = Color.WHITE
-                alignmentX = Component.LEFT_ALIGNMENT
-                addActionListener { onWallStyleChange?.invoke(false) }
-            }
-
-            val blockWallRadio = JRadioButton("Block Walls").apply {
-                background = Color(40, 44, 52)
-                foreground = Color.WHITE
-                alignmentX = Component.LEFT_ALIGNMENT
-                addActionListener { onWallStyleChange?.invoke(true) }
-            }
-
-            wallStyleGroup.add(flatWallRadio)
-            wallStyleGroup.add(blockWallRadio)
-
-            add(flatWallRadio)
-            add(Box.createVerticalStrut(2))
-            add(blockWallRadio)
-
-            // visualization toggle checkbox
-            val visualizationToggle = JCheckBox("Show Flat Walls as Lines").apply {
-                background = Color(40, 44, 52)
-                foreground = Color.WHITE
-                alignmentX = Component.LEFT_ALIGNMENT
-                addActionListener {
-                    gridEditor.setFlatWallVisualization(isSelected)
-                }
-            }
-
-            add(Box.createVerticalStrut(5))
-            add(visualizationToggle)
-
-            border = BorderFactory.createCompoundBorder(
-                border,
-                BorderFactory.createEmptyBorder(5, 5, 5, 5)
-            )
-        }
-    }
-
     private fun setupMainPanel() {
         mainPanel.apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             background = Color(40, 44, 52)
             border = BorderFactory.createEmptyBorder(5, 10, 5, 10)
-
-            add(createWallStylePanel())
         }
     }
 }

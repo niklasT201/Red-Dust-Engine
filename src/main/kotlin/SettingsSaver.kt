@@ -236,7 +236,7 @@ class SettingsSaver {
             val settingCount = inputStream.readInt()
 
             // Read each setting
-            for (i in 0 until settingCount) {
+            for (i in 0..<settingCount) {
                 val key = inputStream.readUTF()
                 val typeId = inputStream.readInt()
 
