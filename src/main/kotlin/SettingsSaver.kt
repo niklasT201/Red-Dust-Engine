@@ -1,14 +1,8 @@
 import java.io.*
 import ui.components.DisplayOptionsPanel
-import java.awt.Color
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.math.PI
 
-/**
- * Saves and loads application settings to a file.
- * Designed to handle multiple types of settings with an extensible architecture.
- */
 class SettingsSaver {
     companion object {
         // Define the directory where settings will be stored
@@ -25,11 +19,6 @@ class SettingsSaver {
         }
     }
 
-    /**
-     * Saves display options to a file
-     * @param displayOptionsPanel The panel containing display options
-     * @return True if save was successful, false otherwise
-     */
     fun saveDisplayOptions(displayOptionsPanel: DisplayOptionsPanel): Boolean {
         try {
             ensureSettingsDir()
@@ -66,7 +55,6 @@ class SettingsSaver {
     /**
      * Saves renderer settings to a file
      * @param renderer The renderer containing settings to save
-     * @return True if save was successful, false otherwise
      */
     fun saveRendererSettings(renderer: Renderer): Boolean {
         try {

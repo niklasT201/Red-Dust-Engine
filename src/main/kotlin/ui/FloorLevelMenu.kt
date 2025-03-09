@@ -75,7 +75,7 @@ class FloorLevelMenu(
         floorModel.addElement("Floor $level")
 
         // Sort floors by level
-        val items = (0 until floorModel.size).map { floorModel.getElementAt(it) }
+        val items = (0..<floorModel.size).map { floorModel.getElementAt(it) }
             .sortedBy { it.substringAfter("Floor ").toInt() }
         floorModel.removeAllElements()
         items.forEach { floorModel.addElement(it) }
