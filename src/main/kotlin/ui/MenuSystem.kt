@@ -1,5 +1,6 @@
 package ui
 
+import Game3D
 import javax.swing.*
 import java.awt.*
 import javax.swing.border.EmptyBorder
@@ -15,11 +16,12 @@ class MenuSystem(
     onFloorSelected: (Int) -> Unit,
     onFloorAdded: (Boolean) -> Unit,
     gridEditor: GridEditor,
-    renderer: Renderer
+    renderer: Renderer,
+    game3D: Game3D
 ) {
     private val floorLevelMenu = FloorLevelMenu(onFloorSelected, onFloorAdded)
     private val fileManager = FileManager(gridEditor)
-    private val settingsManager = SettingsManager(renderer)
+    private val settingsManager = SettingsManager(renderer, game3D)
     private val controlsManager = ControlsManager()
     private val menuBuilder = MenuBuilder(fileManager, controlsManager, settingsManager, gridEditor)
 

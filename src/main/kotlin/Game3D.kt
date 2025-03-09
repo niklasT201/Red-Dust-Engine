@@ -18,6 +18,8 @@ class Game3D : JPanel() {
     private val floors = mutableListOf<Floor>()
     private var isEditorMode = true
 
+    private var skyColor = Color(135, 206, 235)
+
     private var isDebugInfoVisible = true
 
     // Right panel with card layout to switch between grid editor and game view
@@ -121,7 +123,8 @@ class Game3D : JPanel() {
                 renderPanel.repaint()
             },
             gridEditor = gridEditor,  // Pass the GridEditor reference to MenuSystem
-            renderer = renderer
+            renderer = renderer,
+            game3D = this
         )
 
         addComponentListener(object : ComponentAdapter() {
@@ -248,8 +251,8 @@ class Game3D : JPanel() {
             val g2 = g as Graphics2D
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
 
-            // Sky Color
-            g2.color = Color(135, 206, 235)
+            // Use the sky color property instead of hardcoded value
+            g2.color = skyColor
             g2.fillRect(0, 0, width, height)
 
             renderer.drawScene(g2, walls, floors, player.camera)
@@ -286,6 +289,15 @@ class Game3D : JPanel() {
 
     // Method to check current debug info visibility
     fun isDebugInfoVisible(): Boolean = isDebugInfoVisible
+
+    fun getSkyColor(): Color = skyColor
+
+    // Setter for skyColor
+    fun setSkyColor(color: Color) {
+        skyColor = color
+        renderPanel.background = skyColor
+        renderPanel.repaint()
+    }
 
     fun update() {
         if (!isEditorMode) {

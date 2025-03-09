@@ -23,7 +23,7 @@ class MenuBuilder(
         val SEPARATOR_COLOR = Color(70, 73, 75)
     }
 
-    fun createMenuItem(text: String, accelerator: KeyStroke? = null): JMenuItem {
+    private fun createMenuItem(text: String, accelerator: KeyStroke? = null): JMenuItem {
         return JMenuItem(text).apply {
             background = BACKGROUND_COLOR
             foreground = Color.WHITE
@@ -171,14 +171,14 @@ class MenuBuilder(
                     val displayOptionsPanel = settingsManager.findDisplayOptionsPanel(
                         SwingUtilities.getWindowAncestor(parentComponent)
                     )
-                    val (displaySuccess, rendererSuccess) = settingsManager.saveSettings(displayOptionsPanel)
+                    val (displaySuccess, worldSuccess) = settingsManager.saveSettings(displayOptionsPanel)
 
-                    if (displaySuccess && rendererSuccess) {
+                    if (displaySuccess && worldSuccess) {
                         showNotification(parentComponent, "All settings saved successfully")
                     } else if (displaySuccess) {
                         showNotification(parentComponent, "Display settings saved successfully")
-                    } else if (rendererSuccess) {
-                        showNotification(parentComponent, "Renderer settings saved successfully")
+                    } else if (worldSuccess) {
+                        showNotification(parentComponent, "World settings saved successfully")
                     } else {
                         JOptionPane.showMessageDialog(
                             parentComponent,
@@ -195,14 +195,14 @@ class MenuBuilder(
                     val displayOptionsPanel = settingsManager.findDisplayOptionsPanel(
                         SwingUtilities.getWindowAncestor(parentComponent)
                     )
-                    val (displaySuccess, rendererSuccess) = settingsManager.loadSettings(displayOptionsPanel)
+                    val (displaySuccess, worldSuccess) = settingsManager.loadSettings(displayOptionsPanel)
 
-                    if (displaySuccess && rendererSuccess) {
+                    if (displaySuccess && worldSuccess) {
                         showNotification(parentComponent, "All settings loaded successfully")
                     } else if (displaySuccess) {
                         showNotification(parentComponent, "Display settings loaded successfully")
-                    } else if (rendererSuccess) {
-                        showNotification(parentComponent, "Renderer settings loaded successfully")
+                    } else if (worldSuccess) {
+                        showNotification(parentComponent, "World settings loaded successfully")
                     } else {
                         JOptionPane.showMessageDialog(
                             parentComponent,

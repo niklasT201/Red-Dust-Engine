@@ -1,5 +1,6 @@
 import java.io.*
 import ui.components.DisplayOptionsPanel
+import java.awt.Color
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -8,7 +9,7 @@ class SettingsSaver {
         // Define the directory where settings will be stored
         private const val SETTINGS_DIR = "settings"
         private const val DISPLAY_SETTINGS_FILE = "display_options.settings"
-        private const val RENDERER_SETTINGS_FILE = "renderer_options.settings"
+        private const val WORLD_SETTINGS_FILE = "world_options.settings"
 
         // Make sure the settings directory exists
         private fun ensureSettingsDir() {
@@ -56,10 +57,10 @@ class SettingsSaver {
      * Saves renderer settings to a file
      * @param renderer The renderer containing settings to save
      */
-    fun saveRendererSettings(renderer: Renderer): Boolean {
+    fun saveWorldSettings(renderer: Renderer, game3D: Game3D): Boolean {
         try {
             ensureSettingsDir()
-            val file = File("$SETTINGS_DIR/$RENDERER_SETTINGS_FILE")
+            val file = File("$SETTINGS_DIR/$WORLD_SETTINGS_FILE")
             val outputStream = DataOutputStream(BufferedOutputStream(FileOutputStream(file)))
 
             // Write version for future compatibility
@@ -68,16 +69,30 @@ class SettingsSaver {
             // Write timestamp
             outputStream.writeLong(System.currentTimeMillis())
 
-            // Write renderer settings
+            // --- Renderer settings section ---
+            outputStream.writeUTF("RENDERER_SECTION")
+
             outputStream.writeDouble(renderer.getFov())
             outputStream.writeDouble(renderer.getScale())
             outputStream.writeDouble(renderer.getNearPlane())
             outputStream.writeDouble(renderer.getFarPlane())
 
+            // --- Game3D settings section ---
+            outputStream.writeUTF("GAME3D_SECTION")
+
+            // Sky color
+            val skyColor = game3D.getSkyColor()
+            outputStream.writeInt(skyColor.red)
+            outputStream.writeInt(skyColor.green)
+            outputStream.writeInt(skyColor.blue)
+
+            // Debug info visibility
+            outputStream.writeBoolean(game3D.isDebugInfoVisible())
+
             outputStream.close()
             return true
         } catch (e: Exception) {
-            println("Error saving renderer settings: ${e.message}")
+            println("Error saving world settings: ${e.message}")
             e.printStackTrace()
             return false
         }
@@ -113,7 +128,7 @@ class SettingsSaver {
             val optionCount = inputStream.readInt()
 
             // Read each option and apply it
-            for (i in 0 until optionCount) {
+            for (i in 0..<optionCount) {
                 val key = inputStream.readUTF()
                 val state = inputStream.readBoolean()
 
@@ -135,11 +150,11 @@ class SettingsSaver {
      * @param renderer The renderer to load the settings into
      * @return True if load was successful, false otherwise
      */
-    fun loadRendererSettings(renderer: Renderer): Boolean {
+    fun loadWorldSettings(renderer: Renderer, game3D: Game3D): Boolean {
         try {
-            val file = File("$SETTINGS_DIR/$RENDERER_SETTINGS_FILE")
+            val file = File("$SETTINGS_DIR/$WORLD_SETTINGS_FILE")
             if (!file.exists()) {
-                println("Renderer settings file does not exist")
+                println("World settings file does not exist")
                 return false
             }
 
@@ -156,6 +171,14 @@ class SettingsSaver {
             // Read timestamp (not used now but available for future features)
             val timestamp = inputStream.readLong()
 
+            // Read renderer section
+            val rendererSection = inputStream.readUTF()
+            if (rendererSection != "RENDERER_SECTION") {
+                println("Invalid world settings file format - missing renderer section")
+                inputStream.close()
+                return false
+            }
+
             // Read renderer settings
             val fov = inputStream.readDouble()
             val scale = inputStream.readDouble()
@@ -168,10 +191,30 @@ class SettingsSaver {
             renderer.setNearPlane(nearPlane)
             renderer.setFarPlane(farPlane)
 
+            // Read Game3D section
+            val game3DSection = inputStream.readUTF()
+            if (game3DSection != "GAME3D_SECTION") {
+                println("Invalid world settings file format - missing Game3D section")
+                inputStream.close()
+                return false
+            }
+
+            // Read sky color
+            val red = inputStream.readInt()
+            val green = inputStream.readInt()
+            val blue = inputStream.readInt()
+            game3D.setSkyColor(Color(red, green, blue))
+
+            // Read debug info visibility
+            val debugInfoVisible = inputStream.readBoolean()
+            game3D.setDebugInfoVisible(debugInfoVisible)
+
+            // Add more Game3D settings as needed
+
             inputStream.close()
             return true
         } catch (e: Exception) {
-            println("Error loading renderer settings: ${e.message}")
+            println("Error loading world settings: ${e.message}")
             e.printStackTrace()
             return false
         }
