@@ -230,6 +230,8 @@ class GridRenderer(private val editor: GridEditor) {
 
         // Texture name display
         if (editor.labelVisibility["texture"] == true) {
+            g2.color = Color.WHITE // Add this line
+            g2.font = Font("Monospace", Font.BOLD, 12) // Ensure font is set
             val textureName = when(editor.currentObjectType) {
                 ObjectType.WALL -> editor.currentWallTexture?.name ?: "None"
                 ObjectType.FLOOR -> editor.currentFloorTexture?.name ?: "None"
@@ -238,12 +240,14 @@ class GridRenderer(private val editor: GridEditor) {
             g2.drawString(
                 "Current ${editor.currentObjectType.name} Image: $textureName",
                 10,
-                45  // Position it below the direction text
+                45
             )
         }
 
         // Stats label
         if (editor.labelVisibility["stats"] == true) {
+            g2.color = Color.WHITE // Add this line
+            g2.font = Font("Monospace", Font.BOLD, 12) // Ensure font is set
             val statsText = StringBuilder("Objects: ")
             editor.objectStats.forEach { (type, count) ->
                 statsText.append("${type.name}: $count, ")
@@ -257,6 +261,8 @@ class GridRenderer(private val editor: GridEditor) {
 
         // Player position label
         if (editor.labelVisibility["player"] == true) {
+            g2.color = Color.WHITE // Add this line
+            g2.font = Font("Monospace", Font.BOLD, 12) // Ensure font is set
             editor.cameraRef?.let { camera ->
                 g2.drawString(
                     "Player: (${String.format("%.2f", camera.position.x)}, " +
@@ -264,9 +270,9 @@ class GridRenderer(private val editor: GridEditor) {
                             "${String.format("%.2f", camera.position.z)})",
                     10,
                     75
-                    )
-                }
+                )
             }
+        }
 
         // Draw direction letters on wall tiles
         editor.grid.forEach { (pos, cell) ->
