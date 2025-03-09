@@ -61,7 +61,19 @@ class FloorLevelMenu(
     }
 
     fun addFloor(level: Int) {
+        // Check if this floor level already exists to prevent duplicates
+        for (i in 0..<floorModel.size) {
+            val item = floorModel.getElementAt(i)
+            val floorLevel = item.substringAfter("Floor ").toInt()
+            if (floorLevel == level) {
+                // Floor already exists, don't add a duplicate
+                return
+            }
+        }
+
+        // Add the new floor
         floorModel.addElement("Floor $level")
+
         // Sort floors by level
         val items = (0 until floorModel.size).map { floorModel.getElementAt(it) }
             .sortedBy { it.substringAfter("Floor ").toInt() }
