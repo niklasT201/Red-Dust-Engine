@@ -28,6 +28,7 @@ class FloorLevelMenu(
                 val floorText = selectedItem?.toString()
                 val floorLevel = floorText?.substringAfter("Floor ")?.toInt()
                 if (floorLevel != null) {
+                    // Call the callback to update the system
                     onFloorSelected(floorLevel)
                 }
             }

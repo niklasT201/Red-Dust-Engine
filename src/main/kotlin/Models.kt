@@ -62,6 +62,11 @@ data class GridCell(
     fun getAllObjects(): List<GameObject> {
         return objectsByFloor.values.flatten()
     }
+
+    fun getOccupiedFloors(): Set<Int> {
+        // Simply return the keys from the objectsByFloor map
+        return objectsByFloor.keys.toSet()
+    }
 }
 
 sealed class GameObject {

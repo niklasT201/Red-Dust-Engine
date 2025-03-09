@@ -16,7 +16,6 @@ import javax.swing.border.TitledBorder
 class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Unit) : JPanel() {
     private val resourceManager = ResourceManager()
     private val textureManager = TextureManagerPanel(resourceManager)
-    val sectionChooser = FloorSelectorPanel()
     private val modeButton = JButton("Editor Mode")
     private val mainPanel = JPanel()
     private val wallStyleGroup = ButtonGroup()
@@ -138,16 +137,6 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
         // Tools section
         val toolsSection = CollapsibleSection("Tools").apply {
             addComponent(toolsPanel)
-        }
-
-        sectionChooser.addPropertyChangeListener { evt ->
-            when (evt.propertyName) {
-                "currentFloorChanged" -> {
-                    val floor = evt.newValue as FloorSelectorPanel.Floor
-                    gridEditor.setCurrentFloor(floor.level) // Set the current floor
-                    gridEditor.updateCurrentFloorHeight(floor.heightOffset) // Set the height offset
-                }
-            }
         }
 
         val imageSection = CollapsibleSection("Textures").apply {

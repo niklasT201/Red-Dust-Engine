@@ -1,7 +1,6 @@
 import grideditor.GridEditor
 import player.Player
 import ui.EditorPanel
-import ui.FloorSelectorPanel
 import ui.MenuSystem
 import java.awt.*
 import java.awt.event.*
@@ -71,48 +70,47 @@ class Game3D : JPanel() {
         // Create menu bar with reference to GridEditor for save/load functionality
         menuSystem = MenuSystem(
             onFloorSelected = { level ->
-                // Update editor panel's floor selector
-                editorPanel.sectionChooser.setCurrentFloor(level)
-                // Update grid editor
+                // Update grid editor with new floor level
                 gridEditor.setCurrentFloor(level)
-                gridEditor.updateCurrentFloorHeight(level * 4.0) // 4 units between floors
+
+                // Update the floor height based on the level
+                gridEditor.updateCurrentFloorHeight(level * gridEditor.floorHeight)
+
+                // Update UI to show we're on the new floor
+                menuSystem.setCurrentFloor(level)
+
+                // Refresh the rendering
                 renderPanel.repaint()
             },
             onFloorAdded = { isAbove ->
-                val floors = editorPanel.sectionChooser.floors
+                // Get existing floors
+                val currentFloors = getExistingFloors()
+                val currentFloor = gridEditor.getCurrentFloor()
+
+                // Calculate new floor level (relative to current floor, not just min/max)
                 val newLevel = if (isAbove) {
-                    floors.maxOf { it.level } + 1
+                    currentFloor + 1
                 } else {
-                    floors.minOf { it.level } - 1
+                    currentFloor - 1
                 }
 
-                // Add new floor to both menu and section chooser
+                // Add new floor to menu system
                 menuSystem.addFloor(newLevel)
-                editorPanel.sectionChooser.floors.add(
-                    FloorSelectorPanel.Floor(newLevel)
-                )
 
-                // Update UI
-                editorPanel.sectionChooser.updateFloorButtons(
-                    editorPanel.sectionChooser.findFloorsPanel()
-                )
+                // Important: Actually set the current floor to the new level
+                gridEditor.setCurrentFloor(newLevel)
+
+                // Update floor height in the grid editor
+                gridEditor.updateCurrentFloorHeight(newLevel * gridEditor.floorHeight)
+
+                // Update UI immediately
+                menuSystem.setCurrentFloor(newLevel)
+
+                // Notify of change
                 renderPanel.repaint()
             },
             gridEditor = gridEditor  // Pass the GridEditor reference to MenuSystem
         )
-
-        // Add listeners to keep menu and section chooser in sync
-        editorPanel.sectionChooser.addPropertyChangeListener("currentFloorChanged") { evt ->
-            val floor = evt.newValue as FloorSelectorPanel.Floor
-            menuSystem.setCurrentFloor(floor.level)
-        }
-
-        editorPanel.sectionChooser.addPropertyChangeListener("floorsChanged") { _ ->
-            // Ensure menu shows all available floors
-            editorPanel.sectionChooser.floors.forEach { floor ->
-                menuSystem.addFloor(floor.level)
-            }
-        }
 
         addComponentListener(object : ComponentAdapter() {
             override fun componentResized(e: ComponentEvent) {
@@ -134,6 +132,18 @@ class Game3D : JPanel() {
 
         setupInputHandling()
         updateMode()
+    }
+
+    // Helper method to get existing floor levels from the grid
+    private fun getExistingFloors(): Set<Int> {
+        val floors = mutableSetOf<Int>()
+        // Collect all unique floor levels from the grid cells
+        gridEditor.grid.values.forEach { cell ->
+            floors.addAll(cell.getOccupiedFloors())
+        }
+        // Always include floor 0 (ground floor)
+        floors.add(0)
+        return floors
     }
 
     private fun setupInputHandling() {
