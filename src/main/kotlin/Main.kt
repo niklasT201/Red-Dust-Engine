@@ -22,12 +22,10 @@ fun main() {
 }
 
 // fix visible floor tile border
-// add settings file to save values
 // default value saving
 // adding physics
 // fixing image sliding
 // optional border around objects
-// checkbox for all labels on grid editor
 
 // Object List:
 // Pillar, breakable walls and floors, PropObject, Doors, Triggers, Elevator, Light Sources, Items, 3D Object Support

@@ -20,6 +20,7 @@ class DisplayOptionsPanel(private val gridEditor: GridEditor) : JPanel() {
 
     // Available label types and their default states
     private val labelOptions = mapOf(
+        "all" to Pair("Show All Labels", true),
         "mode" to Pair("Show Mode Label", true),
         "direction" to Pair("Show Direction Label", true),
         "texture" to Pair("Show Texture Info", true),
@@ -122,8 +123,25 @@ class DisplayOptionsPanel(private val gridEditor: GridEditor) : JPanel() {
             background = Color(40, 44, 52)
             foreground = Color.WHITE
             alignmentX = Component.LEFT_ALIGNMENT
-            addActionListener {
-                gridEditor.updateLabelVisibility(key, isSelected)
+
+            if (key == "all") {
+                // Special handling for "Show All Labels" checkbox
+                addActionListener {
+                    // Update all other checkboxes to match this one's state
+                    val newState = isSelected
+                    labelOptions.keys.filter { it != "all" }.forEach { labelKey ->
+                        checkboxes[labelKey]?.isSelected = newState
+                        gridEditor.updateLabelVisibility(labelKey, newState)
+                    }
+                }
+            } else {
+                // Regular checkbox behavior
+                addActionListener {
+                    gridEditor.updateLabelVisibility(key, isSelected)
+
+                    // Update "all" checkbox state based on other checkboxes
+                    updateAllCheckboxState()
+                }
             }
         }
 
@@ -135,13 +153,45 @@ class DisplayOptionsPanel(private val gridEditor: GridEditor) : JPanel() {
         panel.add(Box.createVerticalStrut(2))
     }
 
+    private fun updateAllCheckboxState() {
+        checkboxes["all"]?.let { allCheckbox ->
+            // Check if all other checkboxes are selected
+            val allSelected = labelOptions.keys
+                .filter { it != "all" }
+                .all { checkboxes[it]?.isSelected == true }
+
+            // Update the "all" checkbox without triggering its action listener
+            val listener = allCheckbox.actionListeners.firstOrNull()
+            if (listener != null) {
+                allCheckbox.removeActionListener(listener)
+                allCheckbox.isSelected = allSelected
+                allCheckbox.addActionListener(listener)
+            } else {
+                allCheckbox.isSelected = allSelected
+            }
+        }
+    }
+
     /**
      * Updates a specific checkbox state programmatically
      */
     fun setCheckboxState(key: String, state: Boolean) {
+        if (key == "all") {
+            // When setting the "all" checkbox, update all other checkboxes
+            labelOptions.keys.filter { it != "all" }.forEach { labelKey ->
+                checkboxes[labelKey]?.isSelected = state
+                gridEditor.updateLabelVisibility(labelKey, state)
+            }
+        }
+
         checkboxes[key]?.let { checkbox ->
             checkbox.isSelected = state
             gridEditor.updateLabelVisibility(key, state)
+        }
+
+        // Update the "all" checkbox state if needed
+        if (key != "all") {
+            updateAllCheckboxState()
         }
     }
 
