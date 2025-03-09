@@ -247,6 +247,7 @@ class Game3D : JPanel() {
             val g2 = g as Graphics2D
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
 
+            // Sky Color
             g2.color = Color(135, 206, 235)
             g2.fillRect(0, 0, width, height)
 
