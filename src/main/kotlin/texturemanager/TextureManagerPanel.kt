@@ -6,14 +6,17 @@ import grideditor.GridEditor
 import java.awt.*
 import java.awt.image.BufferedImage
 import java.io.File
-import javax.imageio.ImageIO
 import javax.swing.*
 import javax.swing.border.TitledBorder
 import javax.swing.filechooser.FileNameExtensionFilter
 
 class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel() {
     var gridEditor: GridEditor? = null
-    private val objectTypeComboBox = JComboBox(ObjectType.entries.toTypedArray())
+
+    // Filter the object types to only include FLOOR and WALL
+    private val allowedObjectTypes = listOf(ObjectType.FLOOR, ObjectType.WALL)
+    private val objectTypeComboBox = JComboBox(allowedObjectTypes.toTypedArray())
+
     private val textureListModel = DefaultListModel<TextureEntry>()
     private val textureList = JList(textureListModel)
     private val previewLabel = JLabel()

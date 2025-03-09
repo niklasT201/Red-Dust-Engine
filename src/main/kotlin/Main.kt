@@ -26,6 +26,7 @@ fun main() {
 // adding physics
 // fixing image sliding
 // optional border around objects
+// wall style save
 
 // Object List:
 // Pillar, breakable walls and floors, PropObject, Doors, Triggers, Elevator, Light Sources, Items, 3D Object Support
