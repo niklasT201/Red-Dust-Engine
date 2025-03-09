@@ -55,7 +55,7 @@ class DisplayOptionsPanel(private val gridEditor: GridEditor) : JPanel() {
 
         // Add buttons panel for save/load functionality
         val buttonsPanel = JPanel().apply {
-            layout = BoxLayout(this, BoxLayout.X_AXIS)
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)  // Changed from X_AXIS to Y_AXIS
             background = Color(40, 44, 52)
             border = BorderFactory.createEmptyBorder(5, 5, 5, 5)
         }
@@ -64,6 +64,7 @@ class DisplayOptionsPanel(private val gridEditor: GridEditor) : JPanel() {
         val saveButton = JButton("Save Settings").apply {
             background = Color(60, 63, 65)
             foreground = Color.WHITE
+            alignmentX = Component.LEFT_ALIGNMENT  // Added for vertical alignment
             addActionListener {
                 if (settingsSaver.saveDisplayOptions(this@DisplayOptionsPanel)) {
                     println("Display settings saved successfully.")
@@ -77,6 +78,7 @@ class DisplayOptionsPanel(private val gridEditor: GridEditor) : JPanel() {
         val loadButton = JButton("Load Settings").apply {
             background = Color(60, 63, 65)
             foreground = Color.WHITE
+            alignmentX = Component.LEFT_ALIGNMENT  // Added for vertical alignment
             addActionListener {
                 if (settingsSaver.loadDisplayOptions(this@DisplayOptionsPanel)) {
                     println("Display settings loaded successfully.")
@@ -90,17 +92,18 @@ class DisplayOptionsPanel(private val gridEditor: GridEditor) : JPanel() {
         val resetButton = JButton("Reset").apply {
             background = Color(60, 63, 65)
             foreground = Color.WHITE
+            alignmentX = Component.LEFT_ALIGNMENT  // Added for vertical alignment
             addActionListener {
                 resetToDefaults()
                 println("Display settings reset to defaults.")
             }
         }
 
-        // Add buttons to panel
+        // Add buttons to panel with vertical struts instead of horizontal
         buttonsPanel.add(saveButton)
-        buttonsPanel.add(Box.createHorizontalStrut(5))
+        buttonsPanel.add(Box.createVerticalStrut(5))  // Changed from horizontal to vertical
         buttonsPanel.add(loadButton)
-        buttonsPanel.add(Box.createHorizontalStrut(5))
+        buttonsPanel.add(Box.createVerticalStrut(5))  // Changed from horizontal to vertical
         buttonsPanel.add(resetButton)
 
         // Add buttons panel to the main panel
