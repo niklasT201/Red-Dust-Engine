@@ -121,6 +121,9 @@ class SettingsSaver {
             outputStream.writeDouble(player.playerHeight)
             outputStream.writeDouble(player.headClearance)
 
+            // Add camera rotation speed
+            outputStream.writeDouble(player.camera.accessRotationSpeed())
+
             outputStream.close()
             return true
         } catch (e: Exception) {
@@ -287,8 +290,14 @@ class SettingsSaver {
             val playerHeight = inputStream.readDouble()
             val headClearance = inputStream.readDouble()
 
+            // Read camera rotation speed
+            val rotationSpeed = inputStream.readDouble()
+
             // Apply settings to player
             player.setMovementSettings(moveSpeed, playerRadius, playerHeight, headClearance)
+
+            // Apply camera settings
+            player.camera.changeRotationSpeed(rotationSpeed)
 
             inputStream.close()
             return true

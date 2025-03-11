@@ -8,7 +8,16 @@ class Camera(
     var yaw: Double = 0.0,
     var pitch: Double = 0.0
 ) {
-    private val rotationSpeed = 0.003
+    // Change from private val to var to allow modification
+    var rotationSpeed = 0.003
+
+    // Add setter method to allow controlled changes
+    fun changeRotationSpeed(speed: Double) {
+        rotationSpeed = speed
+    }
+
+    // Getter for settings saving
+    fun accessRotationSpeed(): Double = rotationSpeed
 
     fun rotate(dx: Double, dy: Double) {
         // Update yaw (horizontal rotation)
