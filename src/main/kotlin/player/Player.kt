@@ -33,11 +33,6 @@ class Player(
         return Math.toDegrees(camera.pitch).toInt()
     }
 
-    fun getMoveSpeed(): Double = moveSpeed
-    fun getPlayerRadius(): Double = playerRadius
-    fun getPlayerHeight(): Double = playerHeight
-    fun getHeadClearance(): Double = headClearance
-
     // Method to update all movement settings at once
     fun setMovementSettings(
         moveSpeed: Double,

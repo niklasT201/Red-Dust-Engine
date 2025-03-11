@@ -171,21 +171,31 @@ class MenuBuilder(
                     val displayOptionsPanel = settingsManager.findDisplayOptionsPanel(
                         SwingUtilities.getWindowAncestor(parentComponent)
                     )
-                    val (displaySuccess, worldSuccess) = settingsManager.saveSettings(displayOptionsPanel)
+                    val (displaySuccess, worldSuccess, playerSuccess) = settingsManager.saveSettings(displayOptionsPanel)
 
-                    if (displaySuccess && worldSuccess) {
-                        showNotification(parentComponent, "All settings saved successfully")
-                    } else if (displaySuccess) {
-                        showNotification(parentComponent, "Display settings saved successfully")
-                    } else if (worldSuccess) {
-                        showNotification(parentComponent, "World settings saved successfully")
-                    } else {
-                        JOptionPane.showMessageDialog(
-                            parentComponent,
-                            "Failed to save settings.",
-                            "Save Error",
-                            JOptionPane.ERROR_MESSAGE
-                        )
+                    when {
+                        displaySuccess && worldSuccess && playerSuccess -> {
+                            showNotification(parentComponent, "All settings saved successfully")
+                        }
+                        else -> {
+                            // Build a message based on what was saved successfully
+                            val successList = mutableListOf<String>()
+                            if (displaySuccess) successList.add("Display")
+                            if (worldSuccess) successList.add("World")
+                            if (playerSuccess) successList.add("Player")
+
+                            if (successList.isNotEmpty()) {
+                                val successMessage = successList.joinToString(", ")
+                                showNotification(parentComponent, "$successMessage settings saved successfully")
+                            } else {
+                                JOptionPane.showMessageDialog(
+                                    parentComponent,
+                                    "Failed to save settings.",
+                                    "Save Error",
+                                    JOptionPane.ERROR_MESSAGE
+                                )
+                            }
+                        }
                     }
                 }
             })
@@ -195,21 +205,31 @@ class MenuBuilder(
                     val displayOptionsPanel = settingsManager.findDisplayOptionsPanel(
                         SwingUtilities.getWindowAncestor(parentComponent)
                     )
-                    val (displaySuccess, worldSuccess) = settingsManager.loadSettings(displayOptionsPanel)
+                    val (displaySuccess, worldSuccess, playerSuccess) = settingsManager.loadSettings(displayOptionsPanel)
 
-                    if (displaySuccess && worldSuccess) {
-                        showNotification(parentComponent, "All settings loaded successfully")
-                    } else if (displaySuccess) {
-                        showNotification(parentComponent, "Display settings loaded successfully")
-                    } else if (worldSuccess) {
-                        showNotification(parentComponent, "World settings loaded successfully")
-                    } else {
-                        JOptionPane.showMessageDialog(
-                            parentComponent,
-                            "Failed to load settings.",
-                            "Load Error",
-                            JOptionPane.ERROR_MESSAGE
-                        )
+                    when {
+                        displaySuccess && worldSuccess && playerSuccess -> {
+                            showNotification(parentComponent, "All settings loaded successfully")
+                        }
+                        else -> {
+                            // Build a message based on what was loaded successfully
+                            val successList = mutableListOf<String>()
+                            if (displaySuccess) successList.add("Display")
+                            if (worldSuccess) successList.add("World")
+                            if (playerSuccess) successList.add("Player")
+
+                            if (successList.isNotEmpty()) {
+                                val successMessage = successList.joinToString(", ")
+                                showNotification(parentComponent, "$successMessage settings loaded successfully")
+                            } else {
+                                JOptionPane.showMessageDialog(
+                                    parentComponent,
+                                    "Failed to load settings.",
+                                    "Load Error",
+                                    JOptionPane.ERROR_MESSAGE
+                                )
+                            }
+                        }
                     }
                 }
             })
