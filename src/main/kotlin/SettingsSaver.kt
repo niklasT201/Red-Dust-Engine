@@ -11,7 +11,7 @@ class SettingsSaver {
         private const val SETTINGS_DIR = "settings"
         private const val DISPLAY_SETTINGS_FILE = "display_options.settings"
         private const val WORLD_SETTINGS_FILE = "world_options.settings"
-        private const val PLAYER_SETTINGS_FILE = "player_options.settings" // New constant
+        private const val PLAYER_SETTINGS_FILE = "player_options.settings"
 
         // Make sure the settings directory exists
         private fun ensureSettingsDir() {

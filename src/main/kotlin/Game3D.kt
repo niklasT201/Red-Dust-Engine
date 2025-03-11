@@ -19,8 +19,8 @@ class Game3D : JPanel() {
     private var isEditorMode = true
 
     private var skyColor = Color(135, 206, 235)
-
     private var isDebugInfoVisible = true
+    private var isCrosshairVisible = true
 
     // Right panel with card layout to switch between grid editor and game view
     private val rightPanel = JPanel(CardLayout()).apply {
@@ -259,10 +259,12 @@ class Game3D : JPanel() {
             renderer.drawScene(g2, walls, floors, player.camera)
 
             if (!isEditorMode) {
-                // Draw crosshair
-                g2.color = Color.WHITE
-                g2.drawLine(width/2 - 10, height/2, width/2 + 10, height/2)
-                g2.drawLine(width/2, height/2 - 10, width/2, height/2 + 10)
+                // Draw crosshair only if it's visible
+                if (isCrosshairVisible) {
+                    g2.color = Color.WHITE
+                    g2.drawLine(width/2 - 10, height/2, width/2 + 10, height/2)
+                    g2.drawLine(width/2, height/2 - 10, width/2, height/2 + 10)
+                }
 
                 // Conditionally draw debug information
                 if (isDebugInfoVisible) {
@@ -281,6 +283,13 @@ class Game3D : JPanel() {
             }
         }
     }
+
+    fun setCrosshairVisible(visible: Boolean) {
+        isCrosshairVisible = visible
+        renderPanel.repaint()
+    }
+
+    fun isCrosshairVisible(): Boolean = isCrosshairVisible
 
     // Method to toggle debug info visibility
     fun setDebugInfoVisible(visible: Boolean) {
