@@ -116,6 +116,9 @@ class WorldSaver {
             // Clear existing grid
             gridEditor.grid.clear()
 
+            // Track all floor levels found during loading
+            val floorLevels = mutableSetOf<Int>()
+
             // Read grid size
             val gridSize = inputStream.readInt()
 
@@ -136,6 +139,8 @@ class WorldSaver {
                 for (j in 0 until floorCount) {
                     // Read floor level
                     val floor = inputStream.readInt()
+                    // Add floor level to tracking set
+                    floorLevels.add(floor)
 
                     // Read number of objects
                     val objectCount = inputStream.readInt()
@@ -218,6 +223,9 @@ class WorldSaver {
             gridEditor.useBlockWalls = useBlockWalls
 
             inputStream.close()
+
+            // Store the floor levels for menu system to use
+            gridEditor.setDiscoveredFloors(floorLevels)
 
             // Notify that grid has changed
             gridEditor.notifyGridChanged()

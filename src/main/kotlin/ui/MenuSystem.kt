@@ -22,15 +22,25 @@ class MenuSystem(
     player: Player
 ) {
     private val floorLevelMenu = FloorLevelMenu(onFloorSelected, onFloorAdded)
-    private val fileManager = FileManager(gridEditor)
+    private val fileManager: FileManager = FileManager(gridEditor, this)
     private val settingsManager = SettingsManager(renderer, game3D, player)
     private val controlsManager = ControlsManager()
-    private val menuBuilder = MenuBuilder(fileManager, controlsManager, settingsManager, gridEditor)
+    private var menuBuilder: MenuBuilder = MenuBuilder(fileManager, controlsManager, settingsManager, gridEditor)
 
     companion object {
         val BACKGROUND_COLOR = Color(40, 44, 52)
         val BORDER_COLOR = Color(28, 31, 36)
         val HOVER_COLOR = Color(60, 63, 65)
+    }
+
+    init {
+        // Property change listener to GridEditor for floor discovery
+        gridEditor.addPropertyChangeListener("floorsDiscovered") { event ->
+            val floors = event.newValue as Set<Int>
+            floors.forEach { floor ->
+                floorLevelMenu.addFloor(floor)
+            }
+        }
     }
 
     fun createMenuBar(): JMenuBar {

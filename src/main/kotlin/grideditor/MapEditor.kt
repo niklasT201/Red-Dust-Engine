@@ -40,6 +40,7 @@ class GridEditor : JPanel() {
     var currentDirection = Direction.NORTH
     var currentFloorHeight = 0.0
     private var currentFloor = 0
+    private val discoveredFloors = mutableSetOf<Int>()
 
     var labelVisibility = mutableMapOf(
         "mode" to true,
@@ -187,6 +188,18 @@ class GridEditor : JPanel() {
     fun setFlatWallVisualization(showAsLines: Boolean) {
         showFlatWallsAsLines = showAsLines
         repaint()
+    }
+
+    fun setDiscoveredFloors(floors: Set<Int>) {
+        discoveredFloors.clear()
+        discoveredFloors.addAll(floors)
+
+        // Fire property change event to notify listeners
+        firePropertyChange("floorsDiscovered", null, discoveredFloors)
+    }
+
+    fun getDiscoveredFloors(): Set<Int> {
+        return discoveredFloors.toSet()
     }
 
     fun getScaledTexture(image: Image, size: Int): Image {

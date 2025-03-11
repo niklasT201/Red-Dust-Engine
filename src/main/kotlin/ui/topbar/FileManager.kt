@@ -6,8 +6,12 @@ import java.awt.Component
 import java.io.File
 import java.util.*
 import javax.swing.JFileChooser
+import ui.MenuSystem
 
-class FileManager(private val gridEditor: GridEditor) {
+class FileManager(
+    private val gridEditor: GridEditor,
+    private val menuSystem: MenuSystem? = null
+) {
     private val worldSaver = WorldSaver()
     private var currentSaveFile: File? = null
 
@@ -58,9 +62,28 @@ class FileManager(private val gridEditor: GridEditor) {
     fun loadWorld(file: File): Boolean {
         if (worldSaver.loadWorld(gridEditor, file.absolutePath)) {
             currentSaveFile = file
+
+            // Update the menu system with discovered floors
+            updateMenuFloorsAfterLoad()
+
             return true
         }
         return false
+    }
+
+    private fun updateMenuFloorsAfterLoad() {
+        menuSystem?.let { menu ->
+            // Get discovered floors from GridEditor
+            val floors = gridEditor.getDiscoveredFloors()
+
+            // Add each floor to the menu
+            floors.forEach { floorLevel ->
+                menu.addFloor(floorLevel)
+            }
+
+            // Set the current floor in the menu
+            menu.setCurrentFloor(gridEditor.getCurrentFloor())
+        }
     }
 
     fun quickSave(parentComponent: Component): File? {
