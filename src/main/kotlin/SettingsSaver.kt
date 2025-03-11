@@ -1,3 +1,4 @@
+import player.Player
 import java.io.*
 import ui.components.DisplayOptionsPanel
 import java.awt.Color
@@ -10,6 +11,7 @@ class SettingsSaver {
         private const val SETTINGS_DIR = "settings"
         private const val DISPLAY_SETTINGS_FILE = "display_options.settings"
         private const val WORLD_SETTINGS_FILE = "world_options.settings"
+        private const val PLAYER_SETTINGS_FILE = "player_options.settings" // New constant
 
         // Make sure the settings directory exists
         private fun ensureSettingsDir() {
@@ -93,6 +95,36 @@ class SettingsSaver {
             return true
         } catch (e: Exception) {
             println("Error saving world settings: ${e.message}")
+            e.printStackTrace()
+            return false
+        }
+    }
+
+    fun savePlayerSettings(player: Player): Boolean {
+        try {
+            ensureSettingsDir()
+            val file = File("$SETTINGS_DIR/$PLAYER_SETTINGS_FILE")
+            val outputStream = DataOutputStream(BufferedOutputStream(FileOutputStream(file)))
+
+            // Write version for future compatibility
+            outputStream.writeInt(1) // Version 1 of the settings format
+
+            // Write timestamp
+            outputStream.writeLong(System.currentTimeMillis())
+
+            // --- Player settings section ---
+            outputStream.writeUTF("PLAYER_SECTION")
+
+            // Write player movement values
+            outputStream.writeDouble(player.moveSpeed)
+            outputStream.writeDouble(player.playerRadius)
+            outputStream.writeDouble(player.playerHeight)
+            outputStream.writeDouble(player.headClearance)
+
+            outputStream.close()
+            return true
+        } catch (e: Exception) {
+            println("Error saving player settings: ${e.message}")
             e.printStackTrace()
             return false
         }
@@ -215,6 +247,53 @@ class SettingsSaver {
             return true
         } catch (e: Exception) {
             println("Error loading world settings: ${e.message}")
+            e.printStackTrace()
+            return false
+        }
+    }
+
+    fun loadPlayerSettings(player: Player): Boolean {
+        try {
+            val file = File("$SETTINGS_DIR/$PLAYER_SETTINGS_FILE")
+            if (!file.exists()) {
+                println("Player settings file does not exist")
+                return false
+            }
+
+            val inputStream = DataInputStream(BufferedInputStream(FileInputStream(file)))
+
+            // Read and verify version
+            val version = inputStream.readInt()
+            if (version != 1) {
+                println("Unsupported settings file version: $version")
+                inputStream.close()
+                return false
+            }
+
+            // Read timestamp (not used now but available for future features)
+            val timestamp = inputStream.readLong()
+
+            // Read player section
+            val playerSection = inputStream.readUTF()
+            if (playerSection != "PLAYER_SECTION") {
+                println("Invalid player settings file format - missing player section")
+                inputStream.close()
+                return false
+            }
+
+            // Read player settings
+            val moveSpeed = inputStream.readDouble()
+            val playerRadius = inputStream.readDouble()
+            val playerHeight = inputStream.readDouble()
+            val headClearance = inputStream.readDouble()
+
+            // Apply settings to player
+            player.setMovementSettings(moveSpeed, playerRadius, playerHeight, headClearance)
+
+            inputStream.close()
+            return true
+        } catch (e: Exception) {
+            println("Error loading player settings: ${e.message}")
             e.printStackTrace()
             return false
         }

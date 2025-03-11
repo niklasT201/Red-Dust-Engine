@@ -124,7 +124,8 @@ class Game3D : JPanel() {
             },
             gridEditor = gridEditor,  // Pass the GridEditor reference to MenuSystem
             renderer = renderer,
-            game3D = this
+            game3D = this,
+            player = player
         )
 
         addComponentListener(object : ComponentAdapter() {

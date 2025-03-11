@@ -8,10 +8,10 @@ import kotlin.math.sin
 
 class Player(
     val camera: Camera = Camera(Vec3(0.0, 1.7, -5.0)),
-    private val moveSpeed: Double = 0.05,
-    private val playerRadius: Double = 0.3,
-    private val playerHeight: Double = 1.7,  // Distance from eyes to feet
-    private val headClearance: Double = 0.3   // Extra space needed above the head
+    var moveSpeed: Double = 0.05,
+    var playerRadius: Double = 0.3,
+    var playerHeight: Double = 1.7,  // Distance from eyes to feet
+    var headClearance: Double = 0.3   // Extra space needed above the head
 ) {
     // Getter for player position (via camera)
     val position: Vec3 get() = camera.position
@@ -31,6 +31,24 @@ class Player(
 
     fun getPitchDegrees(): Int {
         return Math.toDegrees(camera.pitch).toInt()
+    }
+
+    fun getMoveSpeed(): Double = moveSpeed
+    fun getPlayerRadius(): Double = playerRadius
+    fun getPlayerHeight(): Double = playerHeight
+    fun getHeadClearance(): Double = headClearance
+
+    // Method to update all movement settings at once
+    fun setMovementSettings(
+        moveSpeed: Double,
+        playerRadius: Double,
+        playerHeight: Double,
+        headClearance: Double
+    ) {
+        this.moveSpeed = moveSpeed
+        this.playerRadius = playerRadius
+        this.playerHeight = playerHeight
+        this.headClearance = headClearance
     }
 
     // Movement and collision

@@ -7,6 +7,7 @@ import javax.swing.border.EmptyBorder
 import javax.swing.border.MatteBorder
 import grideditor.GridEditor
 import Renderer
+import player.Player
 import ui.topbar.ControlsManager
 import ui.topbar.FileManager
 import ui.topbar.MenuBuilder
@@ -17,11 +18,12 @@ class MenuSystem(
     onFloorAdded: (Boolean) -> Unit,
     gridEditor: GridEditor,
     renderer: Renderer,
-    game3D: Game3D
+    game3D: Game3D,
+    player: Player
 ) {
     private val floorLevelMenu = FloorLevelMenu(onFloorSelected, onFloorAdded)
     private val fileManager = FileManager(gridEditor)
-    private val settingsManager = SettingsManager(renderer, game3D)
+    private val settingsManager = SettingsManager(renderer, game3D, player)
     private val controlsManager = ControlsManager()
     private val menuBuilder = MenuBuilder(fileManager, controlsManager, settingsManager, gridEditor)
 

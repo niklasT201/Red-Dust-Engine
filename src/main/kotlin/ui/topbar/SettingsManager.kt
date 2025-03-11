@@ -4,18 +4,21 @@ import Renderer
 import SettingsSaver
 import ui.components.DisplayOptionsPanel
 import Game3D
+import player.Player
 import java.awt.Component
 import java.awt.Container
 
 class SettingsManager(
     private val renderer: Renderer,
-    private val game3D: Game3D
+    private val game3D: Game3D,
+    private val player: Player
 ) {
     private val settingsSaver = SettingsSaver()
 
-    fun saveSettings(displayOptionsPanel: DisplayOptionsPanel?): Pair<Boolean, Boolean> {
+    fun saveSettings(displayOptionsPanel: DisplayOptionsPanel?): Triple<Boolean, Boolean, Boolean> {
         var displaySuccess = false
         var worldSuccess = false
+        var playerSuccess = false
 
         // Save display settings if panel is available
         if (displayOptionsPanel != null) {
@@ -25,12 +28,16 @@ class SettingsManager(
         // Save world settings (includes both renderer and Game3D settings)
         worldSuccess = settingsSaver.saveWorldSettings(renderer, game3D)
 
-        return Pair(displaySuccess, worldSuccess)
+        // Save player settings
+        playerSuccess = settingsSaver.savePlayerSettings(player)
+
+        return Triple(displaySuccess, worldSuccess, playerSuccess)
     }
 
-    fun loadSettings(displayOptionsPanel: DisplayOptionsPanel?): Pair<Boolean, Boolean> {
+    fun loadSettings(displayOptionsPanel: DisplayOptionsPanel?): Triple<Boolean, Boolean, Boolean> {
         var displaySuccess = false
         var worldSuccess = false
+        var playerSuccess = false
 
         // Load display settings if panel is available
         if (displayOptionsPanel != null) {
@@ -40,7 +47,10 @@ class SettingsManager(
         // Load world settings (includes both renderer and Game3D settings)
         worldSuccess = settingsSaver.loadWorldSettings(renderer, game3D)
 
-        return Pair(displaySuccess, worldSuccess)
+        // Load player settings
+        playerSuccess = settingsSaver.loadPlayerSettings(player)
+
+        return Triple(displaySuccess, worldSuccess, playerSuccess)
     }
 
     fun findDisplayOptionsPanel(component: Component?): DisplayOptionsPanel? {
