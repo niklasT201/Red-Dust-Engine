@@ -23,7 +23,7 @@ class MenuSystem(
 ) {
     private val floorLevelMenu = FloorLevelMenu(onFloorSelected, onFloorAdded)
     private val fileManager: FileManager = FileManager(gridEditor, this)
-    private val settingsManager = SettingsManager(renderer, game3D, player)
+    private val settingsManager = SettingsManager(renderer, game3D, player, gridEditor)
     private val controlsManager = ControlsManager()
     private var menuBuilder: MenuBuilder = MenuBuilder(fileManager, controlsManager, settingsManager, gridEditor)
 

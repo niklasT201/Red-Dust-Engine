@@ -1,3 +1,4 @@
+import grideditor.GridEditor
 import player.Player
 import java.io.*
 import ui.components.DisplayOptionsPanel
@@ -5,7 +6,7 @@ import java.awt.Color
 import java.text.SimpleDateFormat
 import java.util.*
 
-class SettingsSaver {
+class SettingsSaver(private val gridEditor: GridEditor) {
     companion object {
         // Define the directory where settings will be stored
         private const val SETTINGS_DIR = "settings"
@@ -45,6 +46,10 @@ class SettingsSaver {
                 outputStream.writeUTF(key)
                 outputStream.writeBoolean(state)
             }
+
+            // Write the flat walls visualization setting from GridEditor
+            outputStream.writeUTF("VISUALIZATION_SECTION")
+            outputStream.writeBoolean(gridEditor.showFlatWallsAsLines)
 
             outputStream.close()
             return true
@@ -169,6 +174,17 @@ class SettingsSaver {
 
                 // Apply the setting
                 displayOptionsPanel.setCheckboxState(key, state)
+            }
+
+            // Try to read visualization setting
+            try {
+                val section = inputStream.readUTF()
+                if (section == "VISUALIZATION_SECTION") {
+                    val showFlatWallsAsLines = inputStream.readBoolean()
+                    gridEditor.setFlatWallVisualization(showFlatWallsAsLines)
+                }
+            } catch (e: Exception) {
+                println("No visualization settings found, using defaults")
             }
 
             inputStream.close()

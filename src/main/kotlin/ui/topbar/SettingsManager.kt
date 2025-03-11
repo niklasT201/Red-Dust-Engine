@@ -5,15 +5,17 @@ import SettingsSaver
 import ui.components.DisplayOptionsPanel
 import Game3D
 import player.Player
+import grideditor.GridEditor
 import java.awt.Component
 import java.awt.Container
 
 class SettingsManager(
     private val renderer: Renderer,
     private val game3D: Game3D,
-    private val player: Player
+    private val player: Player,
+    private val gridEditor: GridEditor
 ) {
-    private val settingsSaver = SettingsSaver()
+    private val settingsSaver = SettingsSaver(gridEditor)
 
     fun saveSettings(displayOptionsPanel: DisplayOptionsPanel?): Triple<Boolean, Boolean, Boolean> {
         var displaySuccess = false

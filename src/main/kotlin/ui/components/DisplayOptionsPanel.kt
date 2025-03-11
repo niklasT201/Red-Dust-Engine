@@ -32,7 +32,7 @@ class DisplayOptionsPanel(private val gridEditor: GridEditor) : JPanel() {
     private val checkboxes = mutableMapOf<String, JCheckBox>()
 
     // Settings saver instance
-    private val settingsSaver = SettingsSaver()
+    private val settingsSaver = SettingsSaver(gridEditor)
 
     init {
         // Setup panel properties
