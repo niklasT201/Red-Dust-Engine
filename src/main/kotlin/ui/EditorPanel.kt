@@ -167,9 +167,6 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
                 layout = BoxLayout(this, BoxLayout.Y_AXIS)
                 background = Color(40, 44, 52)
                 border = BorderFactory.createEmptyBorder(0, 10, 10, 10)
-
-                // Add vertical glue at the end to push everything to the top
-                add(Box.createVerticalGlue())
             }
         }
 
@@ -274,12 +271,13 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
         wallsSectionsPanel.add(wallStyleSection)
         wallsSectionsPanel.add(Box.createVerticalStrut(10))
         wallsSectionsPanel.add(wallPropertiesSection)
+        wallsSectionsPanel.add(Box.createVerticalGlue())
 
         // Floors tab sections
-        // You can move relevant floor-related sections here
+        floorsSectionsPanel.add(Box.createVerticalGlue())
 
         // Player tab sections
-        // Add player-related sections here
+        playerSectionsPanel.add(Box.createVerticalGlue())
 
         // Map tab sections
         val quickActionsSection = CollapsibleSection("Quick Actions").apply {
@@ -294,6 +292,7 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
         mapSectionsPanel.add(quickActionsSection)
         mapSectionsPanel.add(Box.createVerticalStrut(10))
         mapSectionsPanel.add(displayOptionsSection)
+        mapSectionsPanel.add(Box.createVerticalGlue())
 
         // Textures tab sections
         val imageSection = CollapsibleSection("Textures").apply {
@@ -301,6 +300,7 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
         }
 
         texturesSectionsPanel.add(imageSection)
+        texturesSectionsPanel.add(Box.createVerticalGlue())
 
         // Tools tab sections
         val toolsSection = CollapsibleSection("Tools").apply {
@@ -308,6 +308,8 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
         }
 
         toolsSectionsPanel.add(toolsSection)
+        // Vertical glue AFTER adding all sections
+        toolsSectionsPanel.add(Box.createVerticalGlue())
     }
 
     private fun setupWallPropertiesPanel() {
