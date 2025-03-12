@@ -22,6 +22,28 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
     private val toolsPanel: ToolsPanel
     private val quickActionsPanel: QuickActionsPanel
 
+    // Tab buttons
+    private val wallsTabButton = JButton("Walls")
+    private val floorsTabButton = JButton("Floors")
+    private val playerTabButton = JButton("Player")
+    private val mapTabButton = JButton("Map")
+    private val texturesTabButton = JButton("Textures")
+    private val toolsTabButton = JButton("Tools")
+
+    // Section containers for each tab
+    private val wallsSectionsPanel = JPanel()
+    private val floorsSectionsPanel = JPanel()
+    private val playerSectionsPanel = JPanel()
+    private val mapSectionsPanel = JPanel()
+    private val texturesSectionsPanel = JPanel()
+    private val toolsSectionsPanel = JPanel()
+
+    // Main content panel that will hold the active tab content
+    private val tabContentPanel = JPanel(CardLayout())
+
+    // Currently active tab button
+    private var activeTabButton: JButton? = null
+
     init {
         layout = BorderLayout()
         background = Color(40, 44, 52)
@@ -40,30 +62,11 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
         setupSelectionHandling()
         setupWallPropertiesPanel()
         setupWallStylePanel()
+        setupTabPanels()
+        createTabSections()
 
         // Connect wall properties panel to grid editor
         wallPropertiesPanel.setGridEditor(gridEditor)
-
-        // Create sections container
-        val sectionsPanel = JPanel().apply {
-            layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            background = Color(40, 44, 52)
-        }
-
-        // Top panel with mode button and separator
-        val topPanel = JPanel().apply {
-            layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            background = Color(40, 44, 52)
-            border = BorderFactory.createEmptyBorder(10, 5, 5, 5)
-
-            add(modeButton)
-            add(Box.createVerticalStrut(10))
-            add(JSeparator())
-            add(Box.createVerticalStrut(10))
-
-            // Set maximum size to prevent stretching
-            maximumSize = Dimension(Int.MAX_VALUE, preferredSize.height)
-        }
 
         textureManager.setTextureSelectionListener(object : TextureManagerPanel.TextureSelectionListener {
             override fun onTextureSetAsDefault(entry: TextureManagerPanel.TextureEntry, objectType: ObjectType) {
@@ -87,63 +90,46 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
             }
         })
 
-        // Create collapsible sections
-        val quickActionsSection = CollapsibleSection("Quick Actions").apply {
-            addComponent(quickActionsPanel)
+        // Mode button panel with fixed left alignment
+        val modeButtonPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0)).apply {
+            background = Color(40, 44, 52)
+            add(modeButton)
+            // Force the panel to use the preferred width of the button
+            preferredSize = Dimension(modeButton.preferredSize.width, modeButton.preferredSize.height)
         }
 
-        val wallStyleSection = CollapsibleSection("Wall Style").apply {
-            addComponent(wallStylePanel)
-        }
-
-        // Wall properties section
-        val wallPropertiesSection = CollapsibleSection("Wall Properties").apply {
-            addComponent(wallPropertiesPanel)
-        }
-
-        // Tools section
-        val toolsSection = CollapsibleSection("Tools").apply {
-            addComponent(toolsPanel)
-        }
-
-        val imageSection = CollapsibleSection("Textures").apply {
-            addComponent(textureManager)
-        }
-
-        val displayOptionsPanel = DisplayOptionsPanel(gridEditor)
-        val displayOptionsSection = CollapsibleSection("Display Options").apply {
-            addComponent(displayOptionsPanel)
-        }
-
-        // Add sections to the panel
-        sectionsPanel.add(topPanel)
-        sectionsPanel.add(quickActionsSection)
-        sectionsPanel.add(Box.createVerticalStrut(10))  // Increased spacing between sections
-        sectionsPanel.add(wallStyleSection)
-        sectionsPanel.add(Box.createVerticalStrut(10))
-        sectionsPanel.add(wallPropertiesSection)
-        sectionsPanel.add(Box.createVerticalStrut(10))
-        sectionsPanel.add(toolsSection)
-        sectionsPanel.add(Box.createVerticalStrut(10))
-        sectionsPanel.add(displayOptionsSection)
-        sectionsPanel.add(Box.createVerticalStrut(10))
-        sectionsPanel.add(imageSection)
-
-        // Add rigid area at the bottom to prevent stretching
-        sectionsPanel.add(Box.createVerticalGlue())
-
-        // Wrap sectionsPanel in a panel that handles alignment
-        val wrapperPanel = JPanel().apply {
+        // Top panel with mode button and separator
+        val topPanel = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             background = Color(40, 44, 52)
-            border = BorderFactory.createEmptyBorder(0, 10, 10, 10)
+            border = BorderFactory.createEmptyBorder(10, 5, 5, 5)
 
-            add(sectionsPanel)
-            add(Box.createVerticalGlue())
+            // Add the mode button panel instead of just the button
+            add(modeButtonPanel)
+            add(Box.createVerticalStrut(10))
+            add(JSeparator())
+            add(Box.createVerticalStrut(10))
+
+            // Set maximum size to prevent stretching
+            maximumSize = Dimension(Int.MAX_VALUE, preferredSize.height)
+        }
+
+        // Tab buttons panel
+        val tabButtonsPanel = createTabButtonsPanel()
+
+        // Main container panel
+        val mainContainerPanel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            background = Color(40, 44, 52)
+
+            add(topPanel)
+            add(tabButtonsPanel)
+            add(Box.createVerticalStrut(10))
+            add(tabContentPanel)
         }
 
         // Add scroll pane
-        val scrollPane = JScrollPane(wrapperPanel).apply {
+        val scrollPane = JScrollPane(mainContainerPanel).apply {
             border = null
             verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
             horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_NEVER
@@ -164,6 +150,164 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
         }
 
         add(scrollPane, BorderLayout.CENTER)
+
+        // Activate walls tab by default
+        activateTab(wallsTabButton)
+    }
+
+    private fun setupTabPanels() {
+        // Setup panel properties for each tab section container
+        val panels = listOf(
+            wallsSectionsPanel, floorsSectionsPanel, playerSectionsPanel,
+            mapSectionsPanel, texturesSectionsPanel, toolsSectionsPanel
+        )
+
+        panels.forEach { panel ->
+            panel.apply {
+                layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                background = Color(40, 44, 52)
+                border = BorderFactory.createEmptyBorder(0, 10, 10, 10)
+
+                // Add vertical glue at the end to push everything to the top
+                add(Box.createVerticalGlue())
+            }
+        }
+
+        // Add panels to card layout
+        tabContentPanel.apply {
+            add(wallsSectionsPanel, "walls")
+            add(floorsSectionsPanel, "floors")
+            add(playerSectionsPanel, "player")
+            add(mapSectionsPanel, "map")
+            add(texturesSectionsPanel, "textures")
+            add(toolsSectionsPanel, "tools")
+        }
+    }
+
+    private fun createTabButtonsPanel(): JPanel {
+        // Create a panel for the tab buttons with two rows
+        val tabButtonsPanel = JPanel().apply {
+            layout = GridLayout(2, 3, 5, 5)
+            background = Color(40, 44, 52)
+            border = BorderFactory.createEmptyBorder(0, 5, 0, 5)
+
+            // First row
+            add(wallsTabButton)
+            add(floorsTabButton)
+            add(playerTabButton)
+
+            // Second row
+            add(mapTabButton)
+            add(texturesTabButton)
+            add(toolsTabButton)
+        }
+
+        // Style the tab buttons
+        val tabButtons = listOf(
+            wallsTabButton, floorsTabButton, playerTabButton,
+            mapTabButton, texturesTabButton, toolsTabButton
+        )
+
+        tabButtons.forEach { button ->
+            button.apply {
+                background = Color(60, 63, 65)
+                foreground = Color.WHITE
+                isFocusPainted = false
+                addActionListener {
+                    activateTab(this)
+                }
+            }
+        }
+
+        // Create a container to keep the tabs at a consistent width
+        val tabButtonsContainer = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            background = Color(40, 44, 52)
+            add(tabButtonsPanel)
+
+            // Set maximum size to prevent vertical stretching
+            maximumSize = Dimension(Int.MAX_VALUE, tabButtonsPanel.preferredSize.height)
+        }
+
+        return tabButtonsContainer
+    }
+
+    private fun activateTab(tabButton: JButton) {
+        // Reset all buttons
+        val allButtons = listOf(
+            wallsTabButton, floorsTabButton, playerTabButton,
+            mapTabButton, texturesTabButton, toolsTabButton
+        )
+
+        allButtons.forEach { button ->
+            button.background = Color(60, 63, 65)
+            button.isEnabled = true
+        }
+
+        // Highlight selected button
+        tabButton.background = Color(88, 91, 93)
+        tabButton.isEnabled = false
+        activeTabButton = tabButton
+
+        // Show the selected tab content
+        val cardLayout = tabContentPanel.layout as CardLayout
+        when (tabButton) {
+            wallsTabButton -> cardLayout.show(tabContentPanel, "walls")
+            floorsTabButton -> cardLayout.show(tabContentPanel, "floors")
+            playerTabButton -> cardLayout.show(tabContentPanel, "player")
+            mapTabButton -> cardLayout.show(tabContentPanel, "map")
+            texturesTabButton -> cardLayout.show(tabContentPanel, "textures")
+            toolsTabButton -> cardLayout.show(tabContentPanel, "tools")
+        }
+    }
+
+    private fun createTabSections() {
+        // Walls tab sections
+        val wallStyleSection = CollapsibleSection("Wall Style").apply {
+            addComponent(wallStylePanel)
+        }
+
+        val wallPropertiesSection = CollapsibleSection("Wall Properties").apply {
+            addComponent(wallPropertiesPanel)
+        }
+
+        wallsSectionsPanel.add(wallStyleSection)
+        wallsSectionsPanel.add(Box.createVerticalStrut(10))
+        wallsSectionsPanel.add(wallPropertiesSection)
+
+        // Floors tab sections
+        // You can move relevant floor-related sections here
+
+        // Player tab sections
+        // Add player-related sections here
+
+        // Map tab sections
+        val quickActionsSection = CollapsibleSection("Quick Actions").apply {
+            addComponent(quickActionsPanel)
+        }
+
+        val displayOptionsPanel = DisplayOptionsPanel(gridEditor)
+        val displayOptionsSection = CollapsibleSection("Display Options").apply {
+            addComponent(displayOptionsPanel)
+        }
+
+        mapSectionsPanel.add(quickActionsSection)
+        mapSectionsPanel.add(Box.createVerticalStrut(10))
+        mapSectionsPanel.add(displayOptionsSection)
+
+        // Textures tab sections
+        val imageSection = CollapsibleSection("Textures").apply {
+            addComponent(textureManager)
+        }
+
+        texturesSectionsPanel.add(imageSection)
+
+        // Tools tab sections
+        val toolsSection = CollapsibleSection("Tools").apply {
+            addComponent(toolsPanel)
+        }
+
+        toolsSectionsPanel.add(toolsSection)
     }
 
     private fun setupWallPropertiesPanel() {
@@ -225,7 +369,10 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
             background = Color(60, 63, 65)
             foreground = Color.WHITE
             isFocusPainted = false
+            // Explicitly set alignments to ensure it stays left
+            horizontalAlignment = SwingConstants.LEFT
             alignmentX = Component.LEFT_ALIGNMENT
+            maximumSize = preferredSize  // Prevent stretching
             addActionListener {
                 onModeSwitch()
             }
@@ -240,9 +387,3 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
         }
     }
 }
-
-/*
-can you help me with my kotlin boomer shooter engine?
-i have this editorpanel, and it works good, but it doesnt fit anymore so good, bc it has not really seperations for like walls, floors, player things, map things, images etc.
-i watched a video where someone also coded an engine, but not for boomer shooters. there was this thing with the gui, i really liked. maybe you can see what i mean in the image i send you. its like 6 buttons in two rows and when you press on it, the items in it then get visible under the two buttons rows. so these rows keep visible always. can you add this to my engine, but keep the collapse thing so this then just get visible. only adding the button rows, and dont change any other feature
- */

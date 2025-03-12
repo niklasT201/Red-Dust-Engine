@@ -26,7 +26,7 @@ fun main() {
 // adding physics
 // fixing image sliding
 // optional border around objects
-// wall style save
+// wall style checkbox updating right
 // changeable keys
 
 // Object List:
