@@ -184,7 +184,7 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
     private fun createTabButtonsPanel(): JPanel {
         // Create a panel for the tab buttons with two rows
         val tabButtonsPanel = JPanel().apply {
-            layout = GridLayout(2, 3, 5, 5)
+            layout = GridLayout(2, 3, 3, 3) // Reduce the gaps between buttons
             background = Color(40, 44, 52)
             border = BorderFactory.createEmptyBorder(0, 5, 0, 5)
 
@@ -210,6 +210,9 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
                 background = Color(60, 63, 65)
                 foreground = Color.WHITE
                 isFocusPainted = false
+                // Make the buttons smaller
+                font = Font(font.name, font.style, 12) // Smaller font
+                margin = Insets(2, 4, 2, 4) // Smaller internal margins
                 addActionListener {
                     activateTab(this)
                 }
