@@ -29,6 +29,10 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
     private val mapTabButton = JButton("Map")
     private val texturesTabButton = JButton("Textures")
     private val toolsTabButton = JButton("Tools")
+    private var openTabButton: JButton? = null  // Tracks currently open tab
+    private val closedTabColor = Color(60, 63, 65) // Default tab color
+    private val openTabColor = Color(88, 91, 93)  // Highlighted tab color
+    private val cardLayout = CardLayout()  // Declare cardLayout as a property for easier access
 
     // Section containers for each tab
     private val wallsSectionsPanel = JPanel()
@@ -37,9 +41,16 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
     private val mapSectionsPanel = JPanel()
     private val texturesSectionsPanel = JPanel()
     private val toolsSectionsPanel = JPanel()
+    private val emptyPanel = JPanel().apply {
+        background = Color(40, 44, 52)
+        layout = BorderLayout()
+        val label = JLabel("Select a tab to view content", SwingConstants.CENTER)
+        label.foreground = Color(150, 150, 150)
+        add(label, BorderLayout.CENTER)
+    }
 
     // Main content panel that will hold the active tab content
-    private val tabContentPanel = JPanel(CardLayout())
+    private val tabContentPanel = JPanel(cardLayout)
 
     // Currently active tab button
     private var activeTabButton: JButton? = null
@@ -152,7 +163,7 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
         add(scrollPane, BorderLayout.CENTER)
 
         // Activate walls tab by default
-        activateTab(wallsTabButton)
+        cardLayout.show(tabContentPanel, "empty")
     }
 
     private fun setupTabPanels() {
@@ -178,6 +189,7 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
             add(mapSectionsPanel, "map")
             add(texturesSectionsPanel, "textures")
             add(toolsSectionsPanel, "tools")
+            add(emptyPanel, "empty")
         }
     }
 
@@ -207,14 +219,14 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
 
         tabButtons.forEach { button ->
             button.apply {
-                background = Color(60, 63, 65)
+                background = closedTabColor
                 foreground = Color.WHITE
                 isFocusPainted = false
                 // Make the buttons smaller
                 font = Font(font.name, font.style, 12) // Smaller font
                 margin = Insets(2, 4, 2, 4) // Smaller internal margins
                 addActionListener {
-                    activateTab(this)
+                    toggleTab(this)
                 }
             }
         }
@@ -232,32 +244,38 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
         return tabButtonsContainer
     }
 
-    private fun activateTab(tabButton: JButton) {
-        // Reset all buttons
+    private fun toggleTab(tabButton: JButton) {
+        val tabName = when (tabButton) {
+            wallsTabButton -> "walls"
+            floorsTabButton -> "floors"
+            playerTabButton -> "player"
+            mapTabButton -> "map"
+            texturesTabButton -> "textures"
+            toolsTabButton -> "tools"
+            else -> "empty"
+        }
+
+        // Reset all buttons to closed appearance
         val allButtons = listOf(
             wallsTabButton, floorsTabButton, playerTabButton,
             mapTabButton, texturesTabButton, toolsTabButton
         )
 
         allButtons.forEach { button ->
-            button.background = Color(60, 63, 65)
+            button.background = closedTabColor
             button.isEnabled = true
         }
 
-        // Highlight selected button
-        tabButton.background = Color(88, 91, 93)
-        tabButton.isEnabled = false
-        activeTabButton = tabButton
-
-        // Show the selected tab content
-        val cardLayout = tabContentPanel.layout as CardLayout
-        when (tabButton) {
-            wallsTabButton -> cardLayout.show(tabContentPanel, "walls")
-            floorsTabButton -> cardLayout.show(tabContentPanel, "floors")
-            playerTabButton -> cardLayout.show(tabContentPanel, "player")
-            mapTabButton -> cardLayout.show(tabContentPanel, "map")
-            texturesTabButton -> cardLayout.show(tabContentPanel, "textures")
-            toolsTabButton -> cardLayout.show(tabContentPanel, "tools")
+        // Toggle tab state
+        if (openTabButton == tabButton) {
+            // If clicked tab is already open, close it
+            openTabButton = null
+            cardLayout.show(tabContentPanel, "empty")
+        } else {
+            // Otherwise, open this tab and close any previously open tab
+            tabButton.background = openTabColor
+            openTabButton = tabButton
+            cardLayout.show(tabContentPanel, tabName)
         }
     }
 
