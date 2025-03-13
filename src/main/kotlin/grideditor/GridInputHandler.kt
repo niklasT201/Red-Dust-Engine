@@ -2,9 +2,9 @@ package grideditor
 
 import FloorObject
 import GridCell
-import KeyBindings
 import PlayerSpawnObject
 import WallObject
+import controls.KeyBindings
 import java.awt.Color
 import java.awt.event.*
 import javax.swing.*

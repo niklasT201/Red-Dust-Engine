@@ -8,6 +8,7 @@ import player.Player
 import grideditor.GridEditor
 import java.awt.Component
 import java.awt.Container
+import controls.KeyBindings
 
 class SettingsManager(
     private val renderer: Renderer,
@@ -16,6 +17,7 @@ class SettingsManager(
     private val gridEditor: GridEditor
 ) {
     private val settingsSaver = SettingsSaver(gridEditor)
+    private val keyBindingManager = KeyBindings.getManager()
 
     fun saveSettings(displayOptionsPanel: DisplayOptionsPanel?): Triple<Boolean, Boolean, Boolean> {
         var displaySuccess = false
@@ -32,6 +34,9 @@ class SettingsManager(
 
         // Save player settings
         playerSuccess = settingsSaver.savePlayerSettings(player)
+
+        // Save key bindings
+        keyBindingManager.saveKeyBindings()
 
         return Triple(displaySuccess, worldSuccess, playerSuccess)
     }
@@ -51,6 +56,9 @@ class SettingsManager(
 
         // Load player settings
         playerSuccess = settingsSaver.loadPlayerSettings(player)
+
+        // Load key bindings
+        keyBindingManager.loadKeyBindings()
 
         return Triple(displaySuccess, worldSuccess, playerSuccess)
     }

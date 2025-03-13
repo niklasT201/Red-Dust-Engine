@@ -1,3 +1,4 @@
+import controls.KeyBindings
 import grideditor.GridEditor
 import player.Player
 import ui.EditorPanel
