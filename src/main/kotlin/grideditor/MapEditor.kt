@@ -1,5 +1,6 @@
 package grideditor
 
+import CommandManager
 import player.Camera
 import Direction
 import Floor
@@ -14,6 +15,7 @@ import java.awt.*
 import javax.swing.*
 
 class GridEditor : JPanel() {
+    val commandManager = CommandManager()
     val grid = mutableMapOf<Pair<Int, Int>, GridCell>()
     var currentObjectType = ObjectType.WALL
     var isDragging = false

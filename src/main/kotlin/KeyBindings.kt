@@ -2,7 +2,6 @@ package controls
 
 import java.awt.event.KeyEvent
 import java.io.*
-import java.util.*
 
 /**
  * Manages configurable key bindings for the game
@@ -12,6 +11,10 @@ class KeyBindingManager {
     companion object {
         private const val SETTINGS_DIR = "settings"
         private const val KEY_BINDINGS_FILE = "key_bindings.settings"
+
+        // Fixed keys for undo/redo operations
+        const val UNDO_KEY = KeyEvent.VK_Z
+        const val REDO_KEY = KeyEvent.VK_Y
 
         // Make sure the settings directory exists
         private fun ensureSettingsDir() {
@@ -35,7 +38,8 @@ class KeyBindingManager {
     // List of fixed keys (the ones users cannot change)
     private val fixedKeys = listOf(
         "ROTATE_NORTH", "ROTATE_SOUTH", "ROTATE_EAST", "ROTATE_WEST",
-        "ROTATE_WALL", "WALL_SHORTCUT", "FLOOR_SHORTCUT", "PLAYER_SPAWN_SHORTCUT"
+        "ROTATE_WALL", "WALL_SHORTCUT", "FLOOR_SHORTCUT", "PLAYER_SPAWN_SHORTCUT",
+        "UNDO", "REDO"
     )
 
     init {
@@ -71,6 +75,10 @@ class KeyBindingManager {
         defaultBindings["WALL_SHORTCUT"] = KeyEvent.VK_1
         defaultBindings["FLOOR_SHORTCUT"] = KeyEvent.VK_2
         defaultBindings["PLAYER_SPAWN_SHORTCUT"] = KeyEvent.VK_3
+
+        // Undo/Redo Keys (fixed)
+        defaultBindings["UNDO"] = UNDO_KEY // Ctrl+Z
+        defaultBindings["REDO"] = REDO_KEY // Ctrl+Y
     }
 
     /**
@@ -159,6 +167,8 @@ class KeyBindingManager {
             "FLY_DOWN" -> "Fly Down"
             "JUMP" -> "Jump"
             "TOGGLE_EDITOR" -> "Toggle Editor Mode"
+            "UNDO" -> "Undo"
+            "REDO" -> "Redo"
             else -> name.replace("_", " ").toLowerCase().capitalize()
         }
     }
@@ -275,6 +285,10 @@ object KeyBindings {
     const val WALL_SHORTCUT = KeyEvent.VK_1
     const val FLOOR_SHORTCUT = KeyEvent.VK_2
     const val PLAYER_SPAWN_SHORTCUT = KeyEvent.VK_3
+
+    // Undo/Redo keys (fixed)
+    const val UNDO = KeyBindingManager.UNDO_KEY
+    const val REDO = KeyBindingManager.REDO_KEY
 
     // Expose the manager for configuration UI
     fun getManager(): KeyBindingManager = keyBindingManager

@@ -1,8 +1,10 @@
 package grideditor
 
+import AddObjectCommand
 import FloorObject
 import GridCell
 import PlayerSpawnObject
+import RemoveObjectCommand
 import WallObject
 import controls.KeyBindings
 import java.awt.Color
@@ -148,6 +150,12 @@ class GridInputHandler(private val editor: GridEditor) {
         windowInputMap.put(KeyStroke.getKeyStroke(KeyBindings.FLOOR_SHORTCUT, 0), "select_floor")
         windowInputMap.put(KeyStroke.getKeyStroke(KeyBindings.PLAYER_SPAWN_SHORTCUT, 0), "select_player_spawn")
 
+        val undoKeystroke = KeyStroke.getKeyStroke(KeyBindings.UNDO, KeyEvent.CTRL_DOWN_MASK)
+        val redoKeystroke = KeyStroke.getKeyStroke(KeyBindings.REDO, KeyEvent.CTRL_DOWN_MASK)
+
+        windowInputMap.put(undoKeystroke, "undo_action")
+        windowInputMap.put(redoKeystroke, "redo_action")
+
         // Direction actions
         editor.actionMap.put("rotate_north", object : AbstractAction() {
             override fun actionPerformed(e: ActionEvent) {
@@ -221,6 +229,22 @@ class GridInputHandler(private val editor: GridEditor) {
                 editor.repaint()
             }
         })
+        editor.actionMap.put("undo_action", object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent) {
+                if (editor.commandManager.undo()) {
+                    editor.repaint()
+                    editor.notifyGridChanged()
+                }
+            }
+        })
+        editor.actionMap.put("redo_action", object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent) {
+                if (editor.commandManager.redo()) {
+                    editor.repaint()
+                    editor.notifyGridChanged()
+                }
+            }
+        })
     }
 
     private fun setupZoomControl() {
@@ -238,14 +262,21 @@ class GridInputHandler(private val editor: GridEditor) {
 
         if (currentCell != editor.lastCell) {
             if (editor.isRightMouseButton) {
-                // Remove objects of current type only from current floor
-                editor.grid[currentCell]?.removeObject(editor.getCurrentFloor(), editor.currentObjectType)
-                if (editor.grid[currentCell]?.objectsByFloor?.isEmpty() == true) {
-                    editor.grid.remove(currentCell)
+                // Create a remove command
+                editor.grid[currentCell]?.let { cell ->
+                    val objectType = editor.currentObjectType
+                    if (cell.getObjectsForFloor(editor.getCurrentFloor()).any { it.type == objectType }) {
+                        val command = RemoveObjectCommand(
+                            editor.grid,
+                            currentCell,
+                            editor.getCurrentFloor(),
+                            objectType
+                        )
+                        editor.commandManager.executeCommand(command)
+                    }
                 }
             } else {
                 // Get or create cell
-                val cell = editor.grid.getOrPut(currentCell) { GridCell() }
                 val texture = editor.currentWallTexture
                 println("Using texture for new wall: ${texture?.name ?: "null"}")
 
@@ -274,7 +305,15 @@ class GridInputHandler(private val editor: GridEditor) {
                     ObjectType.PROP -> null
                 }
 
-                newObject?.let { cell.addObject(editor.getCurrentFloor(), it) }
+                newObject?.let {
+                    val command = AddObjectCommand(
+                        editor.grid,
+                        currentCell,
+                        editor.getCurrentFloor(),
+                        it
+                    )
+                    editor.commandManager.executeCommand(command)
+                }
             }
 
             editor.lastCell = currentCell
