@@ -172,7 +172,7 @@ class Game3D : JPanel() {
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher { e ->
             when (e.id) {
                 KeyEvent.KEY_PRESSED -> {
-                    if (e.keyCode == KeyEvent.VK_E) {
+                    if (e.keyCode == KeyBindings.TOGGLE_EDITOR) {
                         SwingUtilities.invokeLater { toggleEditorMode() }
                     }
                     if (!isEditorMode) {
