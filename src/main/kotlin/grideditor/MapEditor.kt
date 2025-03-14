@@ -190,6 +190,7 @@ class GridEditor : JPanel() {
     fun setFlatWallVisualization(showAsLines: Boolean) {
         showFlatWallsAsLines = showAsLines
         repaint()
+        firePropertyChange("flatWallVisualization", !showAsLines, showAsLines)
     }
 
     fun setDiscoveredFloors(floors: Set<Int>) {

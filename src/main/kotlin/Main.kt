@@ -26,7 +26,6 @@ fun main() {
 // adding physics
 // fixing image sliding
 // optional border around objects
-// wall style checkbox updating right
 // disable keys option
 // player drawing in cell fix
 // fps disabler

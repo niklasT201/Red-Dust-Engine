@@ -37,6 +37,10 @@ class WallStylePanel(private val gridEditor: GridEditor) : JPanel() {
 
     init {
         setupPanel()
+
+        gridEditor.addPropertyChangeListener("flatWallVisualization") { e ->
+            visualizationToggle.isSelected = e.newValue as Boolean
+        }
     }
 
     private fun setupPanel() {
@@ -68,38 +72,19 @@ class WallStylePanel(private val gridEditor: GridEditor) : JPanel() {
         )
     }
 
-    /**
-     * Sets a listener to be notified when the wall style changes
-     * @param listener Function that takes a boolean indicating if block walls are selected
-     */
     fun setWallStyleChangeListener(listener: (Boolean) -> Unit) {
         onWallStyleChange = listener
     }
 
-    /**
-     * Returns whether block walls are currently selected
-     */
     fun isBlockWallSelected(): Boolean {
         return blockWallRadio.isSelected
     }
 
-    /**
-     * Set the wall style
-     * @param isBlockWall true for block walls, false for flat walls
-     */
     fun setWallStyle(isBlockWall: Boolean) {
         if (isBlockWall) {
             blockWallRadio.isSelected = true
         } else {
             flatWallRadio.isSelected = true
         }
-    }
-
-    /**
-     * Sets whether flat walls should be visualized as lines
-     */
-    fun setFlatWallVisualization(showAsLines: Boolean) {
-        visualizationToggle.isSelected = showAsLines
-        gridEditor.setFlatWallVisualization(showAsLines)
     }
 }
