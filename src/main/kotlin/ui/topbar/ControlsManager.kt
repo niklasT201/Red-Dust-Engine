@@ -97,10 +97,11 @@ class ControlsManager {
                 keyBindingManager.resetAllKeyBindings()
                 keyBindingManager.saveKeyBindings()
 
-                // Refresh the table
-                val configurableTable = findConfigurableTable(configPanel)
+                // Find both tables correctly
+                val configurableTable = findConfigurableTable(configurablePanel)
                 val combinedConfigTable = findConfigurableTable(configPanel)
 
+                // Refresh both tables
                 refreshTable(configurableTable)
                 refreshTable(combinedConfigTable)
             }
