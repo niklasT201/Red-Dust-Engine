@@ -27,7 +27,6 @@ fun main() {
 // fixing image sliding
 // optional border around objects
 // wall style checkbox updating right
-// changeable keys
 
 // Object List:
 // Pillar, breakable walls and floors, PropObject, Doors, Triggers, Elevator, Light Sources, Items, 3D Object Support
