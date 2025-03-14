@@ -28,6 +28,8 @@ fun main() {
 // optional border around objects
 // wall style checkbox updating right
 // disable keys option
+// player drawing in cell fix
+// fps disabler
 
 // Object List:
 // Pillar, breakable walls and floors, PropObject, Doors, Triggers, Elevator, Light Sources, Items, 3D Object Support
@@ -37,8 +39,6 @@ fun main() {
 // create own weapons
 // damage system
 // all objects in editor menu
-
-// FPS show
 
 // UI:
 // physics optional

@@ -18,6 +18,10 @@ class Game3D : JPanel() {
     private val walls = mutableListOf<Wall>()
     private val floors = mutableListOf<Floor>()
     private var isEditorMode = true
+    private var frameCount = 0
+    private var lastFpsUpdateTime = System.currentTimeMillis()
+    private var currentFps = 0
+    private var isFpsCounterVisible = true
 
     private var skyColor = Color(135, 206, 235)
     private var isDebugInfoVisible = true
@@ -267,6 +271,14 @@ class Game3D : JPanel() {
                     g2.drawLine(width/2, height/2 - 10, width/2, height/2 + 10)
                 }
 
+                g2.font = Font("Monospace", Font.BOLD, 14)
+                g2.color = Color.WHITE
+
+                // Draw FPS counter independently of other debug info
+                if (isFpsCounterVisible) {
+                    g2.drawString("FPS: $currentFps", 10, 20)
+                }
+
                 // Conditionally draw debug information
                 if (isDebugInfoVisible) {
                     // Get cardinal direction from player
@@ -276,10 +288,10 @@ class Game3D : JPanel() {
                     val yawDegrees = player.getYawDegrees()
 
                     // Draw debug information
-                    g2.font = Font("Monospace", Font.BOLD, 14)
-                    g2.color = Color.WHITE
-                    g2.drawString("Direction: $direction (${yawDegrees}°)", 10, 20)
-                    g2.drawString("Position: (${String.format("%.1f", player.position.x)}, ${String.format("%.1f", player.position.y)}, ${String.format("%.1f", player.position.z)})", 10, 40)
+                    // Adjust y-position based on whether FPS is also being shown
+                    val startY = if (isFpsCounterVisible) 40 else 20
+                    g2.drawString("Direction: $direction (${yawDegrees}°)", 10, startY)
+                    g2.drawString("Position: (${String.format("%.1f", player.position.x)}, ${String.format("%.1f", player.position.y)}, ${String.format("%.1f", player.position.z)})", 10, startY + 20)
                 }
             }
         }
@@ -310,6 +322,27 @@ class Game3D : JPanel() {
         renderPanel.repaint()
     }
 
+    private fun calculateFps() {
+        frameCount++
+        val currentTime = System.currentTimeMillis()
+        val elapsedTime = currentTime - lastFpsUpdateTime
+
+        // Update FPS calculation every 500ms
+        if (elapsedTime >= 500) {
+            currentFps = (frameCount / (elapsedTime / 1000.0)).toInt()
+            frameCount = 0
+            lastFpsUpdateTime = currentTime
+        }
+    }
+
+    // Add these getters and setters for FPS counter visibility
+    fun setFpsCounterVisible(visible: Boolean) {
+        isFpsCounterVisible = visible
+        renderPanel.repaint()
+    }
+
+    fun isFpsCounterVisible(): Boolean = isFpsCounterVisible
+
     fun update() {
         if (!isEditorMode) {
             var forward = 0.0
@@ -329,6 +362,9 @@ class Game3D : JPanel() {
 
             gridEditor.repaint()  // Update the grid editor to show new player position
         }
+
+        // Calculate FPS for every frame
+        calculateFps()
 
         renderPanel.repaint()
     }
