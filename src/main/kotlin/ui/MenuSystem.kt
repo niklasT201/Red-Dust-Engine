@@ -55,7 +55,6 @@ class MenuSystem(
             UIManager.put("MenuBar.gradient", null)
 
             add(menuBuilder.createFileMenu(floorLevelMenu))
-            add(menuBuilder.createEditMenu(floorLevelMenu))
             add(menuBuilder.createControlsMenu(floorLevelMenu))
             add(menuBuilder.createHelpMenu(floorLevelMenu))
 

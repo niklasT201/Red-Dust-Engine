@@ -276,42 +276,6 @@ class MenuBuilder(
         }
     }
 
-    fun createEditMenu(parentComponent: Component): JMenu {
-        return createMenu("Edit", KeyEvent.VK_E).apply {
-            add(createMenuItem("Undo",
-                KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_DOWN_MASK)).apply {
-                addActionListener {
-                    // Implement undo functionality
-                    // gridEditor.undo()
-                    showNotification(parentComponent, "Undo operation")
-                }
-            })
-
-            add(createMenuItem("Redo",
-                KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_DOWN_MASK)).apply {
-                addActionListener {
-                    // Implement redo functionality
-                    // gridEditor.redo()
-                    showNotification(parentComponent, "Redo operation")
-                }
-            })
-
-            addSeparator()
-
-            add(createMenuItem("Preferences").apply {
-                addActionListener {
-                    // Show preferences dialog
-                    JOptionPane.showMessageDialog(
-                        parentComponent,
-                        "Preferences dialog will be implemented in a future update.",
-                        "Preferences",
-                        JOptionPane.INFORMATION_MESSAGE
-                    )
-                }
-            })
-        }
-    }
-
     fun createControlsMenu(parentComponent: Component): JMenu {
         return createMenu("Controls", KeyEvent.VK_C).apply {
             add(createMenuItem("Show All Controls").apply {
