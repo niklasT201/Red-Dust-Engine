@@ -78,10 +78,10 @@ class Renderer(
         // Process floors
         for (floor in floors) {
             val corners = listOf(
-                Vec3(floor.x1, floor.y, floor.z1),
-                Vec3(floor.x2, floor.y, floor.z1),
-                Vec3(floor.x2, floor.y, floor.z2),
-                Vec3(floor.x1, floor.y, floor.z2)
+                Vec3(floor.x1 - 0.01, floor.y, floor.z1 - 0.01),
+                Vec3(floor.x2 + 0.01, floor.y, floor.z1 - 0.01),
+                Vec3(floor.x2 + 0.01, floor.y, floor.z2 + 0.01),
+                Vec3(floor.x1 - 0.01, floor.y, floor.z2 + 0.01)
             )
 
             // Determine if we're viewing the floor from below (for texture orientation)
