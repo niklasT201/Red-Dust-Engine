@@ -85,12 +85,7 @@ class MenuBuilder(
                         if (fileManager.loadWorld(parentComponent)) {
                             showNotification(parentComponent, "World loaded successfully")
                         } else {
-                            JOptionPane.showMessageDialog(
-                                parentComponent,
-                                "Failed to load world.",
-                                "Load Error",
-                                JOptionPane.ERROR_MESSAGE
-                            )
+                            showNotification(parentComponent, "Failed to load world.", "Load Error", JOptionPane.ERROR_MESSAGE)
                         }
                     }
                 }
@@ -246,33 +241,33 @@ class MenuBuilder(
     }
 
     private fun confirmUnsavedChanges(parentComponent: Component): Boolean {
-        val result = JOptionPane.showConfirmDialog(
-            parentComponent,
+        val frame = SwingUtilities.getWindowAncestor(parentComponent) as? JFrame
+        val optionPane = JOptionPane(
             "You may have unsaved changes. Continue?",
-            "Unsaved Changes",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.WARNING_MESSAGE
+            JOptionPane.WARNING_MESSAGE,
+            JOptionPane.YES_NO_OPTION
         )
-        return result == JOptionPane.YES_OPTION
+        val dialog = optionPane.createDialog(frame, "Unsaved Changes")
+        dialog.setLocationRelativeTo(frame) // Center the dialog
+        dialog.isVisible = true
+
+        return optionPane.value == JOptionPane.YES_OPTION
     }
 
     // Helper to show a notification
-    fun showNotification(parentComponent: Component, message: String) {
+    fun showNotification(parentComponent: Component, message: String, title: String = "Notification", messageType: Int = JOptionPane.INFORMATION_MESSAGE) {
         val frame = SwingUtilities.getWindowAncestor(parentComponent) as? JFrame
-        val notification = JDialog(frame, "Notification", false).apply {
-            layout = BorderLayout()
-            add(JLabel("  $message  ", JLabel.CENTER).apply {
-                border = EmptyBorder(10, 20, 10, 20)
-            }, BorderLayout.CENTER)
-            pack()
-            setLocationRelativeTo(frame)
-            isVisible = true
-        }
+        val optionPane = JOptionPane(message, messageType)
+        val dialog = optionPane.createDialog(frame, title)
+        dialog.setLocationRelativeTo(frame) // This centers the dialog
+        dialog.isVisible = true
 
-        // Auto-close notification after 1.5 seconds
-        Timer(1500) { notification.dispose() }.apply {
-            isRepeats = false
-            start()
+        // For non-error messages, auto-close after a delay
+        if (messageType != JOptionPane.ERROR_MESSAGE && messageType != JOptionPane.WARNING_MESSAGE) {
+            Timer(1500) { dialog.dispose() }.apply {
+                isRepeats = false
+                start()
+            }
         }
     }
 
@@ -300,12 +295,14 @@ class MenuBuilder(
                 KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0)).apply {
                 addActionListener {
                     // Show documentation
-                    JOptionPane.showMessageDialog(
-                        parentComponent,
+                    val frame = SwingUtilities.getWindowAncestor(parentComponent) as? JFrame
+                    val optionPane = JOptionPane(
                         "Documentation will be available in a future update.",
-                        "Documentation",
                         JOptionPane.INFORMATION_MESSAGE
                     )
+                    val dialog = optionPane.createDialog(frame, "Documentation")
+                    dialog.setLocationRelativeTo(frame) // Center the dialog
+                    dialog.isVisible = true
                 }
             })
 
@@ -335,7 +332,7 @@ class MenuBuilder(
                         })
 
                         pack()
-                        setLocationRelativeTo(parentComponent)
+                        setLocationRelativeTo(SwingUtilities.getWindowAncestor(parentComponent)) // Center the dialog
                         isVisible = true
                     }
                 }

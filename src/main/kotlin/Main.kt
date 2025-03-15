@@ -47,6 +47,8 @@ fun main() {
 // player drawing in cell fix
 // fps disabler
 // top for block walls
+// about dialog design changing
+// control panel design improvement
 
 // Object List:
 // Pillar, breakable walls and floors, PropObject, Doors, Triggers, Elevator, Light Sources, Items, 3D Object Support

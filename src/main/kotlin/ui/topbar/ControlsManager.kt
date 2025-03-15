@@ -139,7 +139,7 @@ class ControlsManager {
 
         dialog.add(mainPanel)
         dialog.setSize(500, 500)
-        dialog.setLocationRelativeTo(parentComponent)
+        dialog.setLocationRelativeTo(SwingUtilities.getWindowAncestor(parentComponent)) // Center the dialog
         dialog.isVisible = true
     }
 
@@ -174,7 +174,7 @@ class ControlsManager {
         val tableModel = table.model as DefaultTableModel
         val bindings = keyBindingManager.getConfigurableBindings()
 
-        for (row in 0 until tableModel.rowCount) {
+        for (row in 0..<tableModel.rowCount) {
             val action = tableModel.getValueAt(row, 0).toString()
             val key = bindings.entries.find { keyBindingManager.getBindingDisplayName(it.key) == action }?.value
             if (key != null) {
@@ -373,9 +373,10 @@ class ControlsManager {
                             )
 
                             // Style the option pane
-                            val dialog = optionPane.createDialog(table, "Key Conflict")
+                            val frame = SwingUtilities.getWindowAncestor(table) as? JFrame
+                            val dialog = optionPane.createDialog(frame, "Key Conflict")
                             dialog.contentPane.background = backgroundColor
-
+                            dialog.setLocationRelativeTo(frame) // Center the dialog
                             dialog.isVisible = true
 
                             val result = optionPane.value
