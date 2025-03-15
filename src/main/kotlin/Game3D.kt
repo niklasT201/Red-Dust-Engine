@@ -12,7 +12,7 @@ class Game3D : JPanel() {
     private val renderer = Renderer(800, 600)
     private val renderPanel = RenderPanel()
     private val gridEditor = GridEditor()
-    private val editorPanel = EditorPanel(gridEditor) { toggleEditorMode() }
+    private val editorPanel = EditorPanel(gridEditor, this) { toggleEditorMode() }
     private lateinit var menuSystem: MenuSystem
     private val keysPressed = mutableSetOf<Int>()
     private val walls = mutableListOf<Wall>()

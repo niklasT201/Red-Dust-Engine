@@ -1,5 +1,6 @@
 package ui
 
+import Game3D
 import ObjectType
 import WallObject
 import grideditor.GridEditor
@@ -9,7 +10,7 @@ import ui.components.*
 import java.awt.*
 import javax.swing.*
 
-class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Unit) : JPanel() {
+class EditorPanel(var gridEditor: GridEditor, private val game3D: Game3D, private val onModeSwitch: () -> Unit) : JPanel() {
     private val resourceManager = ResourceManager()
     private val textureManager = TextureManagerPanel(resourceManager)
     private val modeButton = JButton("Editor Mode")
@@ -51,9 +52,6 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
 
     // Main content panel that will hold the active tab content
     private val tabContentPanel = JPanel(cardLayout)
-
-    // Currently active tab button
-    private var activeTabButton: JButton? = null
 
     init {
         layout = BorderLayout()
@@ -305,14 +303,22 @@ class EditorPanel(var gridEditor: GridEditor, private val onModeSwitch: () -> Un
             addComponent(quickActionsPanel)
         }
 
-        val displayOptionsPanel = DisplayOptionsPanel(gridEditor)
-        val displayOptionsSection = CollapsibleSection("Display Options").apply {
-            addComponent(displayOptionsPanel)
+        val gridLabelsPanel = DisplayOptionsPanel(gridEditor)
+        val gridLabelsSection = CollapsibleSection("Grid Labels").apply {
+            addComponent(gridLabelsPanel)
+        }
+
+        // GameViewOptionsPanel
+        val gameViewOptionsPanel = GameViewOptionsPanel(game3D)  // Pass the game3D reference
+        val gameViewOptionsSection = CollapsibleSection("Game View Options").apply {
+            addComponent(gameViewOptionsPanel)
         }
 
         mapSectionsPanel.add(quickActionsSection)
         mapSectionsPanel.add(Box.createVerticalStrut(10))
-        mapSectionsPanel.add(displayOptionsSection)
+        mapSectionsPanel.add(gridLabelsSection)
+        mapSectionsPanel.add(Box.createVerticalStrut(10))
+        mapSectionsPanel.add(gameViewOptionsSection)
         mapSectionsPanel.add(Box.createVerticalGlue())
 
         // Textures tab sections
