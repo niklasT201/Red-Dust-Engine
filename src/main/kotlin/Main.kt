@@ -1,7 +1,11 @@
 import javax.swing.JFrame
 import javax.swing.SwingUtilities
+import java.util.concurrent.atomic.AtomicBoolean
 
 fun main() {
+    // Flag to control the game loop
+    val isRunning = AtomicBoolean(true)
+
     SwingUtilities.invokeLater {
         val frame = JFrame("3D Engine")
         frame.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
@@ -12,10 +16,23 @@ fun main() {
         frame.setLocationRelativeTo(null)
         frame.isVisible = true
 
+        // Add window listener to properly shutdown the application
+        frame.addWindowListener(object : java.awt.event.WindowAdapter() {
+            override fun windowClosing(e: java.awt.event.WindowEvent) {
+                isRunning.set(false) // Signal the game loop to stop
+                System.exit(0) // Ensure complete application shutdown
+            }
+        })
+
         Thread {
-            while (true) {
+            while (isRunning.get()) {
                 game.update()
                 Thread.sleep(16)
+
+                // Check if frame is still visible
+                if (!frame.isVisible) {
+                    isRunning.set(false)
+                }
             }
         }.start()
     }
@@ -29,6 +46,7 @@ fun main() {
 // disable keys option
 // player drawing in cell fix
 // fps disabler
+// top for block walls
 
 // Object List:
 // Pillar, breakable walls and floors, PropObject, Doors, Triggers, Elevator, Light Sources, Items, 3D Object Support
