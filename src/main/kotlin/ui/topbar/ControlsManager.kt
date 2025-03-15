@@ -211,6 +211,20 @@ class ControlsManager {
                     else -> backgroundColor.darker()
                 }
                 component.foreground = foregroundColor
+
+                // Add padding to the cell contents
+                if (component is JLabel) {
+                    // Add left padding to the text
+                    component.border = EmptyBorder(0, 15, 0, 15)
+
+                    // Set alignment based on column
+                    component.horizontalAlignment = when (column) {
+                        0 -> JLabel.LEFT
+                        1 -> JLabel.CENTER
+                        else -> JLabel.LEFT
+                    }
+                }
+
                 return component
             }
         }.apply {
@@ -235,6 +249,30 @@ class ControlsManager {
             // Column widths
             getColumnModel().getColumn(0).preferredWidth = 250
             getColumnModel().getColumn(1).preferredWidth = 150
+
+            // Add padding to table header
+            tableHeader.defaultRenderer = object : TableCellRenderer {
+                val renderer = tableHeader.defaultRenderer
+
+                override fun getTableCellRendererComponent(
+                    table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int
+                ): Component {
+                    val component = renderer.getTableCellRendererComponent(
+                        table, value, isSelected, hasFocus, row, column
+                    )
+
+                    if (component is JLabel) {
+                        component.border = EmptyBorder(5, 15, 5, 15)
+
+                        // Center the "Key" column header
+                        if (column == 1) {
+                            component.horizontalAlignment = JLabel.CENTER
+                        }
+                    }
+
+                    return component
+                }
+            }
         }
 
         // Create scrollpane

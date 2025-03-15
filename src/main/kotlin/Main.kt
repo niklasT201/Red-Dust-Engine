@@ -1,6 +1,7 @@
 import javax.swing.JFrame
 import javax.swing.SwingUtilities
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.system.exitProcess
 
 fun main() {
     // Flag to control the game loop
@@ -20,7 +21,7 @@ fun main() {
         frame.addWindowListener(object : java.awt.event.WindowAdapter() {
             override fun windowClosing(e: java.awt.event.WindowEvent) {
                 isRunning.set(false) // Signal the game loop to stop
-                System.exit(0) // Ensure complete application shutdown
+                exitProcess(0) // Ensure complete application shutdown
             }
         })
 
@@ -47,7 +48,6 @@ fun main() {
 // player drawing in cell fix
 // fps disabler
 // top for block walls
-// control panel design improvement
 
 // Object List:
 // Pillar, breakable walls and floors, PropObject, Doors, Triggers, Elevator, Light Sources, Items, 3D Object Support
