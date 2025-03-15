@@ -47,7 +47,6 @@ fun main() {
 // player drawing in cell fix
 // fps disabler
 // top for block walls
-// about dialog design changing
 // control panel design improvement
 
 // Object List:

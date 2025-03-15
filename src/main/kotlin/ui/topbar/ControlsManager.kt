@@ -46,7 +46,6 @@ class ControlsManager {
         val showFixedControls = JCheckBox("Show Fixed Controls")
         showFixedControls.background = backgroundColor
         showFixedControls.foreground = foregroundColor
-        //showFixedControls.focusPainted = false
         showFixedControls.isSelected = false
         titlePanel.add(showFixedControls, BorderLayout.EAST)
 
@@ -60,23 +59,11 @@ class ControlsManager {
         val configurablePanel = createConfigurableControlsPanel(dialog)
         cardPanel.add(configurablePanel, "configurable")
 
-        // Create combined panel (configurable + fixed)
-        val combinedPanel = JPanel(BorderLayout(0, 10))
-        combinedPanel.background = backgroundColor
-
-        // Add configurable controls to top
-        val configPanel = createConfigurableControlsPanel(dialog)
-        configPanel.border = CompoundBorder(
-            EmptyBorder(0, 0, 10, 0),
-            configPanel.border
-        )
-        combinedPanel.add(configPanel, BorderLayout.CENTER)
-
-        // Add fixed controls to bottom
-        val fixedPanel = createFixedControlsPanel()
-        combinedPanel.add(fixedPanel, BorderLayout.SOUTH)
-
-        cardPanel.add(combinedPanel, "combined")
+        // Create fixed controls panel (only fixed controls)
+        val fixedOnlyPanel = JPanel(BorderLayout())
+        fixedOnlyPanel.background = backgroundColor
+        fixedOnlyPanel.add(createFixedControlsPanel(), BorderLayout.CENTER)
+        cardPanel.add(fixedOnlyPanel, "fixed")
 
         mainPanel.add(cardPanel, BorderLayout.CENTER)
 
@@ -97,13 +84,11 @@ class ControlsManager {
                 keyBindingManager.resetAllKeyBindings()
                 keyBindingManager.saveKeyBindings()
 
-                // Find both tables correctly
+                // Find the configurable table correctly
                 val configurableTable = findConfigurableTable(configurablePanel)
-                val combinedConfigTable = findConfigurableTable(configPanel)
 
-                // Refresh both tables
+                // Refresh the table
                 refreshTable(configurableTable)
-                refreshTable(combinedConfigTable)
             }
         }
 
@@ -131,9 +116,15 @@ class ControlsManager {
         showFixedControls.addItemListener { e ->
             val cardLayout = cardPanel.layout as CardLayout
             if (e.stateChange == ItemEvent.SELECTED) {
-                cardLayout.show(cardPanel, "combined")
+                cardLayout.show(cardPanel, "fixed")
+                // Hide reset and save buttons when showing fixed controls
+                resetButton.isVisible = false
+                saveButton.isVisible = false
             } else {
                 cardLayout.show(cardPanel, "configurable")
+                // Show reset and save buttons when showing configurable controls
+                resetButton.isVisible = true
+                saveButton.isVisible = true
             }
         }
 
