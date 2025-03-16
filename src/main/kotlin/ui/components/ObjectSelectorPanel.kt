@@ -2,10 +2,7 @@ package ui.components
 
 import grideditor.GridEditor
 import ui.CollapsibleSection
-import java.awt.BorderLayout
-import java.awt.CardLayout
-import java.awt.Color
-import java.awt.Component
+import java.awt.*
 import javax.swing.*
 
 /**
@@ -63,6 +60,23 @@ class ObjectSelectorPanel(private val gridEditor: GridEditor) : JPanel() {
         objectTypeComboBox.background = Color(60, 63, 65)
         objectTypeComboBox.foreground = Color.WHITE
 
+        // Increased font size
+        objectTypeComboBox.font = Font(objectTypeComboBox.font.name, objectTypeComboBox.font.style, 12)
+
+        // Make the dropdown more responsive
+        objectTypeComboBox.maximumRowCount = 10  // Show more items without scrolling
+
+        // Create a custom renderer to reduce padding
+        objectTypeComboBox.renderer = object : DefaultListCellRenderer() {
+            override fun getListCellRendererComponent(
+                list: JList<*>?, value: Any?, index: Int, isSelected: Boolean, cellHasFocus: Boolean
+            ): Component {
+                val component = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
+                (component as JLabel).border = BorderFactory.createEmptyBorder(2, 4, 2, 4) // Minimal padding
+                return component
+            }
+        }
+
         // Add action listener
         objectTypeComboBox.addActionListener {
             val selectedItem = objectTypeComboBox.selectedItem as String
@@ -78,8 +92,12 @@ class ObjectSelectorPanel(private val gridEditor: GridEditor) : JPanel() {
             add(JLabel("Object Type:").apply {
                 foreground = Color.WHITE
                 border = BorderFactory.createEmptyBorder(0, 0, 0, 10)
+                font = Font(font.name, font.style, 14)
             })
+
+            // Make combo box fill available space but with minimum width
             add(objectTypeComboBox)
+
             add(Box.createHorizontalGlue())
         }
 

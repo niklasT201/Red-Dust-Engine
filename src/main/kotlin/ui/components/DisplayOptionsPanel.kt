@@ -4,13 +4,17 @@ import SettingsSaver
 import grideditor.GridEditor
 import java.awt.Color
 import java.awt.Component
+import java.awt.Dimension
+import java.awt.Font
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JButton
 import javax.swing.JCheckBox
 import javax.swing.JPanel
+import javax.swing.border.EmptyBorder
 import java.awt.BorderLayout
 import javax.swing.BorderFactory
+import javax.swing.JLabel
 
 /**
  * Panel that manages display options for the GridEditor
@@ -34,18 +38,40 @@ class DisplayOptionsPanel(private val gridEditor: GridEditor) : JPanel() {
     // Settings saver instance
     private val settingsSaver = SettingsSaver(gridEditor)
 
+    // UI Colors
+    private val backgroundColor = Color(40, 44, 52)
+    private val buttonColor = Color(60, 63, 65)
+    private val accentColor = Color(97, 175, 239)
+    private val textColor = Color(220, 223, 228)
+
     init {
         // Setup panel properties
-        layout = BorderLayout()
-        background = Color(40, 44, 52)
+        layout = BorderLayout(10, 10)
+        background = backgroundColor
+        border = BorderFactory.createEmptyBorder(10, 10, 10, 10)
 
-        val optionsPanel = JPanel().apply {
-            layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            background = Color(40, 44, 52)
-            border = BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        // Create title panel
+        val titlePanel = JPanel(BorderLayout()).apply {
+            background = backgroundColor
+            border = BorderFactory.createMatteBorder(0, 0, 1, 0, accentColor)
         }
 
-        // Create checkboxes for each label option
+        val titleLabel = JLabel("Display Options").apply {
+            font = Font("Dialog", Font.BOLD, 14)
+            foreground = textColor
+            border = EmptyBorder(0, 2, 5, 0)
+        }
+        titlePanel.add(titleLabel, BorderLayout.WEST)
+        add(titlePanel, BorderLayout.NORTH)
+
+        // Create options panel with improved styling
+        val optionsPanel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            background = backgroundColor
+            border = BorderFactory.createEmptyBorder(10, 5, 10, 5)
+        }
+
+        // Create checkboxes for each label option with improved styling
         labelOptions.forEach { (key, value) ->
             val (label, defaultState) = value
             createCheckbox(key, label, defaultState, optionsPanel)
@@ -54,18 +80,19 @@ class DisplayOptionsPanel(private val gridEditor: GridEditor) : JPanel() {
         // Add the options panel to the main panel
         add(optionsPanel, BorderLayout.CENTER)
 
-        // Add buttons panel for save/load functionality
+        // Create buttons panel with vertical stacking
         val buttonsPanel = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            background = Color(40, 44, 52)
+            background = backgroundColor
             border = BorderFactory.createEmptyBorder(5, 5, 5, 5)
         }
 
+        // Create consistently sized buttons
+        val buttonDimension = Dimension(140, 30)
+
         // Save button
-        val saveButton = JButton("Save Settings").apply {
-            background = Color(60, 63, 65)
-            foreground = Color.WHITE
-            alignmentX = Component.LEFT_ALIGNMENT  // Added for vertical alignment
+        val saveButton = createStyledButton("Save Settings", buttonDimension).apply {
+            alignmentX = Component.LEFT_ALIGNMENT
             addActionListener {
                 if (settingsSaver.saveDisplayOptions(this@DisplayOptionsPanel)) {
                     println("Display settings saved successfully.")
@@ -76,10 +103,8 @@ class DisplayOptionsPanel(private val gridEditor: GridEditor) : JPanel() {
         }
 
         // Load button
-        val loadButton = JButton("Load Settings").apply {
-            background = Color(60, 63, 65)
-            foreground = Color.WHITE
-            alignmentX = Component.LEFT_ALIGNMENT  // Added for vertical alignment
+        val loadButton = createStyledButton("Load Settings", buttonDimension).apply {
+            alignmentX = Component.LEFT_ALIGNMENT
             addActionListener {
                 if (settingsSaver.loadDisplayOptions(this@DisplayOptionsPanel)) {
                     println("Display settings loaded successfully.")
@@ -89,10 +114,8 @@ class DisplayOptionsPanel(private val gridEditor: GridEditor) : JPanel() {
             }
         }
 
-        // Reset button
-        val resetButton = JButton("Reset").apply {
-            background = Color(60, 63, 65)
-            foreground = Color.WHITE
+        // Reset button - now same size as other buttons
+        val resetButton = createStyledButton("Reset", buttonDimension).apply {
             alignmentX = Component.LEFT_ALIGNMENT
             addActionListener {
                 resetToDefaults()
@@ -100,11 +123,11 @@ class DisplayOptionsPanel(private val gridEditor: GridEditor) : JPanel() {
             }
         }
 
-        // Add buttons to panel with vertical struts instead of horizontal
+        // Add buttons to panel with vertical spacing
         buttonsPanel.add(saveButton)
-        buttonsPanel.add(Box.createVerticalStrut(5))
+        buttonsPanel.add(Box.createVerticalStrut(8))
         buttonsPanel.add(loadButton)
-        buttonsPanel.add(Box.createVerticalStrut(5))  // Changed from horizontal to vertical
+        buttonsPanel.add(Box.createVerticalStrut(8))
         buttonsPanel.add(resetButton)
 
         // Add buttons panel to the main panel
@@ -119,17 +142,41 @@ class DisplayOptionsPanel(private val gridEditor: GridEditor) : JPanel() {
     }
 
     /**
-     * Creates a checkbox for controlling label visibility
+     * Creates a styled button with consistent size
+     */
+    private fun createStyledButton(text: String, dimension: Dimension): JButton {
+        return JButton(text).apply {
+            background = buttonColor
+            foreground = textColor
+            preferredSize = dimension
+            minimumSize = dimension
+            maximumSize = dimension
+            isFocusPainted = false
+            border = BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(accentColor, 1),
+                BorderFactory.createEmptyBorder(4, 8, 4, 8)
+            )
+            font = Font("Dialog", Font.BOLD, 12)
+        }
+    }
+
+    /**
+     * Creates a checkbox for controlling label visibility with improved styling
      */
     private fun createCheckbox(key: String, label: String, defaultState: Boolean, panel: JPanel) {
         val checkbox = JCheckBox(label).apply {
             isSelected = defaultState
-            background = Color(40, 44, 52)
-            foreground = Color.WHITE
+            background = backgroundColor
+            foreground = textColor
             alignmentX = Component.LEFT_ALIGNMENT
+            font = Font("Dialog", Font.PLAIN, 12)
+
+            // Add some padding around the checkbox text
+            border = BorderFactory.createEmptyBorder(2, 0, 2, 0)
 
             if (key == "all") {
                 // Special handling for "Show All Labels" checkbox
+                font = Font("Dialog", Font.BOLD, 12)
                 addActionListener {
                     // Update all other checkboxes to match this one's state
                     val newState = isSelected
@@ -152,9 +199,12 @@ class DisplayOptionsPanel(private val gridEditor: GridEditor) : JPanel() {
         // Store reference to checkbox
         checkboxes[key] = checkbox
 
-        // Add to panel
+        // Add to panel with visual indentation for non-"all" checkboxes
+        if (key != "all") {
+            panel.add(Box.createHorizontalStrut(15), checkbox)
+        }
         panel.add(checkbox)
-        panel.add(Box.createVerticalStrut(2))
+        panel.add(Box.createVerticalStrut(4)) // Slightly more spacing between checkboxes
     }
 
     private fun updateAllCheckboxState() {

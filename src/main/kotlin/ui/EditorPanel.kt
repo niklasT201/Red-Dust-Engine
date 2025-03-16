@@ -37,8 +37,6 @@ class EditorPanel(var gridEditor: GridEditor, private val game3D: Game3D, privat
 
     // Section containers for each tab
     private val objectsSectionsPanel = JPanel()
-    private val wallsSectionsPanel = JPanel()
-    private val floorsSectionsPanel = JPanel()
     private val playerSectionsPanel = JPanel()
     private val mapSectionsPanel = JPanel()
     private val texturesSectionsPanel = JPanel()
