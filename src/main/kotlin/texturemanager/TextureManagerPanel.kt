@@ -286,6 +286,10 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
     private fun removeSelectedTexture() {
         val selectedEntry = textureList.selectedValue ?: return
 
+        // Check if this is the default texture for its type
+        val isDefault = selectedEntry.isDefault
+        val objectType = selectedEntry.objectType
+
         // Find the ID of the image in the ResourceManager
         val imageId = findImageId(selectedEntry.imageEntry)
 
@@ -305,10 +309,15 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
 
                 if (success) {
                     // Remove from local tracking
-                    texturesByType[selectedEntry.objectType]?.remove(selectedEntry)
+                    texturesByType[objectType]?.remove(selectedEntry)
 
-                    // Update the UI
-                    updateTextureList()
+                    // If the deleted texture was the default, revert to using color
+                    if (isDefault) {
+                        clearTextureForType(objectType)
+                    } else {
+                        // Just update the UI
+                        updateTextureList()
+                    }
 
                     // Clear preview if this was the selected texture
                     if (previewLabel.icon != null) {
@@ -325,8 +334,14 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
                     )
 
                     // Remove from local tracking even if file deletion failed
-                    texturesByType[selectedEntry.objectType]?.remove(selectedEntry)
-                    updateTextureList()
+                    texturesByType[objectType]?.remove(selectedEntry)
+
+                    // If default, revert to using color
+                    if (isDefault) {
+                        clearTextureForType(objectType)
+                    } else {
+                        updateTextureList()
+                    }
                 }
             }
         } else {
