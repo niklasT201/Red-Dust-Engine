@@ -156,7 +156,8 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
             background = Color(60, 63, 65)
             foreground = Color.WHITE
             isFocusPainted = false
-            maximumSize = Dimension(Int.MAX_VALUE, 30)
+            maximumSize = Dimension(140, 25)  // Reduced height from 30
+            margin = Insets(2, 4, 2, 4)  // Smaller internal margins
             addActionListener { action() }
         }
     }
