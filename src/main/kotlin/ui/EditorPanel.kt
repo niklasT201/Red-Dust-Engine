@@ -97,6 +97,25 @@ class EditorPanel(var gridEditor: GridEditor, private val game3D: Game3D, privat
                     }
                 }
             }
+
+            // Implement the new method
+            override fun onTextureCleared(objectType: ObjectType) {
+                when (objectType) {
+                    ObjectType.WALL -> {
+                        // Clear the wall texture and revert to using color
+                        gridEditor.clearWallTexture()
+                        println("Listener: Cleared wall texture, reverting to color")
+                    }
+                    ObjectType.FLOOR -> {
+                        // Clear the floor texture and revert to using color
+                        gridEditor.clearFloorTexture()
+                        println("Listener: Cleared floor texture, reverting to color")
+                    }
+                    else -> {
+                        println("Listener: Object type ${objectType.name} not handled for texture clearing")
+                    }
+                }
+            }
         })
 
         // Mode button panel with fixed left alignment

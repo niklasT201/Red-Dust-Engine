@@ -210,6 +210,20 @@ class GridEditor : JPanel() {
         return image.getScaledInstance(size, size, Image.SCALE_FAST)
     }
 
+    fun clearWallTexture() {
+        currentWallTexture = null
+        // Update any selected wall to use its color property
+        updateSelectedCell()
+        repaint()
+    }
+
+    fun clearFloorTexture() {
+        currentFloorTexture = null
+        // Update any selected floor to use its color property
+        updateSelectedCell()
+        repaint()
+    }
+
     fun updateSelectedCell(color: Color? = null, height: Double? = null, width: Double? = null, texture: ImageEntry? = null) {
         selectedCell?.let { cell ->
             grid[cell]?.let { gridCell ->

@@ -101,7 +101,7 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
 
         // Buttons
         val buttonPanel = JPanel().apply {
-            layout = GridLayout(2, 2, 5, 5)
+            layout = GridLayout(3, 2, 5, 5) // Changed from 2x2 to 3x2 to add new button
             background = Color(40, 44, 52)
             alignmentX = LEFT_ALIGNMENT
 
@@ -119,6 +119,11 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
                 } else {
                     JOptionPane.showMessageDialog(this, "No texture selected!", "Error", JOptionPane.ERROR_MESSAGE)
                 }
+            })
+            // Use color instead of texture
+            add(createButton("Use Color") {
+                val objectType = objectTypeComboBox.selectedItem as ObjectType
+                clearTextureForType(objectType)
             })
         }
 
@@ -141,6 +146,7 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
 
     interface TextureSelectionListener {
         fun onTextureSetAsDefault(entry: TextureEntry, objectType: ObjectType)
+        fun onTextureCleared(objectType: ObjectType)
     }
 
     // Add a field to store the listener
@@ -349,5 +355,16 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
         }
 
         updateTextureList()
+    }
+
+    fun clearTextureForType(objectType: ObjectType) {
+        // Find any texture marked as default for this type and unmark it
+        texturesByType[objectType]?.forEachIndexed { index, texture ->
+            texturesByType[objectType]!![index] = texture.copy(isDefault = false)
+        }
+        updateTextureList()
+
+        // Notify listeners that texture has been cleared
+        textureSelectionListener?.onTextureCleared(objectType)
     }
 }
