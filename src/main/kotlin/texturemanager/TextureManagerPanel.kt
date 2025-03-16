@@ -284,9 +284,70 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
     }
 
     private fun removeSelectedTexture() {
-        val selectedEntry = textureList.selectedValue as? TextureEntry ?: return
-        texturesByType[selectedEntry.objectType]?.remove(selectedEntry)
-        updateTextureList()
+        val selectedEntry = textureList.selectedValue ?: return
+
+        // Find the ID of the image in the ResourceManager
+        val imageId = findImageId(selectedEntry.imageEntry)
+
+        if (imageId != null) {
+            // Ask for confirmation
+            val confirm = JOptionPane.showConfirmDialog(
+                this,
+                "Are you sure you want to permanently delete '${selectedEntry.imageEntry.name}'? This cannot be undone.",
+                "Confirm Deletion",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+            )
+
+            if (confirm == JOptionPane.YES_OPTION) {
+                // Remove from resource manager (and file system)
+                val success = resourceManager.removeImage(imageId)
+
+                if (success) {
+                    // Remove from local tracking
+                    texturesByType[selectedEntry.objectType]?.remove(selectedEntry)
+
+                    // Update the UI
+                    updateTextureList()
+
+                    // Clear preview if this was the selected texture
+                    if (previewLabel.icon != null) {
+                        previewLabel.icon = null
+                    }
+
+                    println("Successfully removed texture: ${selectedEntry.imageEntry.name}")
+                } else {
+                    JOptionPane.showMessageDialog(
+                        this,
+                        "Failed to delete texture file. The entry has been removed from the list only.",
+                        "Deletion Error",
+                        JOptionPane.ERROR_MESSAGE
+                    )
+
+                    // Remove from local tracking even if file deletion failed
+                    texturesByType[selectedEntry.objectType]?.remove(selectedEntry)
+                    updateTextureList()
+                }
+            }
+        } else {
+            JOptionPane.showMessageDialog(
+                this,
+                "Could not find the selected texture in the resource manager.",
+                "Error",
+                JOptionPane.ERROR_MESSAGE
+            )
+        }
+    }
+
+    // Helper method to find the ID of an ImageEntry in the ResourceManager
+    private fun findImageId(imageEntry: ImageEntry): String? {
+        val allImages = resourceManager.getAllImages()
+        for ((id, entry) in allImages) {
+            if (entry.path == imageEntry.path) {
+                return id
+            }
+        }
+        return null
     }
 
     private fun setAsDefault(entry: TextureEntry, objectType: ObjectType) {

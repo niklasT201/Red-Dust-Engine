@@ -190,6 +190,31 @@ class ResourceManager {
         }
     }
 
+    fun removeImage(id: String): Boolean {
+        val imageEntry = images[id] ?: return false
+
+        try {
+            // Remove from memory
+            images.remove(id)
+
+            // Remove from cache if it exists
+            textureCache.remove(imageEntry.path)
+
+            // Delete the physical file
+            val file = File(imageEntry.path)
+            if (file.exists() && file.isFile) {
+                Files.delete(file.toPath())
+                println("Deleted texture file: ${file.absolutePath}")
+                return true
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            println("Failed to delete texture file: ${e.message}")
+        }
+
+        return false
+    }
+
     // Clear texture cache
     fun clearCache() {
         textureCache.clear()
