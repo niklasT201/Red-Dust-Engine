@@ -63,9 +63,6 @@ class ObjectSelectorPanel(private val gridEditor: GridEditor) : JPanel() {
         // Increased font size
         objectTypeComboBox.font = Font(objectTypeComboBox.font.name, objectTypeComboBox.font.style, 12)
 
-        // Make the dropdown more responsive
-        objectTypeComboBox.maximumRowCount = 10  // Show more items without scrolling
-
         // Create a custom renderer to reduce padding
         objectTypeComboBox.renderer = object : DefaultListCellRenderer() {
             override fun getListCellRendererComponent(
@@ -95,8 +92,12 @@ class ObjectSelectorPanel(private val gridEditor: GridEditor) : JPanel() {
                 font = Font(font.name, font.style, 14)
             })
 
-            // Make combo box fill available space but with minimum width
-            add(objectTypeComboBox)
+            // panel to manage the combo box size
+            add(JPanel(BorderLayout()).apply {
+                background = Color(40, 44, 52)
+                isOpaque = false
+                add(objectTypeComboBox, BorderLayout.CENTER)
+            })
 
             add(Box.createHorizontalGlue())
         }
