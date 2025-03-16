@@ -378,7 +378,7 @@ class Game3D : JPanel() {
         floors.addAll(gridEditor.generateFloors())
     }
 
-    fun addPredefinedPillars() {
+    private fun addPredefinedPillars() {
         // Define some predefined pillars at specific locations
         val predefinedPillars = listOf(
             // Simple square pillar at position (-5, 0, -5)
