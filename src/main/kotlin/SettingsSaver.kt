@@ -147,7 +147,7 @@ class SettingsSaver(private val gridEditor: GridEditor) {
         try {
             val file = File("$SETTINGS_DIR/$DISPLAY_SETTINGS_FILE")
             if (!file.exists()) {
-                println("Display settings file does not exist")
+                println("Display settings file does not exist. Using defaults.")
                 return false
             }
 

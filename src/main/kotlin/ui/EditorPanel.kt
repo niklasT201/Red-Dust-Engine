@@ -18,14 +18,14 @@ class EditorPanel(var gridEditor: GridEditor, private val game3D: Game3D, privat
     private var onWallStyleChange: ((Boolean) -> Unit)? = null
 
     // Component panels
+    private val objectSelectorPanel = ObjectSelectorPanel(gridEditor)
     private val wallPropertiesPanel = WallPropertiesPanel()
     private val wallStylePanel = WallStylePanel(gridEditor)
     private val toolsPanel: ToolsPanel
     private val quickActionsPanel: QuickActionsPanel
 
     // Tab buttons
-    private val wallsTabButton = JButton("Walls")
-    private val floorsTabButton = JButton("Floors")
+    private val objectsTabButton = JButton("Objects")
     private val playerTabButton = JButton("Player")
     private val mapTabButton = JButton("Map")
     private val texturesTabButton = JButton("Textures")
@@ -36,6 +36,7 @@ class EditorPanel(var gridEditor: GridEditor, private val game3D: Game3D, privat
     private val cardLayout = CardLayout()  // Declare cardLayout as a property for easier access
 
     // Section containers for each tab
+    private val objectsSectionsPanel = JPanel()
     private val wallsSectionsPanel = JPanel()
     private val floorsSectionsPanel = JPanel()
     private val playerSectionsPanel = JPanel()
@@ -72,6 +73,7 @@ class EditorPanel(var gridEditor: GridEditor, private val game3D: Game3D, privat
         setupWallPropertiesPanel()
         setupWallStylePanel()
         setupTabPanels()
+        setupObjectSelectorPanel()
         createTabSections()
 
         // Connect wall properties panel to grid editor
@@ -164,10 +166,36 @@ class EditorPanel(var gridEditor: GridEditor, private val game3D: Game3D, privat
         cardLayout.show(tabContentPanel, "empty")
     }
 
+    private fun setupObjectSelectorPanel() {
+        // Connect the object selector to wall property changes
+        objectSelectorPanel.setWallPropertyChangeListener(object : WallPropertiesPanel.WallPropertyChangeListener {
+            override fun onWallColorChanged(color: Color) {
+                gridEditor.setWallColor(color)
+            }
+
+            override fun onWallHeightChanged(height: Double) {
+                gridEditor.setWallHeight(height)
+            }
+
+            override fun onWallWidthChanged(width: Double) {
+                gridEditor.setWallWidth(width)
+            }
+        })
+
+        // Connect the wall style change event
+        objectSelectorPanel.setWallStyleChangeListener { isBlockWall ->
+            // This updates the GridEditor's visualization setting
+            gridEditor.setFlatWallVisualization(!isBlockWall)
+
+            // And also forwards to any external listeners
+            onWallStyleChange?.invoke(isBlockWall)
+        }
+    }
+
     private fun setupTabPanels() {
         // Setup panel properties for each tab section container
         val panels = listOf(
-            wallsSectionsPanel, floorsSectionsPanel, playerSectionsPanel,
+            objectsSectionsPanel, playerSectionsPanel,
             mapSectionsPanel, texturesSectionsPanel, toolsSectionsPanel
         )
 
@@ -181,8 +209,7 @@ class EditorPanel(var gridEditor: GridEditor, private val game3D: Game3D, privat
 
         // Add panels to card layout
         tabContentPanel.apply {
-            add(wallsSectionsPanel, "walls")
-            add(floorsSectionsPanel, "floors")
+            add(objectsSectionsPanel, "objects")
             add(playerSectionsPanel, "player")
             add(mapSectionsPanel, "map")
             add(texturesSectionsPanel, "textures")
@@ -190,6 +217,7 @@ class EditorPanel(var gridEditor: GridEditor, private val game3D: Game3D, privat
             add(emptyPanel, "empty")
         }
     }
+
 
     private fun createTabButtonsPanel(): JPanel {
         // Create a panel for the tab buttons with two rows
@@ -199,20 +227,20 @@ class EditorPanel(var gridEditor: GridEditor, private val game3D: Game3D, privat
             border = BorderFactory.createEmptyBorder(0, 5, 0, 5)
 
             // First row
-            add(wallsTabButton)
-            add(floorsTabButton)
+            add(objectsTabButton)
             add(playerTabButton)
+            add(mapTabButton)
 
             // Second row
-            add(mapTabButton)
             add(texturesTabButton)
             add(toolsTabButton)
+            add(JPanel().apply { background = Color(40, 44, 52) }) // Empty panel for balance
         }
 
         // Style the tab buttons
         val tabButtons = listOf(
-            wallsTabButton, floorsTabButton, playerTabButton,
-            mapTabButton, texturesTabButton, toolsTabButton
+            objectsTabButton, playerTabButton, mapTabButton,
+            texturesTabButton, toolsTabButton
         )
 
         tabButtons.forEach { button ->
@@ -244,8 +272,7 @@ class EditorPanel(var gridEditor: GridEditor, private val game3D: Game3D, privat
 
     private fun toggleTab(tabButton: JButton) {
         val tabName = when (tabButton) {
-            wallsTabButton -> "walls"
-            floorsTabButton -> "floors"
+            objectsTabButton -> "objects"
             playerTabButton -> "player"
             mapTabButton -> "map"
             texturesTabButton -> "textures"
@@ -255,8 +282,8 @@ class EditorPanel(var gridEditor: GridEditor, private val game3D: Game3D, privat
 
         // Reset all buttons to closed appearance
         val allButtons = listOf(
-            wallsTabButton, floorsTabButton, playerTabButton,
-            mapTabButton, texturesTabButton, toolsTabButton
+            objectsTabButton, playerTabButton, mapTabButton,
+            texturesTabButton, toolsTabButton
         )
 
         allButtons.forEach { button ->
@@ -278,22 +305,9 @@ class EditorPanel(var gridEditor: GridEditor, private val game3D: Game3D, privat
     }
 
     private fun createTabSections() {
-        // Walls tab sections
-        val wallStyleSection = CollapsibleSection("Wall Style").apply {
-            addComponent(wallStylePanel)
-        }
-
-        val wallPropertiesSection = CollapsibleSection("Wall Properties").apply {
-            addComponent(wallPropertiesPanel)
-        }
-
-        wallsSectionsPanel.add(wallStyleSection)
-        wallsSectionsPanel.add(Box.createVerticalStrut(10))
-        wallsSectionsPanel.add(wallPropertiesSection)
-        wallsSectionsPanel.add(Box.createVerticalGlue())
-
-        // Floors tab sections
-        floorsSectionsPanel.add(Box.createVerticalGlue())
+        // Objects tab sections
+        objectsSectionsPanel.add(objectSelectorPanel)
+        objectsSectionsPanel.add(Box.createVerticalGlue())
 
         // Player tab sections
         playerSectionsPanel.add(Box.createVerticalGlue())
@@ -303,13 +317,28 @@ class EditorPanel(var gridEditor: GridEditor, private val game3D: Game3D, privat
             addComponent(quickActionsPanel)
         }
 
-        val gridLabelsPanel = DisplayOptionsPanel(gridEditor)
+        // Create grid labels panel with error handling
+        val gridLabelsPanel = try {
+            DisplayOptionsPanel(gridEditor)
+        } catch (e: Exception) {
+            println("Error creating DisplayOptionsPanel: ${e.message}")
+            e.printStackTrace()
+            // Create a simple fallback panel
+            JPanel().apply {
+                background = Color(40, 44, 52)
+                layout = BorderLayout()
+                add(JLabel("Display options unavailable", SwingConstants.CENTER).apply {
+                    foreground = Color.WHITE
+                }, BorderLayout.CENTER)
+            }
+        }
+
         val gridLabelsSection = CollapsibleSection("Grid Labels").apply {
             addComponent(gridLabelsPanel)
         }
 
         // GameViewOptionsPanel
-        val gameViewOptionsPanel = GameViewOptionsPanel(game3D)  // Pass the game3D reference
+        val gameViewOptionsPanel = GameViewOptionsPanel(game3D)
         val gameViewOptionsSection = CollapsibleSection("Game View Options").apply {
             addComponent(gameViewOptionsPanel)
         }
@@ -382,8 +411,8 @@ class EditorPanel(var gridEditor: GridEditor, private val game3D: Game3D, privat
                 val wallObject = currentFloorObjects.filterIsInstance<WallObject>().firstOrNull()
 
                 wallObject?.let {
-                    // Update wall properties panel
-                    wallPropertiesPanel.updateProperties(
+                    // Update object selector panel instead of wall properties panel
+                    objectSelectorPanel.updateWallProperties(
                         color = it.color,
                         height = it.height,
                         width = it.width

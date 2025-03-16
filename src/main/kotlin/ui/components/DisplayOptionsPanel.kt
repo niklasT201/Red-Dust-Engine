@@ -56,7 +56,7 @@ class DisplayOptionsPanel(private val gridEditor: GridEditor) : JPanel() {
 
         // Add buttons panel for save/load functionality
         val buttonsPanel = JPanel().apply {
-            layout = BoxLayout(this, BoxLayout.Y_AXIS)  // Changed from X_AXIS to Y_AXIS
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
             background = Color(40, 44, 52)
             border = BorderFactory.createEmptyBorder(5, 5, 5, 5)
         }
@@ -93,7 +93,7 @@ class DisplayOptionsPanel(private val gridEditor: GridEditor) : JPanel() {
         val resetButton = JButton("Reset").apply {
             background = Color(60, 63, 65)
             foreground = Color.WHITE
-            alignmentX = Component.LEFT_ALIGNMENT  // Added for vertical alignment
+            alignmentX = Component.LEFT_ALIGNMENT
             addActionListener {
                 resetToDefaults()
                 println("Display settings reset to defaults.")
@@ -102,7 +102,7 @@ class DisplayOptionsPanel(private val gridEditor: GridEditor) : JPanel() {
 
         // Add buttons to panel with vertical struts instead of horizontal
         buttonsPanel.add(saveButton)
-        buttonsPanel.add(Box.createVerticalStrut(5))  // Changed from horizontal to vertical
+        buttonsPanel.add(Box.createVerticalStrut(5))
         buttonsPanel.add(loadButton)
         buttonsPanel.add(Box.createVerticalStrut(5))  // Changed from horizontal to vertical
         buttonsPanel.add(resetButton)
@@ -110,8 +110,12 @@ class DisplayOptionsPanel(private val gridEditor: GridEditor) : JPanel() {
         // Add buttons panel to the main panel
         add(buttonsPanel, BorderLayout.SOUTH)
 
-        // Try to load saved settings on initialization
-        settingsSaver.loadDisplayOptions(this)
+        // Try to load saved settings on initialization, but don't fail if it doesn't work
+        try {
+            settingsSaver.loadDisplayOptions(this)
+        } catch (e: Exception) {
+            println("Could not load display settings, using defaults: ${e.message}")
+        }
     }
 
     /**
