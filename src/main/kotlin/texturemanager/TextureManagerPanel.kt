@@ -14,7 +14,7 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
     var gridEditor: GridEditor? = null
 
     // Filter the object types to only include FLOOR and WALL
-    private val allowedObjectTypes = listOf(ObjectType.FLOOR, ObjectType.WALL)
+    private val allowedObjectTypes = listOf(ObjectType.WALL, ObjectType.FLOOR)
     private val objectTypeComboBox = JComboBox(allowedObjectTypes.toTypedArray())
 
     private val textureListModel = DefaultListModel<TextureEntry>()

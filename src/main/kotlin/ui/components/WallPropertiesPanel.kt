@@ -12,9 +12,9 @@ class WallPropertiesPanel : JPanel() {
     private var currentWallWidth = 2.0
 
     // UI Components
-    val colorButton: JButton
-    val heightButton: JButton
-    val widthButton: JButton
+    private val colorButton: JButton
+    private val heightButton: JButton
+    private val widthButton: JButton
 
     // Listeners
     private var onColorChange: ((Color) -> Unit)? = null

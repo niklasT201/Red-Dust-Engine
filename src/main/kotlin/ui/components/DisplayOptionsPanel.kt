@@ -142,7 +142,7 @@ class DisplayOptionsPanel(private val gridEditor: GridEditor) : JPanel() {
     }
 
     /**
-     * Creates a styled button with consistent size
+     * Creates a styled button with consistent size and hover effects
      */
     private fun createStyledButton(text: String, dimension: Dimension): JButton {
         return JButton(text).apply {
@@ -157,6 +157,58 @@ class DisplayOptionsPanel(private val gridEditor: GridEditor) : JPanel() {
                 BorderFactory.createEmptyBorder(4, 8, 4, 8)
             )
             font = Font("Dialog", Font.BOLD, 12)
+
+            // Hover effect
+            addMouseListener(object : java.awt.event.MouseAdapter() {
+                override fun mouseEntered(e: java.awt.event.MouseEvent) {
+                    // Lighten background color when hovering
+                    background = Color(
+                        Math.min(buttonColor.red + 20, 255),
+                        Math.min(buttonColor.green + 20, 255),
+                        Math.min(buttonColor.blue + 20, 255)
+                    )
+                    // Change border color to brighter accent
+                    border = BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(Color(
+                            Math.min(accentColor.red + 30, 255),
+                            Math.min(accentColor.green + 30, 255),
+                            Math.min(accentColor.blue + 30, 255)
+                        ), 1),
+                        BorderFactory.createEmptyBorder(4, 8, 4, 8)
+                    )
+                }
+
+                override fun mouseExited(e: java.awt.event.MouseEvent) {
+                    // Return to original colors when not hovering
+                    background = buttonColor
+                    border = BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(accentColor, 1),
+                        BorderFactory.createEmptyBorder(4, 8, 4, 8)
+                    )
+                }
+
+                override fun mousePressed(e: java.awt.event.MouseEvent) {
+                    // Darken background color when pressed
+                    background = Color(
+                        Math.max(buttonColor.red - 15, 0),
+                        Math.max(buttonColor.green - 15, 0),
+                        Math.max(buttonColor.blue - 15, 0)
+                    )
+                }
+
+                override fun mouseReleased(e: java.awt.event.MouseEvent) {
+                    // Return to hover state if still hovering
+                    background = if (contains(e.point)) {
+                        Color(
+                            (buttonColor.red + 20).coerceAtMost(255),
+                            (buttonColor.green + 20).coerceAtMost(255),
+                            (buttonColor.blue + 20).coerceAtMost(255)
+                        )
+                    } else {
+                        buttonColor
+                    }
+                }
+            })
         }
     }
 
