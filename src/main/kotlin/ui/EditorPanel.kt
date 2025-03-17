@@ -326,9 +326,6 @@ class EditorPanel(var gridEditor: GridEditor, private val game3D: Game3D, privat
         objectsSectionsPanel.add(objectSelectorPanel)
         objectsSectionsPanel.add(Box.createVerticalGlue())
 
-        // Player tab sections
-        playerSectionsPanel.add(Box.createVerticalGlue())
-
         // Map tab sections
         val quickActionsSection = CollapsibleSection("Quick Actions").apply {
             addComponent(quickActionsPanel)
@@ -350,21 +347,17 @@ class EditorPanel(var gridEditor: GridEditor, private val game3D: Game3D, privat
             }
         }
 
-        val gridLabelsSection = CollapsibleSection("Grid Labels").apply {
-            addComponent(gridLabelsPanel)
-        }
-
         // GameViewOptionsPanel
         val gameViewOptionsPanel = GameViewOptionsPanel(game3D)
         val gameViewOptionsSection = CollapsibleSection("Game View Options").apply {
             addComponent(gameViewOptionsPanel)
         }
 
+        // Player tab sections
+        playerSectionsPanel.add(gameViewOptionsSection)
+        playerSectionsPanel.add(Box.createVerticalGlue())
+
         mapSectionsPanel.add(quickActionsSection)
-        mapSectionsPanel.add(Box.createVerticalStrut(10))
-        mapSectionsPanel.add(gridLabelsSection)
-        mapSectionsPanel.add(Box.createVerticalStrut(10))
-        mapSectionsPanel.add(gameViewOptionsSection)
         mapSectionsPanel.add(Box.createVerticalGlue())
 
         // Textures tab sections
@@ -380,8 +373,14 @@ class EditorPanel(var gridEditor: GridEditor, private val game3D: Game3D, privat
             addComponent(toolsPanel)
         }
 
+        val gridLabelsSection = CollapsibleSection("Grid Labels").apply {
+            addComponent(gridLabelsPanel)
+        }
+
         toolsSectionsPanel.add(toolsSection)
+        toolsSectionsPanel.add(Box.createVerticalStrut(10))
         // Vertical glue AFTER adding all sections
+        toolsSectionsPanel.add(gridLabelsSection)
         toolsSectionsPanel.add(Box.createVerticalGlue())
     }
 

@@ -48,8 +48,6 @@ fun main() {
 // player drawing in cell fix
 // fps disabler
 // checkboxes are updating right
-// crosshair label checkbox to player tab
-// change tab structure
 
 // Object List:
 // Pillar, breakable walls and floors, PropObject, Doors, Triggers, Elevator, Light Sources, Items, 3D Object Support
