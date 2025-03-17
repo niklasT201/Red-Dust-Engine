@@ -47,7 +47,6 @@ fun main() {
 // disable keys option
 // player drawing in cell fix
 // fps disabler
-// checkboxes are updating right
 
 // Object List:
 // Pillar, breakable walls and floors, PropObject, Doors, Triggers, Elevator, Light Sources, Items, 3D Object Support

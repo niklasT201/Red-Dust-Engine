@@ -19,7 +19,8 @@ class GameViewOptionsPanel(private val game3D: Game3D) : JPanel() {
 
         // FPS Counter checkbox
         val fpsCheckbox = JCheckBox("Show FPS Counter").apply {
-            isSelected = game3D.isFpsCounterVisible()
+            // Force selection to match actual state
+            isSelected = true
             background = Color(40, 44, 52)
             foreground = Color.WHITE
             alignmentX = Component.LEFT_ALIGNMENT
@@ -30,7 +31,8 @@ class GameViewOptionsPanel(private val game3D: Game3D) : JPanel() {
 
         // Debug info checkbox (contains direction and position)
         val debugInfoCheckbox = JCheckBox("Show Direction & Position").apply {
-            isSelected = game3D.isDebugInfoVisible()
+            // Force selection to match actual state
+            isSelected = true
             background = Color(40, 44, 52)
             foreground = Color.WHITE
             alignmentX = Component.LEFT_ALIGNMENT
@@ -41,7 +43,8 @@ class GameViewOptionsPanel(private val game3D: Game3D) : JPanel() {
 
         // Crosshair checkbox
         val crosshairCheckbox = JCheckBox("Show Crosshair").apply {
-            isSelected = game3D.isCrosshairVisible()
+            // Force selection to match actual state
+            isSelected = true
             background = Color(40, 44, 52)
             foreground = Color.WHITE
             alignmentX = Component.LEFT_ALIGNMENT
