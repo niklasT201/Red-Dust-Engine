@@ -14,18 +14,16 @@ class Game3D : JPanel() {
     private val gridEditor = GridEditor()
     private val editorPanel = EditorPanel(gridEditor, this) { toggleEditorMode() }
     private lateinit var menuSystem: MenuSystem
+    private var skyColor = Color(135, 206, 235)
     private val keysPressed = mutableSetOf<Int>()
     private val walls = mutableListOf<Wall>()
     private val floors = mutableListOf<Floor>()
     private var isEditorMode = true
+
     private var frameCount = 0
     private var lastFpsUpdateTime = System.currentTimeMillis()
     private var currentFps = 0
     private var isFpsCounterVisible = true
-
-    private var skyColor = Color(135, 206, 235)
-    private var isDebugInfoVisible = true
-    private var isCrosshairVisible = true
 
     // Right panel with card layout to switch between grid editor and game view
     private val rightPanel = JPanel(CardLayout()).apply {
@@ -266,11 +264,10 @@ class Game3D : JPanel() {
 
             if (!isEditorMode) {
                 // Draw crosshair only if it's visible
-                if (isCrosshairVisible) {
                     g2.color = Color.WHITE
                     g2.drawLine(width/2 - 10, height/2, width/2 + 10, height/2)
                     g2.drawLine(width/2, height/2 - 10, width/2, height/2 + 10)
-                }
+
 
                 g2.font = Font("Monospace", Font.BOLD, 14)
                 g2.color = Color.WHITE
@@ -281,7 +278,6 @@ class Game3D : JPanel() {
                 }
 
                 // Conditionally draw debug information
-                if (isDebugInfoVisible) {
                     // Get cardinal direction from player
                     val direction = player.getCardinalDirection()
 
@@ -293,26 +289,9 @@ class Game3D : JPanel() {
                     val startY = if (isFpsCounterVisible) 40 else 20
                     g2.drawString("Direction: $direction (${yawDegrees}°)", 10, startY)
                     g2.drawString("Position: (${String.format("%.1f", player.position.x)}, ${String.format("%.1f", player.position.y)}, ${String.format("%.1f", player.position.z)})", 10, startY + 20)
-                }
             }
         }
     }
-
-    fun setCrosshairVisible(visible: Boolean) {
-        isCrosshairVisible = visible
-        renderPanel.repaint()
-    }
-
-    fun isCrosshairVisible(): Boolean = isCrosshairVisible
-
-    // Method to toggle debug info visibility
-    fun setDebugInfoVisible(visible: Boolean) {
-        isDebugInfoVisible = visible
-        renderPanel.repaint()
-    }
-
-    // Method to check current debug info visibility
-    fun isDebugInfoVisible(): Boolean = isDebugInfoVisible
 
     fun getSkyColor(): Color = skyColor
 

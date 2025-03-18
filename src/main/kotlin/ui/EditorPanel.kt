@@ -347,14 +347,8 @@ class EditorPanel(var gridEditor: GridEditor, private val game3D: Game3D, privat
             }
         }
 
-        // GameViewOptionsPanel
-        val gameViewOptionsPanel = GameViewOptionsPanel(game3D)
-        val gameViewOptionsSection = CollapsibleSection("Game View Options").apply {
-            addComponent(gameViewOptionsPanel)
-        }
-
         // Player tab sections
-        playerSectionsPanel.add(gameViewOptionsSection)
+        // game panel will be here again
         playerSectionsPanel.add(Box.createVerticalGlue())
 
         mapSectionsPanel.add(quickActionsSection)
