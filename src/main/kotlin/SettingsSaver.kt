@@ -93,9 +93,6 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             outputStream.writeInt(skyColor.green)
             outputStream.writeInt(skyColor.blue)
 
-            // Debug info visibility
-            outputStream.writeBoolean(game3D.isDebugInfoVisible())
-
             outputStream.close()
             return true
         } catch (e: Exception) {
@@ -255,12 +252,6 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             val green = inputStream.readInt()
             val blue = inputStream.readInt()
             game3D.setSkyColor(Color(red, green, blue))
-
-            // Read debug info visibility
-            val debugInfoVisible = inputStream.readBoolean()
-            game3D.setDebugInfoVisible(debugInfoVisible)
-
-            // Add more Game3D settings as needed
 
             inputStream.close()
             return true

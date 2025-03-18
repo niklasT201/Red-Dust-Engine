@@ -25,6 +25,8 @@ class Game3D : JPanel() {
     private var currentFps = 0
     private var isFpsCounterVisible = true
 
+    private var isCrosshairVisible = true
+
     // Right panel with card layout to switch between grid editor and game view
     private val rightPanel = JPanel(CardLayout()).apply {
         add(gridEditor, "editor")
@@ -264,10 +266,11 @@ class Game3D : JPanel() {
 
             if (!isEditorMode) {
                 // Draw crosshair only if it's visible
+                if (isCrosshairVisible) {
                     g2.color = Color.WHITE
                     g2.drawLine(width/2 - 10, height/2, width/2 + 10, height/2)
                     g2.drawLine(width/2, height/2 - 10, width/2, height/2 + 10)
-
+                }
 
                 g2.font = Font("Monospace", Font.BOLD, 14)
                 g2.color = Color.WHITE
@@ -291,6 +294,13 @@ class Game3D : JPanel() {
                     g2.drawString("Position: (${String.format("%.1f", player.position.x)}, ${String.format("%.1f", player.position.y)}, ${String.format("%.1f", player.position.z)})", 10, startY + 20)
             }
         }
+    }
+
+    fun isCrosshairVisible(): Boolean = isCrosshairVisible
+
+    fun setCrosshairVisible(visible: Boolean) {
+        isCrosshairVisible = visible
+        renderPanel.repaint()  // Refresh the display when changed
     }
 
     fun getSkyColor(): Color = skyColor
