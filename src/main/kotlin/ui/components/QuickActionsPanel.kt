@@ -21,6 +21,8 @@ class QuickActionsPanel(private val gridEditor: GridEditor) : JPanel() {
     private val hoverColor = Color(80, 83, 85)
     private val defaultButtonColor = Color(60, 63, 65)
     private val selectedButtonColor = Color(220, 95, 60) // Used warm orange/red from About dialog
+    private val clearButtonColor = Color(70, 40, 40) // Dark red for clear button
+    private val clearButtonHoverColor = Color(90, 50, 50) // Lighter red for hover
 
     init {
         // Set up panel with gradient background
@@ -135,11 +137,36 @@ class QuickActionsPanel(private val gridEditor: GridEditor) : JPanel() {
         })
         contentPanel.add(Box.createVerticalStrut(15))
 
-        clearAllButton = createButton("Clear All").apply {
-            background = Color(70, 40, 40) // Different color for destructive action
-        }
-        clearAllButton.addActionListener {
-            gridEditor.clearGrid()
+        // Create Clear All button with custom colors
+        clearAllButton = JButton("Clear All").apply {
+            foreground = Color.WHITE
+            background = clearButtonColor // Use the dark red color
+            font = Font("Arial", Font.BOLD, 12)
+            isFocusPainted = false
+            alignmentX = Component.CENTER_ALIGNMENT
+            maximumSize = Dimension(170, 30)
+            preferredSize = Dimension(150, 30)
+
+            // Add rounded corners and proper border
+            border = BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Color(100, 60, 60)), // Slightly lighter border
+                BorderFactory.createEmptyBorder(5, 15, 5, 15)
+            )
+
+            // Special hover effect for Clear button
+            addMouseListener(object : MouseAdapter() {
+                override fun mouseEntered(e: MouseEvent) {
+                    background = clearButtonHoverColor // Lighter red on hover
+                }
+
+                override fun mouseExited(e: MouseEvent) {
+                    background = clearButtonColor // Back to dark red when not hovering
+                }
+            })
+
+            addActionListener {
+                gridEditor.clearGrid()
+            }
         }
         contentPanel.add(clearAllButton)
 
