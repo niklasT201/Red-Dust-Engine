@@ -8,7 +8,6 @@ import javax.swing.border.TitledBorder
 
 class PlayerOptionsPanel(private val game3D: Game3D) : JPanel() {
     private val crosshairVisibleCheckbox = JCheckBox("Show Crosshair")
-    private val crosshairSizeLabel = JLabel("Size: 10")
     private val customSizeTrack = CrosshairSizeTrack(5, 30, 10)
 
     init {
@@ -30,8 +29,6 @@ class PlayerOptionsPanel(private val game3D: Game3D) : JPanel() {
 
         // Initialize custom size track with current size
         customSizeTrack.value = game3D.getCrosshairSize()
-        crosshairSizeLabel.text = "Size: ${game3D.getCrosshairSize()}"
-        crosshairSizeLabel.foreground = Color.WHITE
 
         // Create a container for the checkbox with proper alignment
         val checkboxPanel = JPanel(FlowLayout(FlowLayout.LEFT))
@@ -40,10 +37,10 @@ class PlayerOptionsPanel(private val game3D: Game3D) : JPanel() {
 
         add(checkboxPanel)
 
-        // Create a panel for the track and its label
+        // Create a panel for the track with a label
         val trackPanel = JPanel(FlowLayout(FlowLayout.LEFT))
         trackPanel.background = Color(50, 52, 55)
-        trackPanel.add(crosshairSizeLabel)
+        trackPanel.add(JLabel("Size:").apply { foreground = Color.WHITE })
         trackPanel.add(customSizeTrack)
         add(trackPanel)
 
@@ -54,7 +51,6 @@ class PlayerOptionsPanel(private val game3D: Game3D) : JPanel() {
 
         // Set up value change listener for custom track
         customSizeTrack.addChangeListener { newValue ->
-            crosshairSizeLabel.text = "Size: $newValue"
             game3D.setCrosshairSize(newValue)
         }
 
@@ -62,7 +58,6 @@ class PlayerOptionsPanel(private val game3D: Game3D) : JPanel() {
         SwingUtilities.invokeLater {
             crosshairVisibleCheckbox.isSelected = game3D.isCrosshairVisible()
             customSizeTrack.value = game3D.getCrosshairSize()
-            crosshairSizeLabel.text = "Size: ${game3D.getCrosshairSize()}"
         }
     }
 
@@ -82,12 +77,12 @@ class PlayerOptionsPanel(private val game3D: Game3D) : JPanel() {
                 }
             }
 
-        private val trackHeight = 8
-        private val knobSize = 14
+        private val trackHeight = 20  // Taller track to accommodate the text
+        private val markerWidth = 3    // Slim vertical marker instead of knob
         private val changeListeners = mutableListOf<(Int) -> Unit>()
 
         init {
-            preferredSize = Dimension(150, knobSize + 4)
+            preferredSize = Dimension(150, trackHeight)
             background = Color(50, 52, 55)
 
             addMouseListener(object : MouseAdapter() {
@@ -104,8 +99,8 @@ class PlayerOptionsPanel(private val game3D: Game3D) : JPanel() {
         }
 
         private fun updateValueFromMouse(x: Int) {
-            val trackWidth = width - knobSize
-            val relativeX = (x - knobSize / 2).coerceIn(0, trackWidth)
+            val trackWidth = width
+            val relativeX = x.coerceIn(0, trackWidth)
             val newValue = min + ((max - min) * relativeX.toDouble() / trackWidth).toInt()
             value = newValue
         }
@@ -119,40 +114,44 @@ class PlayerOptionsPanel(private val game3D: Game3D) : JPanel() {
             val g2 = g as Graphics2D
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
 
-            val trackWidth = width - knobSize
-            val trackY = height / 2 - trackHeight / 2
-
             // Draw track background
             g2.color = Color(30, 32, 34)
-            g2.fillRoundRect(knobSize / 2, trackY, trackWidth, trackHeight, trackHeight, trackHeight)
+            g2.fillRoundRect(0, 0, width, trackHeight, 8, 8)
 
             // Draw filled portion of track
-            val fillWidth = ((value - min).toDouble() / (max - min) * trackWidth).toInt()
+            val fillWidth = ((value - min).toDouble() / (max - min) * width).toInt()
             g2.color = Color(100, 149, 237) // Cornflower blue
-            g2.fillRoundRect(knobSize / 2, trackY, fillWidth, trackHeight, trackHeight, trackHeight)
+            g2.fillRoundRect(0, 0, fillWidth, trackHeight, 8, 8)
 
             // Draw tick marks
-            g2.color = Color(80, 82, 85)
+            g2.color = Color(200, 200, 200, 120)
             for (i in min..max step 5) {
-                val tickX = knobSize / 2 + ((i - min).toDouble() / (max - min) * trackWidth).toInt()
-                g2.drawLine(tickX, trackY - 2, tickX, trackY + trackHeight + 2)
+                val tickX = ((i - min).toDouble() / (max - min) * width).toInt()
+                g2.drawLine(tickX, 2, tickX, trackHeight - 2)
             }
 
-            // Draw knob
-            val knobX = knobSize / 2 + ((value - min).toDouble() / (max - min) * trackWidth).toInt() - knobSize / 2
-            val knobY = height / 2 - knobSize / 2
+            // Draw marker at current position (slim vertical line)
+            val markerX = ((value - min).toDouble() / (max - min) * width).toInt() - markerWidth / 2
+            g2.color = Color.WHITE
+            g2.fillRect(markerX, 0, markerWidth, trackHeight)
 
-            // Knob shadow
-            g2.color = Color(20, 20, 20, 100)
-            g2.fillOval(knobX + 1, knobY + 1, knobSize, knobSize)
+            // Draw value text centered in the track
+            g2.font = Font("SansSerif", Font.BOLD, 12)
+            val valueText = value.toString()
+            val textWidth = g2.fontMetrics.stringWidth(valueText)
+            val textHeight = g2.fontMetrics.height
 
-            // Knob body
-            g2.color = Color(220, 220, 220)
-            g2.fillOval(knobX, knobY, knobSize, knobSize)
+            // Center text in the track
+            val textX = (width - textWidth) / 2
+            val textY = (trackHeight + textHeight) / 2 - 2
 
-            // Knob border
-            g2.color = Color(180, 180, 180)
-            g2.drawOval(knobX, knobY, knobSize, knobSize)
+            // Draw text shadow for better readability
+            g2.color = Color(0, 0, 0, 150)
+            g2.drawString(valueText, textX + 1, textY + 1)
+
+            // Draw text in white
+            g2.color = Color.WHITE
+            g2.drawString(valueText, textX, textY)
         }
     }
 }
