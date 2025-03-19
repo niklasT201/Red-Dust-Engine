@@ -26,6 +26,7 @@ class Game3D : JPanel() {
     private var isFpsCounterVisible = true
 
     private var isCrosshairVisible = true
+    private var crosshairSize = 10
 
     // Right panel with card layout to switch between grid editor and game view
     private val rightPanel = JPanel(CardLayout()).apply {
@@ -268,8 +269,8 @@ class Game3D : JPanel() {
                 // Draw crosshair only if it's visible
                 if (isCrosshairVisible) {
                     g2.color = Color.WHITE
-                    g2.drawLine(width/2 - 10, height/2, width/2 + 10, height/2)
-                    g2.drawLine(width/2, height/2 - 10, width/2, height/2 + 10)
+                    g2.drawLine(width/2 - crosshairSize, height/2, width/2 + crosshairSize, height/2)
+                    g2.drawLine(width/2, height/2 - crosshairSize, width/2, height/2 + crosshairSize)
                 }
 
                 g2.font = Font("Monospace", Font.BOLD, 14)
@@ -300,6 +301,13 @@ class Game3D : JPanel() {
 
     fun setCrosshairVisible(visible: Boolean) {
         isCrosshairVisible = visible
+        renderPanel.repaint()  // Refresh the display when changed
+    }
+
+    fun getCrosshairSize(): Int = crosshairSize
+
+    fun setCrosshairSize(size: Int) {
+        crosshairSize = size
         renderPanel.repaint()  // Refresh the display when changed
     }
 
