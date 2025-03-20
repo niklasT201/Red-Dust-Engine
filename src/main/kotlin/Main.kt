@@ -48,7 +48,6 @@ fun main() {
 // player drawing in cell fix
 // fps disabler
 // Direction and position label toggle adding
-// crosshair settings saver
 
 // Object List:
 // Pillar, breakable walls and floors, PropObject, Doors, Triggers, Elevator, Light Sources, Items, 3D Object Support

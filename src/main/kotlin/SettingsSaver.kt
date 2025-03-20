@@ -2,6 +2,7 @@ import grideditor.GridEditor
 import player.Player
 import java.io.*
 import ui.components.DisplayOptionsPanel
+import ui.components.CrosshairShape
 import java.awt.Color
 import java.text.SimpleDateFormat
 import java.util.*
@@ -60,10 +61,6 @@ class SettingsSaver(private val gridEditor: GridEditor) {
         }
     }
 
-    /**
-     * Saves renderer settings to a file
-     * @param renderer The renderer containing settings to save
-     */
     fun saveWorldSettings(renderer: Renderer, game3D: Game3D): Boolean {
         try {
             ensureSettingsDir()
@@ -102,14 +99,14 @@ class SettingsSaver(private val gridEditor: GridEditor) {
         }
     }
 
-    fun savePlayerSettings(player: Player): Boolean {
+    fun savePlayerSettings(player: Player, game3D: Game3D? = null): Boolean {
         try {
             ensureSettingsDir()
             val file = File("$SETTINGS_DIR/$PLAYER_SETTINGS_FILE")
             val outputStream = DataOutputStream(BufferedOutputStream(FileOutputStream(file)))
 
             // Write version for future compatibility
-            outputStream.writeInt(1) // Version 1 of the settings format
+            outputStream.writeInt(2) // Version 2 of the settings format (now includes crosshair)
 
             // Write timestamp
             outputStream.writeLong(System.currentTimeMillis())
@@ -126,6 +123,39 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             // Add camera rotation speed
             outputStream.writeDouble(player.camera.accessRotationSpeed())
 
+            // --- Crosshair settings section (added in version 2) ---
+            outputStream.writeUTF("CROSSHAIR_SECTION")
+
+            // Only write crosshair settings if Game3D is provided
+            if (game3D != null) {
+                // Write crosshair visibility
+                outputStream.writeBoolean(game3D.isCrosshairVisible())
+
+                // Write crosshair size
+                outputStream.writeInt(game3D.getCrosshairSize())
+
+                // Write crosshair color
+                val crosshairColor = game3D.getCrosshairColor()
+                outputStream.writeInt(crosshairColor.red)
+                outputStream.writeInt(crosshairColor.green)
+                outputStream.writeInt(crosshairColor.blue)
+
+                // Write crosshair shape (as ordinal integer)
+                outputStream.writeInt(game3D.getCrosshairShape().ordinal)
+
+                // Write FPS counter visibility for completeness
+                outputStream.writeBoolean(game3D.isFpsCounterVisible())
+            } else {
+                // Default values if Game3D isn't available
+                outputStream.writeBoolean(true) // Visible by default
+                outputStream.writeInt(10) // Default size
+                outputStream.writeInt(255) // White color (R)
+                outputStream.writeInt(255) // White color (G)
+                outputStream.writeInt(255) // White color (B)
+                outputStream.writeInt(0) // PLUS shape by default
+                outputStream.writeBoolean(true) // FPS counter visible by default
+            }
+
             outputStream.close()
             return true
         } catch (e: Exception) {
@@ -135,11 +165,6 @@ class SettingsSaver(private val gridEditor: GridEditor) {
         }
     }
 
-    /**
-     * Loads display options from a file
-     * @param displayOptionsPanel The panel to load the settings into
-     * @return True if load was successful, false otherwise
-     */
     fun loadDisplayOptions(displayOptionsPanel: DisplayOptionsPanel): Boolean {
         try {
             val file = File("$SETTINGS_DIR/$DISPLAY_SETTINGS_FILE")
@@ -193,11 +218,6 @@ class SettingsSaver(private val gridEditor: GridEditor) {
         }
     }
 
-    /**
-     * Loads renderer settings from a file
-     * @param renderer The renderer to load the settings into
-     * @return True if load was successful, false otherwise
-     */
     fun loadWorldSettings(renderer: Renderer, game3D: Game3D): Boolean {
         try {
             val file = File("$SETTINGS_DIR/$WORLD_SETTINGS_FILE")
@@ -262,7 +282,7 @@ class SettingsSaver(private val gridEditor: GridEditor) {
         }
     }
 
-    fun loadPlayerSettings(player: Player): Boolean {
+    fun loadPlayerSettings(player: Player, game3D: Game3D? = null): Boolean {
         try {
             val file = File("$SETTINGS_DIR/$PLAYER_SETTINGS_FILE")
             if (!file.exists()) {
@@ -274,7 +294,7 @@ class SettingsSaver(private val gridEditor: GridEditor) {
 
             // Read and verify version
             val version = inputStream.readInt()
-            if (version != 1) {
+            if (version != 1 && version != 2) {
                 println("Unsupported settings file version: $version")
                 inputStream.close()
                 return false
@@ -306,6 +326,42 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             // Apply camera settings
             player.camera.changeRotationSpeed(rotationSpeed)
 
+            // Read crosshair settings if version is 2 or higher and if Game3D is provided
+            if (version >= 2 && game3D != null) {
+                try {
+                    val crosshairSection = inputStream.readUTF()
+                    if (crosshairSection == "CROSSHAIR_SECTION") {
+                        // Read crosshair visibility
+                        val isCrosshairVisible = inputStream.readBoolean()
+
+                        // Read crosshair size
+                        val crosshairSize = inputStream.readInt()
+
+                        // Read crosshair color
+                        val red = inputStream.readInt()
+                        val green = inputStream.readInt()
+                        val blue = inputStream.readInt()
+
+                        // Read crosshair shape ordinal
+                        val shapeOrdinal = inputStream.readInt()
+                        val crosshairShape = CrosshairShape.entries.getOrElse(shapeOrdinal) { CrosshairShape.PLUS }
+
+                        // Read FPS counter visibility
+                        val isFpsVisible = inputStream.readBoolean()
+
+                        // Apply settings to Game3D
+                        game3D.setCrosshairVisible(isCrosshairVisible)
+                        game3D.setCrosshairSize(crosshairSize)
+                        game3D.setCrosshairColor(Color(red, green, blue))
+                        game3D.setCrosshairShape(crosshairShape)
+                        game3D.setFpsCounterVisible(isFpsVisible)
+                    }
+                } catch (e: Exception) {
+                    println("Error loading crosshair settings: ${e.message}")
+                    // Continue with defaults if crosshair settings can't be loaded
+                }
+            }
+
             inputStream.close()
             return true
         } catch (e: Exception) {
@@ -315,10 +371,6 @@ class SettingsSaver(private val gridEditor: GridEditor) {
         }
     }
 
-    /**
-     * Creates a backup of the current settings
-     * @return True if backup was successful, false otherwise
-     */
     fun backupSettings(): Boolean {
         try {
             ensureSettingsDir()

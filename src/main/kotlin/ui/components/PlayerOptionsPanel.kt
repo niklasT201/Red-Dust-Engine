@@ -34,7 +34,7 @@ class PlayerOptionsPanel(private val game3D: Game3D) : JPanel() {
     )
 
     private val colorComboBox = JComboBox(colorOptions.map { it.first }.toTypedArray())
-    private val shapeComboBox = JComboBox(CrosshairShape.values())
+    private val shapeComboBox = JComboBox(CrosshairShape.entries.toTypedArray())
 
     init {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)

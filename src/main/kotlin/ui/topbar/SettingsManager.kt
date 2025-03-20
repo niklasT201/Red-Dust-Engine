@@ -32,8 +32,8 @@ class SettingsManager(
         // Save world settings (includes both renderer and Game3D settings)
         worldSuccess = settingsSaver.saveWorldSettings(renderer, game3D)
 
-        // Save player settings
-        playerSuccess = settingsSaver.savePlayerSettings(player)
+        // Save player settings (now also passing game3D for crosshair settings)
+        playerSuccess = settingsSaver.savePlayerSettings(player, game3D)
 
         // Save key bindings
         keyBindingManager.saveKeyBindings()
@@ -54,8 +54,8 @@ class SettingsManager(
         // Load world settings (includes both renderer and Game3D settings)
         worldSuccess = settingsSaver.loadWorldSettings(renderer, game3D)
 
-        // Load player settings
-        playerSuccess = settingsSaver.loadPlayerSettings(player)
+        // Load player settings (now also passing game3D for crosshair settings)
+        playerSuccess = settingsSaver.loadPlayerSettings(player, game3D)
 
         // Load key bindings
         keyBindingManager.loadKeyBindings()
