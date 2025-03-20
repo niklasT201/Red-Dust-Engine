@@ -158,6 +158,7 @@ class Game3D : JPanel() {
         setupInputHandling()
         updateMode()
         addPredefinedPillars()
+        //settingsSaver.loadPlayerSettings(player, this)
     }
 
     // Helper method to get existing floor levels from the grid
