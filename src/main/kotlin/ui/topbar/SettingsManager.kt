@@ -9,6 +9,8 @@ import grideditor.GridEditor
 import java.awt.Component
 import java.awt.Container
 import controls.KeyBindings
+import ui.components.PlayerOptionsPanel
+import javax.swing.SwingUtilities
 
 class SettingsManager(
     private val renderer: Renderer,
@@ -60,6 +62,11 @@ class SettingsManager(
         // Load key bindings
         keyBindingManager.loadKeyBindings()
 
+        // After loading player settings, refresh the UI
+        if (playerSuccess) {
+            findPlayerOptionsPanel(SwingUtilities.getWindowAncestor(displayOptionsPanel))?.refreshFromGameState()
+        }
+
         return Triple(displaySuccess, worldSuccess, playerSuccess)
     }
 
@@ -70,6 +77,20 @@ class SettingsManager(
         if (component is Container) {
             for (i in 0..<component.componentCount) {
                 val result = findDisplayOptionsPanel(component.getComponent(i))
+                if (result != null) return result
+            }
+        }
+
+        return null
+    }
+
+    fun findPlayerOptionsPanel(component: Component?): PlayerOptionsPanel? {
+        if (component == null) return null
+        if (component is PlayerOptionsPanel) return component
+
+        if (component is Container) {
+            for (i in 0..<component.componentCount) {
+                val result = findPlayerOptionsPanel(component.getComponent(i))
                 if (result != null) return result
             }
         }

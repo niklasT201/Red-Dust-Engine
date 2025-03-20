@@ -224,4 +224,18 @@ class PlayerOptionsPanel(private val game3D: Game3D) : JPanel() {
             g2.drawString(valueText, textX, textY)
         }
     }
+
+    fun refreshFromGameState() {
+        // Update the UI controls to match the game state
+        crosshairVisibleCheckbox.isSelected = game3D.isCrosshairVisible()
+        customSizeTrack.value = game3D.getCrosshairSize()
+
+        // Update color dropdown
+        val currentColor = game3D.getCrosshairColor()
+        val colorIndex = colorOptions.indexOfFirst { it.second == currentColor }.takeIf { it >= 0 } ?: 0
+        colorComboBox.selectedIndex = colorIndex
+
+        // Update shape dropdown
+        shapeComboBox.selectedItem = game3D.getCrosshairShape()
+    }
 }
