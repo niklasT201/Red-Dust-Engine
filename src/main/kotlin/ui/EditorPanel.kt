@@ -352,6 +352,13 @@ class EditorPanel(var gridEditor: GridEditor, private val game3D: Game3D, privat
         val playerOptionsSection = CollapsibleSection("Player Options").apply {
             addComponent(playerOptionsPanel)
         }
+        val debugOptionsPanel = DebugOptionsPanel(game3D)
+        val debugOptionsSection = CollapsibleSection("Player Debug Info").apply {
+            addComponent(debugOptionsPanel)
+        }
+
+        playerSectionsPanel.add(debugOptionsSection)
+        playerSectionsPanel.add(Box.createVerticalStrut(10))
         playerSectionsPanel.add(playerOptionsSection)
         playerSectionsPanel.add(Box.createVerticalGlue())
 

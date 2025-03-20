@@ -26,6 +26,8 @@ class Game3D : JPanel() {
     private var lastFpsUpdateTime = System.currentTimeMillis()
     private var currentFps = 0
     private var isFpsCounterVisible = true
+    private var isDirectionVisible = true
+    private var isPositionVisible = true
 
     private var isCrosshairVisible = true
     private var crosshairSize = 10
@@ -304,17 +306,23 @@ class Game3D : JPanel() {
                 }
 
                 // Conditionally draw debug information
-                    // Get cardinal direction from player
-                    val direction = player.getCardinalDirection()
+                // Get cardinal direction from player
+                val direction = player.getCardinalDirection()
 
-                    // Get angles in degrees for display
-                    val yawDegrees = player.getYawDegrees()
+                // Get angles in degrees for display
+                val yawDegrees = player.getYawDegrees()
 
-                    // Draw debug information
-                    // Adjust y-position based on whether FPS is also being shown
-                    val startY = if (isFpsCounterVisible) 40 else 20
-                    g2.drawString("Direction: $direction (${yawDegrees}°)", 10, startY)
-                    g2.drawString("Position: (${String.format("%.1f", player.position.x)}, ${String.format("%.1f", player.position.y)}, ${String.format("%.1f", player.position.z)})", 10, startY + 20)
+                // Draw debug information
+                // Adjust y-position based on whether FPS is also being shown
+                val startY = if (isFpsCounterVisible) 40 else 20
+                var currentY = startY
+                if (isDirectionVisible) {
+                    g2.drawString("Direction: $direction (${yawDegrees}°)", 10, currentY)
+                    currentY += 20
+                }
+                if (isPositionVisible) {
+                    g2.drawString("Position: (${String.format("%.1f", player.position.x)}, ${String.format("%.1f", player.position.y)}, ${String.format("%.1f", player.position.z)})", 10, currentY)
+                }
             }
         }
     }
@@ -345,6 +353,18 @@ class Game3D : JPanel() {
     fun setCrosshairShape(shape: CrosshairShape) {
         crosshairShape = shape
         renderPanel.repaint()  // Refresh the display when changed
+    }
+
+    fun isDirectionVisible(): Boolean = isDirectionVisible
+    fun setDirectionVisible(visible: Boolean) {
+        isDirectionVisible = visible
+        renderPanel.repaint()
+    }
+
+    fun isPositionVisible(): Boolean = isPositionVisible
+    fun setPositionVisible(visible: Boolean) {
+        isPositionVisible = visible
+        renderPanel.repaint()
     }
 
     fun getSkyColor(): Color = skyColor

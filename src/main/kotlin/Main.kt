@@ -39,6 +39,7 @@ fun main() {
     }
 }
 
+// improve general ui design
 // fix visible floor tile border
 // default value saving
 // adding physics
@@ -46,8 +47,6 @@ fun main() {
 // optional border around objects
 // disable keys option
 // player drawing in cell fix
-// fps disabler
-// Direction and position label toggle adding
 
 // Object List:
 // Pillar, breakable walls and floors, PropObject, Doors, Triggers, Elevator, Light Sources, Items, 3D Object Support
