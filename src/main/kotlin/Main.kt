@@ -48,8 +48,6 @@ fun main() {
 // player drawing in cell fix
 // fps disabler
 // Direction and position label toggle adding
-// Crosshair color adding
-// crosshair form adding
 // crosshair settings saver
 
 // Object List:

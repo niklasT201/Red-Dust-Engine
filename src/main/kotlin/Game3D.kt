@@ -3,6 +3,7 @@ import grideditor.GridEditor
 import player.Player
 import ui.EditorPanel
 import ui.MenuSystem
+import ui.components.CrosshairShape
 import java.awt.*
 import java.awt.event.*
 import javax.swing.*
@@ -27,6 +28,8 @@ class Game3D : JPanel() {
 
     private var isCrosshairVisible = true
     private var crosshairSize = 10
+    private var crosshairColor = Color.WHITE
+    private var crosshairShape = CrosshairShape.PLUS
 
     // Right panel with card layout to switch between grid editor and game view
     private val rightPanel = JPanel(CardLayout()).apply {
@@ -268,9 +271,25 @@ class Game3D : JPanel() {
             if (!isEditorMode) {
                 // Draw crosshair only if it's visible
                 if (isCrosshairVisible) {
-                    g2.color = Color.WHITE
-                    g2.drawLine(width/2 - crosshairSize, height/2, width/2 + crosshairSize, height/2)
-                    g2.drawLine(width/2, height/2 - crosshairSize, width/2, height/2 + crosshairSize)
+                    g2.color = crosshairColor
+
+                    when (crosshairShape) {
+                        CrosshairShape.PLUS -> {
+                            g2.drawLine(width/2 - crosshairSize, height/2, width/2 + crosshairSize, height/2)
+                            g2.drawLine(width/2, height/2 - crosshairSize, width/2, height/2 + crosshairSize)
+                        }
+                        CrosshairShape.X -> {
+                            g2.drawLine(width/2 - crosshairSize, height/2 - crosshairSize, width/2 + crosshairSize, height/2 + crosshairSize)
+                            g2.drawLine(width/2 - crosshairSize, height/2 + crosshairSize, width/2 + crosshairSize, height/2 - crosshairSize)
+                        }
+                        CrosshairShape.DOT -> {
+                            val dotSize = crosshairSize / 3
+                            g2.fillOval(width/2 - dotSize, height/2 - dotSize, dotSize * 2, dotSize * 2)
+                        }
+                        CrosshairShape.CIRCLE -> {
+                            g2.drawOval(width/2 - crosshairSize, height/2 - crosshairSize, crosshairSize * 2, crosshairSize * 2)
+                        }
+                    }
                 }
 
                 g2.font = Font("Monospace", Font.BOLD, 14)
@@ -308,6 +327,20 @@ class Game3D : JPanel() {
 
     fun setCrosshairSize(size: Int) {
         crosshairSize = size
+        renderPanel.repaint()  // Refresh the display when changed
+    }
+
+    fun getCrosshairColor(): Color = crosshairColor?: Color.WHITE
+
+    fun setCrosshairColor(color: Color) {
+        crosshairColor = color
+        renderPanel.repaint()  // Refresh the display when changed
+    }
+
+    fun getCrosshairShape(): CrosshairShape = crosshairShape
+
+    fun setCrosshairShape(shape: CrosshairShape) {
+        crosshairShape = shape
         renderPanel.repaint()  // Refresh the display when changed
     }
 

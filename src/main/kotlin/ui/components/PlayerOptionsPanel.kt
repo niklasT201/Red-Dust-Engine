@@ -6,9 +6,35 @@ import java.awt.event.*
 import javax.swing.*
 import javax.swing.border.TitledBorder
 
+enum class CrosshairShape {
+    PLUS, X, DOT, CIRCLE;
+
+    override fun toString(): String {
+        return when (this) {
+            PLUS -> "Plus (+)"
+            X -> "X"
+            DOT -> "Dot"
+            CIRCLE -> "Circle"
+        }
+    }
+}
+
 class PlayerOptionsPanel(private val game3D: Game3D) : JPanel() {
     private val crosshairVisibleCheckbox = JCheckBox("Show Crosshair")
     private val customSizeTrack = CrosshairSizeTrack(5, 30, 10)
+
+    // New UI components for crosshair color and shape
+    private val colorOptions = arrayOf(
+        "White" to Color.WHITE,
+        "Red" to Color.RED,
+        "Green" to Color(0, 255, 0),
+        "Blue" to Color(0, 180, 255),
+        "Yellow" to Color.YELLOW,
+        "Purple" to Color(200, 0, 200)
+    )
+
+    private val colorComboBox = JComboBox(colorOptions.map { it.first }.toTypedArray())
+    private val shapeComboBox = JComboBox(CrosshairShape.values())
 
     init {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -30,6 +56,20 @@ class PlayerOptionsPanel(private val game3D: Game3D) : JPanel() {
         // Initialize custom size track with current size
         customSizeTrack.value = game3D.getCrosshairSize()
 
+        // Initialize color combo box with current color
+        val currentColor = game3D.getCrosshairColor()
+        val colorIndex = colorOptions.indexOfFirst { it.second == currentColor }.takeIf { it >= 0 } ?: 0
+        colorComboBox.selectedIndex = colorIndex
+        colorComboBox.foreground = Color.WHITE
+        colorComboBox.background = Color(40, 42, 45)
+        (colorComboBox.renderer as JComponent).background = Color(40, 42, 45)
+
+        // Initialize shape combo box with current shape
+        shapeComboBox.selectedItem = game3D.getCrosshairShape()
+        shapeComboBox.foreground = Color.WHITE
+        shapeComboBox.background = Color(40, 42, 45)
+        (shapeComboBox.renderer as JComponent).background = Color(40, 42, 45)
+
         // Create a container for the checkbox with proper alignment
         val checkboxPanel = JPanel(FlowLayout(FlowLayout.LEFT))
         checkboxPanel.background = Color(50, 52, 55)
@@ -44,6 +84,20 @@ class PlayerOptionsPanel(private val game3D: Game3D) : JPanel() {
         trackPanel.add(customSizeTrack)
         add(trackPanel)
 
+        // Create a panel for the color dropdown
+        val colorPanel = JPanel(FlowLayout(FlowLayout.LEFT))
+        colorPanel.background = Color(50, 52, 55)
+        colorPanel.add(JLabel("Color:").apply { foreground = Color.WHITE })
+        colorPanel.add(colorComboBox)
+        add(colorPanel)
+
+        // Create a panel for the shape dropdown
+        val shapePanel = JPanel(FlowLayout(FlowLayout.LEFT))
+        shapePanel.background = Color(50, 52, 55)
+        shapePanel.add(JLabel("Shape:").apply { foreground = Color.WHITE })
+        shapePanel.add(shapeComboBox)
+        add(shapePanel)
+
         // Set up crosshair visibility toggle
         crosshairVisibleCheckbox.addActionListener {
             game3D.setCrosshairVisible(crosshairVisibleCheckbox.isSelected)
@@ -54,10 +108,26 @@ class PlayerOptionsPanel(private val game3D: Game3D) : JPanel() {
             game3D.setCrosshairSize(newValue)
         }
 
+        // Set up color selection listener
+        colorComboBox.addActionListener {
+            val selectedColorIndex = colorComboBox.selectedIndex
+            if (selectedColorIndex in colorOptions.indices) {
+                game3D.setCrosshairColor(colorOptions[selectedColorIndex].second)
+            }
+        }
+
+        // Set up shape selection listener
+        shapeComboBox.addActionListener {
+            val selectedShape = shapeComboBox.selectedItem as CrosshairShape
+            game3D.setCrosshairShape(selectedShape)
+        }
+
         // Force sync the state at initialization
         SwingUtilities.invokeLater {
             crosshairVisibleCheckbox.isSelected = game3D.isCrosshairVisible()
             customSizeTrack.value = game3D.getCrosshairSize()
+            colorComboBox.selectedIndex = colorIndex
+            shapeComboBox.selectedItem = game3D.getCrosshairShape()
         }
     }
 
