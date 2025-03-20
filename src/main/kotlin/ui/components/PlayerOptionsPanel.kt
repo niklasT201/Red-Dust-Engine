@@ -232,7 +232,11 @@ class PlayerOptionsPanel(private val game3D: Game3D) : JPanel() {
 
         // Update color dropdown
         val currentColor = game3D.getCrosshairColor()
-        val colorIndex = colorOptions.indexOfFirst { it.second == currentColor }.takeIf { it >= 0 } ?: 0
+        val colorIndex = colorOptions.indexOfFirst {
+            it.second.red == currentColor.red &&
+                    it.second.green == currentColor.green &&
+                    it.second.blue == currentColor.blue
+        }.takeIf { it >= 0 } ?: 0
         colorComboBox.selectedIndex = colorIndex
 
         // Update shape dropdown

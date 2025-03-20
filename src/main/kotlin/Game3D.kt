@@ -14,6 +14,7 @@ class Game3D : JPanel() {
     private val renderPanel = RenderPanel()
     private val gridEditor = GridEditor()
     private val editorPanel = EditorPanel(gridEditor, this) { toggleEditorMode() }
+    //private val settingsSaver = SettingsSaver(gridEditor)
     private lateinit var menuSystem: MenuSystem
     private var skyColor = Color(135, 206, 235)
     private val keysPressed = mutableSetOf<Int>()
@@ -158,7 +159,8 @@ class Game3D : JPanel() {
         setupInputHandling()
         updateMode()
         addPredefinedPillars()
-        //settingsSaver.loadPlayerSettings(player, this)
+
+        //SwingUtilities.invokeLater { settingsSaver.loadPlayerSettings(player, this) }
     }
 
     // Helper method to get existing floor levels from the grid
