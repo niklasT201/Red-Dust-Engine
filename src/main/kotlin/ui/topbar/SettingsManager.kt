@@ -9,6 +9,7 @@ import grideditor.GridEditor
 import java.awt.Component
 import java.awt.Container
 import controls.KeyBindings
+import ui.components.DebugOptionsPanel
 import ui.components.PlayerOptionsPanel
 import javax.swing.SwingUtilities
 
@@ -62,9 +63,11 @@ class SettingsManager(
         // Load key bindings
         keyBindingManager.loadKeyBindings()
 
-        // After loading player settings, refresh the UI
+        // After loading player settings, refresh the UI components
         if (playerSuccess) {
-            findPlayerOptionsPanel(SwingUtilities.getWindowAncestor(displayOptionsPanel))?.refreshFromGameState()
+            val rootComponent = SwingUtilities.getWindowAncestor(displayOptionsPanel)
+            findPlayerOptionsPanel(rootComponent)?.refreshFromGameState()
+            findDebugOptionsPanel(rootComponent)?.refreshFromGameState()
         }
 
         return Triple(displaySuccess, worldSuccess, playerSuccess)
@@ -84,13 +87,27 @@ class SettingsManager(
         return null
     }
 
-    fun findPlayerOptionsPanel(component: Component?): PlayerOptionsPanel? {
+    private fun findPlayerOptionsPanel(component: Component?): PlayerOptionsPanel? {
         if (component == null) return null
         if (component is PlayerOptionsPanel) return component
 
         if (component is Container) {
             for (i in 0..<component.componentCount) {
                 val result = findPlayerOptionsPanel(component.getComponent(i))
+                if (result != null) return result
+            }
+        }
+
+        return null
+    }
+
+    private fun findDebugOptionsPanel(component: Component?): DebugOptionsPanel? {
+        if (component == null) return null
+        if (component is DebugOptionsPanel) return component
+
+        if (component is Container) {
+            for (i in 0..<component.componentCount) {
+                val result = findDebugOptionsPanel(component.getComponent(i))
                 if (result != null) return result
             }
         }

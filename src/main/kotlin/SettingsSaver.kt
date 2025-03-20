@@ -105,8 +105,8 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             val file = File("$SETTINGS_DIR/$PLAYER_SETTINGS_FILE")
             val outputStream = DataOutputStream(BufferedOutputStream(FileOutputStream(file)))
 
-            // Write version for future compatibility
-            outputStream.writeInt(2) // Version 2 of the settings format (now includes crosshair)
+            // Update version to 3 since we're adding debug options
+            outputStream.writeInt(3) // Version 3 of the settings format
 
             // Write timestamp
             outputStream.writeLong(System.currentTimeMillis())
@@ -123,7 +123,7 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             // Add camera rotation speed
             outputStream.writeDouble(player.camera.accessRotationSpeed())
 
-            // --- Crosshair settings section (added in version 2) ---
+            // --- Crosshair settings section ---
             outputStream.writeUTF("CROSSHAIR_SECTION")
 
             // Only write crosshair settings if Game3D is provided
@@ -143,8 +143,6 @@ class SettingsSaver(private val gridEditor: GridEditor) {
                 // Write crosshair shape (as ordinal integer)
                 outputStream.writeInt(game3D.getCrosshairShape().ordinal)
 
-                // Write FPS counter visibility for completeness
-                outputStream.writeBoolean(game3D.isFpsCounterVisible())
             } else {
                 // Default values if Game3D isn't available
                 outputStream.writeBoolean(true) // Visible by default
@@ -153,7 +151,25 @@ class SettingsSaver(private val gridEditor: GridEditor) {
                 outputStream.writeInt(255) // White color (G)
                 outputStream.writeInt(255) // White color (B)
                 outputStream.writeInt(0) // PLUS shape by default
+            }
+
+            // --- Debug Options Section (new in version 3) ---
+            outputStream.writeUTF("DEBUG_SECTION")
+
+            if (game3D != null) {
+                // Write FPS counter visibility
+                outputStream.writeBoolean(game3D.isFpsCounterVisible())
+
+                // Write direction visibility
+                outputStream.writeBoolean(game3D.isDirectionVisible())
+
+                // Write position visibility
+                outputStream.writeBoolean(game3D.isPositionVisible())
+            } else {
+                // Default values if Game3D isn't available
                 outputStream.writeBoolean(true) // FPS counter visible by default
+                outputStream.writeBoolean(true) // Direction visible by default
+                outputStream.writeBoolean(true) // Position visible by default
             }
 
             outputStream.close()
@@ -294,7 +310,7 @@ class SettingsSaver(private val gridEditor: GridEditor) {
 
             // Read and verify version
             val version = inputStream.readInt()
-            if (version != 1 && version != 2) {
+            if (version < 1 || version > 3) {
                 println("Unsupported settings file version: $version")
                 inputStream.close()
                 return false
@@ -346,19 +362,36 @@ class SettingsSaver(private val gridEditor: GridEditor) {
                         val shapeOrdinal = inputStream.readInt()
                         val crosshairShape = CrosshairShape.entries.getOrElse(shapeOrdinal) { CrosshairShape.PLUS }
 
-                        // Read FPS counter visibility
-                        val isFpsVisible = inputStream.readBoolean()
-
                         // Apply settings to Game3D
                         game3D.setCrosshairVisible(isCrosshairVisible)
                         game3D.setCrosshairSize(crosshairSize)
                         game3D.setCrosshairColor(Color(red, green, blue))
                         game3D.setCrosshairShape(crosshairShape)
-                        game3D.setFpsCounterVisible(isFpsVisible)
                     }
                 } catch (e: Exception) {
                     println("Error loading crosshair settings: ${e.message}")
                     // Continue with defaults if crosshair settings can't be loaded
+                }
+            }
+
+            // Read debug options if version is 3 or higher and if Game3D is provided
+            if (version >= 3 && game3D != null) {
+                try {
+                    val debugSection = inputStream.readUTF()
+                    if (debugSection == "DEBUG_SECTION") {
+                        // Read debug visibility options
+                        val isFpsVisible = inputStream.readBoolean()
+                        val isDirectionVisible = inputStream.readBoolean()
+                        val isPositionVisible = inputStream.readBoolean()
+
+                        // Apply debug settings to Game3D
+                        game3D.setFpsCounterVisible(isFpsVisible)
+                        game3D.setDirectionVisible(isDirectionVisible)
+                        game3D.setPositionVisible(isPositionVisible)
+                    }
+                } catch (e: Exception) {
+                    println("Error loading debug settings: ${e.message}")
+                    // Continue with defaults if debug settings can't be loaded
                 }
             }
 
