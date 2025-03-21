@@ -37,6 +37,7 @@ class SkyOptionsPanel(private val game3D: Game3D) : JPanel() {
     private val browseButton = JButton("Browse...")
     private var skyImage: Image? = null
     private var customColor: Color = Color(135, 206, 235)
+    private val previewPanel = SkyPreviewPanel()
 
     init {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -97,7 +98,6 @@ class SkyOptionsPanel(private val game3D: Game3D) : JPanel() {
         add(imagePanel)
 
         // Add a preview panel
-        val previewPanel = SkyPreviewPanel()
         previewPanel.preferredSize = Dimension(200, 100)
         add(Box.createRigidArea(Dimension(0, 10)))
         add(previewPanel)
@@ -145,7 +145,6 @@ class SkyOptionsPanel(private val game3D: Game3D) : JPanel() {
         }
 
         // Set up browse button for image selection
-        // Set up browse button for image selection
         browseButton.addActionListener {
             val fileChooser = JFileChooser()
             fileChooser.dialogTitle = "Select Sky Image"
@@ -153,22 +152,7 @@ class SkyOptionsPanel(private val game3D: Game3D) : JPanel() {
 
             val result = fileChooser.showOpenDialog(this)
             if (result == JFileChooser.APPROVE_OPTION) {
-                try {
-                    val selectedFile = fileChooser.selectedFile
-                    skyImage = ImageIO.read(selectedFile)
-                    imagePathLabel.text = selectedFile.name
-
-                    // Now that we have an image, update the renderer with the current display mode
-                    updateSkyRenderer()
-                    previewPanel.repaint()
-                } catch (e: Exception) {
-                    JOptionPane.showMessageDialog(
-                        this,
-                        "Error loading image: ${e.message}",
-                        "Image Load Error",
-                        JOptionPane.ERROR_MESSAGE
-                    )
-                }
+                updateSkyImage(fileChooser.selectedFile)
             }
         }
 
@@ -199,6 +183,24 @@ class SkyOptionsPanel(private val game3D: Game3D) : JPanel() {
                 }
                 // Don't revert to COLOR mode here - let the user select an image
             }
+        }
+    }
+
+    private fun updateSkyImage(selectedFile: File) {
+        try {
+            skyImage = ImageIO.read(selectedFile)
+            imagePathLabel.text = selectedFile.name
+
+            // Now that we have an image, update the renderer with the current display mode
+            updateSkyRenderer()
+            previewPanel.repaint()
+        } catch (e: Exception) {
+            JOptionPane.showMessageDialog(
+                this,
+                "Error loading image: ${e.message}",
+                "Image Load Error",
+                JOptionPane.ERROR_MESSAGE
+            )
         }
     }
 

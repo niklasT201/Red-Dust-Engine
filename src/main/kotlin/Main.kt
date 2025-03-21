@@ -48,8 +48,6 @@ fun main() {
 // disable keys option
 // player drawing in cell fix
 // sky panel design improvement
-// sky image duplication bug fix
-// sky image having its one folder, assets/textures/sky_image/
 
 // Object List:
 // Pillar, breakable walls and floors, PropObject, Doors, Triggers, Elevator, Light Sources, Items, 3D Object Support

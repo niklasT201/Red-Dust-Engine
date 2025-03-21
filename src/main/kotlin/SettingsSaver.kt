@@ -19,6 +19,8 @@ class SettingsSaver(private val gridEditor: GridEditor) {
         private const val WORLD_SETTINGS_FILE = "world_options.settings"
         private const val PLAYER_SETTINGS_FILE = "player_options.settings"
 
+        private const val SKY_IMAGES_DIR = "assets/textures/sky_images"
+
         // Make sure the settings directory exists
         private fun ensureSettingsDir() {
             val dir = File(SETTINGS_DIR)
@@ -26,7 +28,33 @@ class SettingsSaver(private val gridEditor: GridEditor) {
                 dir.mkdir()
             }
         }
+
+        // Make sure the sky images directory exists
+        private fun ensureSkyImagesDir() {
+            val dir = File(SKY_IMAGES_DIR)
+            if (!dir.exists()) {
+                dir.mkdirs() // Using mkdirs() to create parent directories if needed
+            }
+        }
+
+        // Calculate image hash for deduplication
+        private fun calculateImageHash(image: BufferedImage): String {
+            val width = image.width
+            val height = image.height
+            var hash = 0L
+
+            // Sample the image at intervals to create a simple hash
+            for (y in 0 until height step (height / 10).coerceAtLeast(1)) {
+                for (x in 0 until width step (width / 10).coerceAtLeast(1)) {
+                    hash = hash * 31 + image.getRGB(x, y)
+                }
+            }
+
+            return hash.toString(16) // Convert to hex string
+        }
     }
+
+    private var currentSkyImageFilename: String? = null
 
     fun saveDisplayOptions(displayOptionsPanel: DisplayOptionsPanel): Boolean {
         try {
@@ -68,6 +96,8 @@ class SettingsSaver(private val gridEditor: GridEditor) {
     fun saveWorldSettings(renderer: Renderer, game3D: Game3D): Boolean {
         try {
             ensureSettingsDir()
+            ensureSkyImagesDir() // Ensure sky images directory exists
+
             val file = File("$SETTINGS_DIR/$WORLD_SETTINGS_FILE")
             val outputStream = DataOutputStream(BufferedOutputStream(FileOutputStream(file)))
 
@@ -119,11 +149,6 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             if (hasImage) {
                 val skyImage = skyRenderer.skyImage!!
 
-                // Create unique filename based on timestamp
-                val timestamp = System.currentTimeMillis()
-                val imgFilename = "sky_image_$timestamp.png"
-                val imgFile = File("$SETTINGS_DIR/$imgFilename")
-
                 // Convert Image to BufferedImage if needed
                 val bufferedImage = if (skyImage is BufferedImage) {
                     skyImage
@@ -137,11 +162,40 @@ class SettingsSaver(private val gridEditor: GridEditor) {
                     newImg
                 }
 
-                // Save the image
-                ImageIO.write(bufferedImage, "png", imgFile)
+                // Calculate image hash for deduplication
+                val imageHash = calculateImageHash(bufferedImage)
+
+                // Check if we already have this image
+                val imgFilename = "sky_image_$imageHash.png"
+                val imgFile = File("$SKY_IMAGES_DIR/$imgFilename")
+
+                // Delete previous sky image if it's different from the current one
+                if (currentSkyImageFilename != null && currentSkyImageFilename != imgFilename) {
+                    val oldFile = File("$SKY_IMAGES_DIR/$currentSkyImageFilename")
+                    if (oldFile.exists()) {
+                        oldFile.delete()
+                    }
+                }
+
+                // Save the image if it doesn't exist yet
+                if (!imgFile.exists()) {
+                    ImageIO.write(bufferedImage, "png", imgFile)
+                }
+
+                // Update current sky image filename
+                currentSkyImageFilename = imgFilename
 
                 // Write the image filename
                 outputStream.writeUTF(imgFilename)
+            } else {
+                // If no image is used, clean up any previous image
+                if (currentSkyImageFilename != null) {
+                    val oldFile = File("$SKY_IMAGES_DIR/$currentSkyImageFilename")
+                    if (oldFile.exists()) {
+                        oldFile.delete()
+                    }
+                    currentSkyImageFilename = null
+                }
             }
 
             outputStream.close()
@@ -365,7 +419,10 @@ class SettingsSaver(private val gridEditor: GridEditor) {
                             // Load image if needed
                             if (hasImage) {
                                 val imgFilename = inputStream.readUTF()
-                                val imgFile = File("$SETTINGS_DIR/$imgFilename")
+                                val imgFile = File("$SKY_IMAGES_DIR/$imgFilename")
+
+                                // Update current sky image filename
+                                currentSkyImageFilename = imgFilename
 
                                 if (imgFile.exists()) {
                                     try {
@@ -373,6 +430,20 @@ class SettingsSaver(private val gridEditor: GridEditor) {
                                     } catch (e: Exception) {
                                         println("Error loading sky image: ${e.message}")
                                         // Continue with no image if loading fails
+                                    }
+                                } else {
+                                    // Try the old path as fallback for backward compatibility
+                                    val oldImgFile = File("$SETTINGS_DIR/$imgFilename")
+                                    if (oldImgFile.exists()) {
+                                        try {
+                                            skyImage = ImageIO.read(oldImgFile)
+                                            // Migrate the image to the new location
+                                            ensureSkyImagesDir()
+                                            oldImgFile.copyTo(imgFile, overwrite = true)
+                                            oldImgFile.delete() // Clean up old file
+                                        } catch (e: Exception) {
+                                            println("Error loading sky image from old path: ${e.message}")
+                                        }
                                     }
                                 }
                             }
