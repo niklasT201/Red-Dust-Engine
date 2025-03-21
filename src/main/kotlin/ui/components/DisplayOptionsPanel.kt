@@ -1,6 +1,6 @@
 package ui.components
 
-import SettingsSaver
+import saving.SettingsSaver
 import grideditor.GridEditor
 import java.awt.Color
 import java.awt.Component

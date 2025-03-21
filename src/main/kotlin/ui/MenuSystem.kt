@@ -11,7 +11,7 @@ import player.Player
 import ui.topbar.ControlsManager
 import ui.topbar.FileManager
 import ui.topbar.MenuBuilder
-import ui.topbar.SettingsManager
+import saving.SettingsManager
 
 class MenuSystem(
     onFloorSelected: (Int) -> Unit,

@@ -46,6 +46,7 @@ fun main() {
 // fixing image sliding
 // optional border around objects
 // player drawing in cell fix
+// improve controls design
 
 // Object List:
 // Pillar, breakable walls and floors, PropObject, Doors, Triggers, Elevator, Light Sources, Items, 3D Object Support

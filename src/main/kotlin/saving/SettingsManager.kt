@@ -1,7 +1,6 @@
-package ui.topbar
+package saving
 
 import Renderer
-import SettingsSaver
 import ui.components.DisplayOptionsPanel
 import Game3D
 import player.Player

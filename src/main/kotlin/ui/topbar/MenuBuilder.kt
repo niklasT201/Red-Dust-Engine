@@ -1,6 +1,7 @@
 package ui.topbar
 
 import grideditor.GridEditor
+import saving.SettingsManager
 import java.awt.*
 import java.awt.event.InputEvent
 import java.awt.event.KeyEvent
