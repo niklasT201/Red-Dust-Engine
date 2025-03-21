@@ -42,13 +42,9 @@ class SkyOptionsPanel(private val game3D: Game3D) : JPanel() {
     init {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         background = Color(50, 52, 55)
-        border = BorderFactory.createTitledBorder(
+        border = BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(Color(70, 73, 75)),
-            "Sky Options",
-            TitledBorder.LEFT,
-            TitledBorder.TOP,
-            null,
-            Color.WHITE
+            BorderFactory.createEmptyBorder(10, 10, 10, 10)  // Added more padding
         )
 
         // Initialize with current sky color from game
@@ -75,31 +71,55 @@ class SkyOptionsPanel(private val game3D: Game3D) : JPanel() {
         browseButton.background = Color(40, 42, 45)
         browseButton.foreground = Color.WHITE
 
-        // Create a panel for the color dropdown
-        val colorPanel = JPanel(FlowLayout(FlowLayout.LEFT))
-        colorPanel.background = Color(50, 52, 55)
-        colorPanel.add(JLabel("Sky Color:").apply { foreground = Color.WHITE })
-        colorPanel.add(colorComboBox)
-        add(colorPanel)
+        // Set fixed size for browse button
+        browseButton.preferredSize = Dimension(120, 25)
+        browseButton.maximumSize = Dimension(120, 25)
+        browseButton.minimumSize = Dimension(120, 25)
 
-        // Create a panel for the display mode dropdown
-        val displayModePanel = JPanel(FlowLayout(FlowLayout.LEFT))
-        displayModePanel.background = Color(50, 52, 55)
-        displayModePanel.add(JLabel("Display Mode:").apply { foreground = Color.WHITE })
-        displayModePanel.add(displayModeComboBox)
-        add(displayModePanel)
+        // Add title to the panel
+        val titleLabel = JLabel("Sky Options")
+        titleLabel.foreground = Color.WHITE
+        titleLabel.font = Font(titleLabel.font.name, Font.BOLD, 14)
+        titleLabel.alignmentX = Component.LEFT_ALIGNMENT
+        add(titleLabel)
+        add(Box.createRigidArea(Dimension(0, 15)))  // Space after title
 
-        // Create a panel for the image selection
-        val imagePanel = JPanel(FlowLayout(FlowLayout.LEFT))
-        imagePanel.background = Color(50, 52, 55)
-        imagePanel.add(JLabel("Sky Image:").apply { foreground = Color.WHITE })
-        imagePanel.add(imagePathLabel)
-        imagePanel.add(browseButton)
-        add(imagePanel)
+        // Create a panel for the color selection with label above
+        add(createFormSection("Sky Color:", colorComboBox))
+        add(Box.createRigidArea(Dimension(0, 15)))  // Space between sections
 
-        // Add a preview panel
-        previewPanel.preferredSize = Dimension(200, 100)
-        add(Box.createRigidArea(Dimension(0, 10)))
+        // Create a panel for the display mode selection with label above
+        add(createFormSection("Display Mode:", displayModeComboBox))
+        add(Box.createRigidArea(Dimension(0, 15)))  // Space between sections
+
+        // Create a panel for the image section
+        val imageLabel = JLabel("Sky Image:")
+        imageLabel.foreground = Color.WHITE
+        imageLabel.alignmentX = Component.LEFT_ALIGNMENT
+        add(imageLabel)
+        add(Box.createRigidArea(Dimension(0, 5)))
+
+        // Image path label
+        imagePathLabel.alignmentX = Component.LEFT_ALIGNMENT
+        imagePathLabel.maximumSize = Dimension(Integer.MAX_VALUE, 25)
+        add(imagePathLabel)
+        add(Box.createRigidArea(Dimension(0, 5)))
+
+        // Browse button
+        browseButton.alignmentX = Component.LEFT_ALIGNMENT
+        add(browseButton)
+        add(Box.createRigidArea(Dimension(0, 15)))  // Space between sections
+
+        // Preview section
+        val previewLabel = JLabel("Preview:")
+        previewLabel.foreground = Color.WHITE
+        previewLabel.alignmentX = Component.LEFT_ALIGNMENT
+        add(previewLabel)
+        add(Box.createRigidArea(Dimension(0, 5)))
+
+        previewPanel.preferredSize = Dimension(100, 100)
+        previewPanel.maximumSize = Dimension(Integer.MAX_VALUE, 100)
+        previewPanel.alignmentX = Component.LEFT_ALIGNMENT
         add(previewPanel)
 
         // Set up color selection listener
@@ -160,6 +180,31 @@ class SkyOptionsPanel(private val game3D: Game3D) : JPanel() {
         val useImage = displayModeComboBox.selectedItem != SkyDisplayMode.COLOR
         imagePathLabel.isEnabled = useImage
         browseButton.isEnabled = useImage
+    }
+
+    // Helper method to create a form section with label above control
+    private fun createFormSection(labelText: String, component: JComponent): JPanel {
+        val panel = JPanel()
+        panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
+        panel.background = Color(50, 52, 55)
+        panel.alignmentX = Component.LEFT_ALIGNMENT
+        panel.maximumSize = Dimension(Integer.MAX_VALUE, 50)
+
+        // Create and add the label
+        val label = JLabel(labelText)
+        label.foreground = Color.WHITE
+        label.alignmentX = Component.LEFT_ALIGNMENT
+        panel.add(label)
+
+        // Add a small gap between label and component
+        panel.add(Box.createRigidArea(Dimension(0, 5)))
+
+        // Configure the component
+        component.alignmentX = Component.LEFT_ALIGNMENT
+        component.maximumSize = Dimension(Integer.MAX_VALUE, 25)
+        panel.add(component)
+
+        return panel
     }
 
     private fun updateSkyRenderer() {
