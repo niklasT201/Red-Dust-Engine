@@ -151,8 +151,9 @@ class KeyBindingManager {
     }
 
     fun getConflictingBinding(keyCode: Int, excludeKey: String): String? {
-        keyBindings.entries.forEach { (name, code) ->
-            if (code == keyCode && name != excludeKey) {
+        // Only check for conflicts in configurable keys
+        configurableKeys.forEach { name ->
+            if (name != excludeKey && keyBindings[name] == keyCode) {
                 return name
             }
         }

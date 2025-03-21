@@ -45,7 +45,6 @@ fun main() {
 // adding physics
 // fixing image sliding
 // optional border around objects
-// disable keys option
 // player drawing in cell fix
 
 // Object List:
