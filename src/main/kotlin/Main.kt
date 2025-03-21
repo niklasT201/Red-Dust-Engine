@@ -47,6 +47,8 @@ fun main() {
 // optional border around objects
 // disable keys option
 // player drawing in cell fix
+// sky panel design improvement
+// sky panel saving
 
 // Object List:
 // Pillar, breakable walls and floors, PropObject, Doors, Triggers, Elevator, Light Sources, Items, 3D Object Support

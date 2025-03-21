@@ -4,6 +4,7 @@ import player.Player
 import ui.EditorPanel
 import ui.MenuSystem
 import ui.components.CrosshairShape
+import ui.components.SkyRenderer
 import java.awt.*
 import java.awt.event.*
 import javax.swing.*
@@ -17,6 +18,7 @@ class Game3D : JPanel() {
     //private val settingsSaver = SettingsSaver(gridEditor)
     private lateinit var menuSystem: MenuSystem
     private var skyColor = Color(135, 206, 235)
+    private var skyRenderer: SkyRenderer = SkyRenderer(skyColor)
     private val keysPressed = mutableSetOf<Int>()
     private val walls = mutableListOf<Wall>()
     private val floors = mutableListOf<Floor>()
@@ -268,8 +270,7 @@ class Game3D : JPanel() {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
 
             // Use the sky color property instead of hardcoded value
-            g2.color = skyColor
-            g2.fillRect(0, 0, width, height)
+            skyRenderer.render(g2, width, height)
 
             renderer.drawScene(g2, walls, floors, player.camera)
 
@@ -367,6 +368,13 @@ class Game3D : JPanel() {
         renderPanel.repaint()
     }
 
+    fun getSkyRenderer(): SkyRenderer = skyRenderer
+
+    fun setSkyRenderer(renderer: SkyRenderer) {
+        skyRenderer = renderer
+        skyColor = renderer.skyColor  // Keep skyColor in sync with renderer
+        renderPanel.repaint()
+    }
     fun getSkyColor(): Color = skyColor
 
     // Setter for skyColor
