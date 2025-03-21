@@ -86,10 +86,12 @@ enum class ObjectType {
 }
 
 data class PlayerSpawnObject(
-    override val color: Color = Color.GREEN,  // Default color for spawn point
-    override val height: Double = 1.0,  // Height of the spawn point indicator
-    override val width: Double = 1.0,  // Width of the spawn point indicator
-    override val direction: Direction = Direction.NORTH  // Default direction
+    override val color: Color = Color.GREEN,
+    override val height: Double = 1.0,
+    override val width: Double = 1.0,
+    override val direction: Direction = Direction.NORTH,
+    val offsetX: Double = 0.5, // Default to cell center
+    val offsetY: Double = 0.5  // Default to cell center
 ) : GameObject() {
     override val type = ObjectType.PLAYER_SPAWN
     override val texture: ImageEntry? = null

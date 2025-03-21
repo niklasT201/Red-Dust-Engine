@@ -297,10 +297,27 @@ class GridInputHandler(private val editor: GridEditor) {
                         texture = editor.currentFloorTexture,
                     )
                     ObjectType.PLAYER_SPAWN -> {
-                        // Update camera position immediately
-                        editor.cameraRef?.position?.x = -gridX * editor.baseScale
-                        editor.cameraRef?.position?.z = gridY * editor.baseScale
-                        PlayerSpawnObject()
+                        // Get exact mouse coordinates within the grid
+                        val exactX = e.x.toDouble()
+                        val exactY = e.y.toDouble()
+
+                        // Convert screen coordinates to exact world coordinates
+                        val cellScreenX = (gridX - editor.viewportX + editor.width / (2 * editor.cellSize)) * editor.cellSize
+                        val cellScreenY = (gridY - editor.viewportY + editor.height / (2 * editor.cellSize)) * editor.cellSize
+
+                        // Calculate offset within the cell (0.0 to 1.0)
+                        val offsetX = (exactX - cellScreenX) / editor.cellSize
+                        val offsetY = (exactY - cellScreenY) / editor.cellSize
+
+                        // Apply to world coordinates with offset
+                        val worldX = -(gridX + offsetX) * editor.baseScale
+                        val worldZ = (gridY + offsetY) * editor.baseScale
+
+                        // Update camera position with precise coordinates
+                        editor.cameraRef?.position?.x = worldX
+                        editor.cameraRef?.position?.z = worldZ
+
+                        PlayerSpawnObject(offsetX = offsetX, offsetY = offsetY)
                     }
                     ObjectType.PROP -> null
                 }

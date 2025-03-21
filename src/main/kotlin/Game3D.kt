@@ -246,10 +246,16 @@ class Game3D : JPanel() {
         } else {
             // Find the player spawn point and set the camera position
             gridEditor.grid.forEach { (pos, cell) ->
-                cell.getObjectsForFloor(gridEditor.getCurrentFloor()).firstOrNull { it.type == ObjectType.PLAYER_SPAWN }?.let {
+                cell.getObjectsForFloor(gridEditor.getCurrentFloor()).filterIsInstance<PlayerSpawnObject>().firstOrNull()?.let { playerSpawn ->
                     val (x, y) = pos
-                    player.camera.position.x = -x * gridEditor.baseScale
-                    player.camera.position.z = y * gridEditor.baseScale
+
+                    // Use the stored offsets to calculate the precise position
+                    val worldX = -(x + playerSpawn.offsetX) * gridEditor.baseScale
+                    val worldZ = (y + playerSpawn.offsetY) * gridEditor.baseScale
+
+                    // Set player position with precise offset
+                    player.camera.position.x = worldX
+                    player.camera.position.z = worldZ
 
                     // Calculate correct Y position based on current floor
                     val floorHeight = gridEditor.getCurrentFloor() * gridEditor.floorHeight
