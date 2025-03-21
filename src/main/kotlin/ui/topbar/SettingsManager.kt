@@ -11,6 +11,7 @@ import java.awt.Container
 import controls.KeyBindings
 import ui.components.DebugOptionsPanel
 import ui.components.PlayerOptionsPanel
+import ui.components.SkyOptionsPanel
 import javax.swing.SwingUtilities
 
 class SettingsManager(
@@ -63,11 +64,16 @@ class SettingsManager(
         // Load key bindings
         keyBindingManager.loadKeyBindings()
 
-        // After loading player settings, refresh the UI components
+        // After loading settings, refresh the UI components
+        val rootComponent = SwingUtilities.getWindowAncestor(displayOptionsPanel)
         if (playerSuccess) {
-            val rootComponent = SwingUtilities.getWindowAncestor(displayOptionsPanel)
             findPlayerOptionsPanel(rootComponent)?.refreshFromGameState()
             findDebugOptionsPanel(rootComponent)?.refreshFromGameState()
+        }
+
+        // Refresh Sky Options Panel after loading world settings
+        if (worldSuccess) {
+            findSkyOptionsPanel(rootComponent)?.refreshFromGameState()
         }
 
         return Triple(displaySuccess, worldSuccess, playerSuccess)
@@ -108,6 +114,20 @@ class SettingsManager(
         if (component is Container) {
             for (i in 0..<component.componentCount) {
                 val result = findDebugOptionsPanel(component.getComponent(i))
+                if (result != null) return result
+            }
+        }
+
+        return null
+    }
+
+    private fun findSkyOptionsPanel(component: Component?): SkyOptionsPanel? {
+        if (component == null) return null
+        if (component is SkyOptionsPanel) return component
+
+        if (component is Container) {
+            for (i in 0..<component.componentCount) {
+                val result = findSkyOptionsPanel(component.getComponent(i))
                 if (result != null) return result
             }
         }

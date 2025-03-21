@@ -3,9 +3,13 @@ import player.Player
 import java.io.*
 import ui.components.DisplayOptionsPanel
 import ui.components.CrosshairShape
+import ui.components.SkyRenderer
 import java.awt.Color
+import java.awt.Image
+import java.awt.image.BufferedImage
 import java.text.SimpleDateFormat
 import java.util.*
+import javax.imageio.ImageIO
 
 class SettingsSaver(private val gridEditor: GridEditor) {
     companion object {
@@ -68,7 +72,7 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             val outputStream = DataOutputStream(BufferedOutputStream(FileOutputStream(file)))
 
             // Write version for future compatibility
-            outputStream.writeInt(1) // Version 1 of the settings format
+            outputStream.writeInt(2) // Update to Version 2 for sky renderer settings
 
             // Write timestamp
             outputStream.writeLong(System.currentTimeMillis())
@@ -89,6 +93,56 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             outputStream.writeInt(skyColor.red)
             outputStream.writeInt(skyColor.green)
             outputStream.writeInt(skyColor.blue)
+
+            // --- Sky Renderer settings section ---
+            outputStream.writeUTF("SKY_RENDERER_SECTION")
+
+            // Get the sky renderer from game3D
+            val skyRenderer = game3D.getSkyRenderer()
+
+            // Write if sky renderer exists
+            outputStream.writeBoolean(true)
+
+            // Write display mode (0 = COLOR, 1 = IMAGE_STRETCH, 2 = IMAGE_TILE)
+            val displayMode = when {
+                skyRenderer.skyImage == null -> 0 // COLOR
+                !skyRenderer.tileImage -> 1      // IMAGE_STRETCH
+                else -> 2                       // IMAGE_TILE
+            }
+            outputStream.writeInt(displayMode)
+
+            // Write if an image is used
+            val hasImage = skyRenderer.skyImage != null
+            outputStream.writeBoolean(hasImage)
+
+            // If there's an image, save it to a file and store the filename
+            if (hasImage) {
+                val skyImage = skyRenderer.skyImage!!
+
+                // Create unique filename based on timestamp
+                val timestamp = System.currentTimeMillis()
+                val imgFilename = "sky_image_$timestamp.png"
+                val imgFile = File("$SETTINGS_DIR/$imgFilename")
+
+                // Convert Image to BufferedImage if needed
+                val bufferedImage = if (skyImage is BufferedImage) {
+                    skyImage
+                } else {
+                    val width = skyImage.getWidth(null)
+                    val height = skyImage.getHeight(null)
+                    val newImg = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+                    val g2 = newImg.createGraphics()
+                    g2.drawImage(skyImage, 0, 0, null)
+                    g2.dispose()
+                    newImg
+                }
+
+                // Save the image
+                ImageIO.write(bufferedImage, "png", imgFile)
+
+                // Write the image filename
+                outputStream.writeUTF(imgFilename)
+            }
 
             outputStream.close()
             return true
@@ -246,7 +300,7 @@ class SettingsSaver(private val gridEditor: GridEditor) {
 
             // Read and verify version
             val version = inputStream.readInt()
-            if (version != 1) {
+            if (version < 1 || version > 2) {
                 println("Unsupported settings file version: $version")
                 inputStream.close()
                 return false
@@ -288,6 +342,55 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             val green = inputStream.readInt()
             val blue = inputStream.readInt()
             game3D.setSkyColor(Color(red, green, blue))
+
+            // If version 2 or higher, read Sky Renderer settings
+            if (version >= 2) {
+                try {
+                    val skySection = inputStream.readUTF()
+                    if (skySection == "SKY_RENDERER_SECTION") {
+                        // Read if sky renderer exists
+                        val hasSkyRenderer = inputStream.readBoolean()
+
+                        if (hasSkyRenderer) {
+                            // Read display mode
+                            val displayMode = inputStream.readInt()
+
+                            // Read if image is used
+                            val hasImage = inputStream.readBoolean()
+
+                            // Initialize variables
+                            var skyImage: Image? = null
+                            var tileImage = false
+
+                            // Load image if needed
+                            if (hasImage) {
+                                val imgFilename = inputStream.readUTF()
+                                val imgFile = File("$SETTINGS_DIR/$imgFilename")
+
+                                if (imgFile.exists()) {
+                                    try {
+                                        skyImage = ImageIO.read(imgFile)
+                                    } catch (e: Exception) {
+                                        println("Error loading sky image: ${e.message}")
+                                        // Continue with no image if loading fails
+                                    }
+                                }
+                            }
+
+                            // Set tiling based on display mode
+                            tileImage = displayMode == 2
+
+                            // Create and set the sky renderer
+                            val skyColor = game3D.getSkyColor() // Use the already loaded color
+                            val skyRenderer = SkyRenderer(skyColor, skyImage, tileImage)
+                            game3D.setSkyRenderer(skyRenderer)
+                        }
+                    }
+                } catch (e: Exception) {
+                    println("Error loading sky renderer settings: ${e.message}")
+                    // Continue with defaults if sky renderer settings can't be loaded
+                }
+            }
 
             inputStream.close()
             return true
