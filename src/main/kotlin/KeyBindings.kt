@@ -15,6 +15,7 @@ class KeyBindingManager {
         // Fixed keys for undo/redo operations
         const val UNDO_KEY = KeyEvent.VK_Z
         const val REDO_KEY = KeyEvent.VK_Y
+        const val KEY_UNBOUND = -1
 
         // Make sure the settings directory exists
         private fun ensureSettingsDir() {
@@ -81,17 +82,38 @@ class KeyBindingManager {
         defaultBindings["REDO"] = REDO_KEY // Ctrl+Y
     }
 
-    /**
-     * Get a key binding by name
-     */
+    private val disabledActions = mutableSetOf<String>()
+
+    // Add methods to disable/enable actions
+    fun disableAction(name: String): Boolean {
+        if (name in configurableKeys) {
+            disabledActions.add(name)
+            // Also unbind the key
+            keyBindings[name] = KEY_UNBOUND
+            return true
+        }
+        return false
+    }
+
+    fun enableAction(name: String): Boolean {
+        return disabledActions.remove(name)
+    }
+
+    fun isActionDisabled(name: String): Boolean {
+        return name in disabledActions
+    }
+
+    // Update the getKeyBinding method to handle unbound actions
     fun getKeyBinding(name: String): Int {
+        // For disabled actions, always return KEY_UNBOUND
+        if (name in disabledActions) {
+            return KEY_UNBOUND
+        }
+
+        // Otherwise return the current binding or the default
         return keyBindings[name] ?: defaultBindings[name] ?: KeyEvent.VK_UNDEFINED
     }
 
-    /**
-     * Set a key binding by name
-     * Only works for configurable keys
-     */
     fun setKeyBinding(name: String, keyCode: Int): Boolean {
         // Only allow changing configurable keys
         if (name in configurableKeys) {
@@ -101,9 +123,6 @@ class KeyBindingManager {
         return false
     }
 
-    /**
-     * Reset a single key binding to its default
-     */
     fun resetKeyBinding(name: String): Boolean {
         if (name in configurableKeys) {
             val defaultValue = defaultBindings[name]
@@ -115,9 +134,6 @@ class KeyBindingManager {
         return false
     }
 
-    /**
-     * Reset all key bindings to defaults
-     */
     fun resetAllKeyBindings() {
         configurableKeys.forEach { key ->
             defaultBindings[key]?.let { defaultValue ->
@@ -126,25 +142,14 @@ class KeyBindingManager {
         }
     }
 
-    /**
-     * Get all configurable key bindings
-     * @return Map of key names to their current value
-     */
     fun getConfigurableBindings(): Map<String, Int> {
         return configurableKeys.associateWith { keyBindings[it] ?: KeyEvent.VK_UNDEFINED }
     }
 
-    /**
-     * Get human-readable name for a key
-     */
     fun getKeyName(keyCode: Int): String {
         return KeyEvent.getKeyText(keyCode)
     }
 
-    /**
-     * Check if a key is already assigned to another action
-     * @return The name of the action this key is assigned to, or null if unassigned
-     */
     fun getConflictingBinding(keyCode: Int, excludeKey: String): String? {
         keyBindings.entries.forEach { (name, code) ->
             if (code == keyCode && name != excludeKey) {
@@ -154,9 +159,6 @@ class KeyBindingManager {
         return null
     }
 
-    /**
-     * Get a pretty display name for a key binding
-     */
     fun getBindingDisplayName(name: String): String {
         return when(name) {
             "MOVE_FORWARD" -> "Move Forward"
@@ -173,9 +175,6 @@ class KeyBindingManager {
         }
     }
 
-    /**
-     * Save key bindings to a file
-     */
     fun saveKeyBindings(): Boolean {
         try {
             ensureSettingsDir()
@@ -207,9 +206,6 @@ class KeyBindingManager {
         }
     }
 
-    /**
-     * Load key bindings from a file
-     */
     fun loadKeyBindings(): Boolean {
         try {
             val file = File("$SETTINGS_DIR/$KEY_BINDINGS_FILE")
@@ -255,10 +251,6 @@ class KeyBindingManager {
     }
 }
 
-/**
- * Static access to key bindings - this replaces the old KeyBindings object
- * Games should use this for key lookups instead of hard-coded values
- */
 object KeyBindings {
     private val keyBindingManager = KeyBindingManager()
 

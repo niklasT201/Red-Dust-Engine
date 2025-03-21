@@ -1,5 +1,6 @@
 package ui.topbar
 
+import controls.KeyBindingManager
 import controls.KeyBindings
 import java.awt.*
 import java.awt.event.KeyAdapter
@@ -167,9 +168,26 @@ class ControlsManager {
 
         for (row in 0..<tableModel.rowCount) {
             val action = tableModel.getValueAt(row, 0).toString()
-            val key = bindings.entries.find { keyBindingManager.getBindingDisplayName(it.key) == action }?.value
-            if (key != null) {
-                tableModel.setValueAt(keyBindingManager.getKeyName(key), row, 1)
+            val keyEntry = bindings.entries.find { keyBindingManager.getBindingDisplayName(it.key) == action }
+
+            if (keyEntry != null) {
+                val keyName = keyEntry.key
+                val keyValue = keyEntry.value
+
+                // Update key column
+                tableModel.setValueAt(
+                    if (keyValue == KeyBindingManager.KEY_UNBOUND) "None"
+                    else keyBindingManager.getKeyName(keyValue),
+                    row, 1
+                )
+
+                // Update status column
+                val status = when {
+                    keyBindingManager.isActionDisabled(keyName) -> "Disabled"
+                    keyValue == KeyBindingManager.KEY_UNBOUND -> "Unbound"
+                    else -> "Active"
+                }
+                tableModel.setValueAt(status, row, 2)
             }
         }
     }
@@ -192,12 +210,20 @@ class ControlsManager {
 
         tableModel.addColumn("Action")
         tableModel.addColumn("Key")
+        tableModel.addColumn("Status")
 
         // Add rows for each binding
         bindings.entries.sortedBy { keyBindingManager.getBindingDisplayName(it.key) }.forEach { (key, value) ->
+            val status = when {
+                keyBindingManager.isActionDisabled(key) -> "Disabled"
+                value == KeyBindingManager.KEY_UNBOUND -> "Unbound"
+                else -> "Active"
+            }
+
             tableModel.addRow(arrayOf(
                 keyBindingManager.getBindingDisplayName(key),
-                keyBindingManager.getKeyName(value)
+                if (value == KeyBindingManager.KEY_UNBOUND) "None" else keyBindingManager.getKeyName(value),
+                status
             ))
         }
 
@@ -274,6 +300,8 @@ class ControlsManager {
                 }
             }
         }
+
+        table.componentPopupMenu = createTableContextMenu(table)
 
         // Create scrollpane
         val scrollPane = JScrollPane(table).apply {
@@ -370,6 +398,15 @@ class ControlsManager {
             // Add key listener
             textField.addKeyListener(object : KeyAdapter() {
                 override fun keyPressed(e: KeyEvent) {
+                    // Support for unbinding with Backspace or Delete
+                    if (e.keyCode == KeyEvent.VK_BACK_SPACE || e.keyCode == KeyEvent.VK_DELETE) {
+                        textField.text = "None"
+                        currentValue = KeyBindingManager.KEY_UNBOUND.toString()
+                        stopCellEditing()
+                        e.consume()
+                        return
+                    }
+
                     // Ignore modifier keys
                     if (e.keyCode == KeyEvent.VK_SHIFT || e.keyCode == KeyEvent.VK_CONTROL ||
                         e.keyCode == KeyEvent.VK_ALT || e.keyCode == KeyEvent.VK_META) {
@@ -490,5 +527,74 @@ class ControlsManager {
                 super.getCellEditorValue()
             }
         }
+    }
+
+    private fun createTableContextMenu(table: JTable): JPopupMenu {
+        val menu = JPopupMenu()
+        menu.background = backgroundColor
+        menu.border = BorderFactory.createLineBorder(borderColor)
+
+        val unbindItem = JMenuItem("Unbind Key").apply {
+            background = backgroundColor
+            foreground = foregroundColor
+            addActionListener {
+                val row = table.selectedRow
+                if (row >= 0) {
+                    val actionName = table.getValueAt(row, 0).toString()
+                    // Find the key in keyBindingManager
+                    val keyName = keyBindingManager.getConfigurableBindings().entries
+                        .find { keyBindingManager.getBindingDisplayName(it.key) == actionName }?.key
+
+                    if (keyName != null) {
+                        keyBindingManager.setKeyBinding(keyName, KeyBindingManager.KEY_UNBOUND)
+                        refreshTable(table)
+                    }
+                }
+            }
+        }
+
+        val disableItem = JMenuItem("Disable Action").apply {
+            background = backgroundColor
+            foreground = foregroundColor
+            addActionListener {
+                val row = table.selectedRow
+                if (row >= 0) {
+                    val actionName = table.getValueAt(row, 0).toString()
+                    // Find the key in keyBindingManager
+                    val keyName = keyBindingManager.getConfigurableBindings().entries
+                        .find { keyBindingManager.getBindingDisplayName(it.key) == actionName }?.key
+
+                    if (keyName != null) {
+                        keyBindingManager.disableAction(keyName)
+                        refreshTable(table)
+                    }
+                }
+            }
+        }
+
+        val enableItem = JMenuItem("Enable Action").apply {
+            background = backgroundColor
+            foreground = foregroundColor
+            addActionListener {
+                val row = table.selectedRow
+                if (row >= 0) {
+                    val actionName = table.getValueAt(row, 0).toString()
+                    // Find the key in keyBindingManager
+                    val keyName = keyBindingManager.getConfigurableBindings().entries
+                        .find { keyBindingManager.getBindingDisplayName(it.key) == actionName }?.key
+
+                    if (keyName != null) {
+                        keyBindingManager.enableAction(keyName)
+                        refreshTable(table)
+                    }
+                }
+            }
+        }
+
+        menu.add(unbindItem)
+        menu.add(disableItem)
+        menu.add(enableItem)
+
+        return menu
     }
 }
