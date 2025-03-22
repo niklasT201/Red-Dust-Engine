@@ -106,7 +106,7 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             val outputStream = DataOutputStream(BufferedOutputStream(FileOutputStream(file)))
 
             // Write version for future compatibility
-            outputStream.writeInt(2) // Update to Version 2 for sky renderer settings
+            outputStream.writeInt(3) // Update to version 3 for border settings
 
             // Write timestamp
             outputStream.writeLong(System.currentTimeMillis())
@@ -118,6 +118,21 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             outputStream.writeDouble(renderer.getScale())
             outputStream.writeDouble(renderer.getNearPlane())
             outputStream.writeDouble(renderer.getFarPlane())
+
+            // --- Border settings section (new in version 3) ---
+            outputStream.writeUTF("BORDER_SECTION")
+
+            // Save border visibility
+            outputStream.writeBoolean(renderer.drawBorders)
+
+            // Save border thickness
+            outputStream.writeFloat(renderer.borderThickness)
+
+            // Save border color
+            val borderColor = renderer.borderColor
+            outputStream.writeInt(borderColor.red)
+            outputStream.writeInt(borderColor.green)
+            outputStream.writeInt(borderColor.blue)
 
             // --- Game3D settings section ---
             outputStream.writeUTF("GAME3D_SECTION")
@@ -358,7 +373,7 @@ class SettingsSaver(private val gridEditor: GridEditor) {
 
             // Read and verify version
             val version = inputStream.readInt()
-            if (version < 1 || version > 2) {
+            if (version < 1 || version > 3) {
                 println("Unsupported settings file version: $version")
                 inputStream.close()
                 return false
@@ -386,6 +401,33 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             renderer.setScale(scale)
             renderer.setNearPlane(nearPlane)
             renderer.setFarPlane(farPlane)
+
+            // If version 3 or higher, read border settings
+            if (version >= 3) {
+                try {
+                    val borderSection = inputStream.readUTF()
+                    if (borderSection == "BORDER_SECTION") {
+                        // Read border visibility
+                        val drawBorders = inputStream.readBoolean()
+
+                        // Read border thickness
+                        val borderThickness = inputStream.readFloat()
+
+                        // Read border color
+                        val red = inputStream.readInt()
+                        val green = inputStream.readInt()
+                        val blue = inputStream.readInt()
+
+                        // Apply border settings to renderer
+                        renderer.drawBorders = drawBorders
+                        renderer.borderThickness = borderThickness
+                        renderer.borderColor = Color(red, green, blue)
+                    }
+                } catch (e: Exception) {
+                    println("Error loading border settings: ${e.message}")
+                    // Continue with defaults if border settings can't be loaded
+                }
+            }
 
             // Read Game3D section
             val game3DSection = inputStream.readUTF()

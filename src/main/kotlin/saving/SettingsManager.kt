@@ -1,16 +1,13 @@
 package saving
 
 import Renderer
-import ui.components.DisplayOptionsPanel
 import Game3D
 import player.Player
 import grideditor.GridEditor
 import java.awt.Component
 import java.awt.Container
 import controls.KeyBindings
-import ui.components.DebugOptionsPanel
-import ui.components.PlayerOptionsPanel
-import ui.components.SkyOptionsPanel
+import ui.components.*
 import javax.swing.SwingUtilities
 
 class SettingsManager(
@@ -73,6 +70,7 @@ class SettingsManager(
         // Refresh Sky Options Panel after loading world settings
         if (worldSuccess) {
             findSkyOptionsPanel(rootComponent)?.refreshFromGameState()
+            findBorderStylePanel(rootComponent)?.refreshFromGameState()
         }
 
         return Triple(displaySuccess, worldSuccess, playerSuccess)
@@ -127,6 +125,20 @@ class SettingsManager(
         if (component is Container) {
             for (i in 0..<component.componentCount) {
                 val result = findSkyOptionsPanel(component.getComponent(i))
+                if (result != null) return result
+            }
+        }
+
+        return null
+    }
+
+    private fun findBorderStylePanel(component: Component?): BorderStylePanel? {
+        if (component == null) return null
+        if (component is BorderStylePanel) return component
+
+        if (component is Container) {
+            for (i in 0..<component.componentCount) {
+                val result = findBorderStylePanel(component.getComponent(i))
                 if (result != null) return result
             }
         }

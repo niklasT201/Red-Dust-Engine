@@ -101,4 +101,11 @@ class BorderStylePanel(private val renderer: Renderer) : JPanel(), ChangeListene
             }
         }
     }
+
+    fun refreshFromGameState() {
+        // Update UI components to match the renderer state
+        enableBordersCheckbox.isSelected = renderer.drawBorders
+        borderThicknessSlider.value = renderer.borderThickness.toInt()
+        colorPreview.background = renderer.borderColor
+    }
 }
