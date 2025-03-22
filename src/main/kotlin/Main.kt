@@ -45,7 +45,6 @@ fun main() {
 // adding physics
 // fixing image sliding
 // optional border around objects
-// player drawing in cell fix
 // improve controls design
 
 // Object List:
