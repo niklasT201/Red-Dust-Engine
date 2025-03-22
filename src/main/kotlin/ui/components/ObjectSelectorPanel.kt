@@ -1,5 +1,6 @@
 package ui.components
 
+import Renderer
 import grideditor.GridEditor
 import ui.CollapsibleSection
 import java.awt.*
@@ -8,7 +9,10 @@ import javax.swing.*
 /**
  * Panel for selecting and editing different object types (walls, floors, etc.)
  */
-class ObjectSelectorPanel(private val gridEditor: GridEditor) : JPanel() {
+class ObjectSelectorPanel(
+    private val gridEditor: GridEditor,
+    private val renderer: Renderer
+) : JPanel() {
 
     private val objectTypeComboBox = JComboBox<String>()
     private val contentPanel = JPanel(CardLayout())
@@ -17,6 +21,7 @@ class ObjectSelectorPanel(private val gridEditor: GridEditor) : JPanel() {
     private val wallStylePanel = WallStylePanel(gridEditor)
     private val wallPropertiesPanel = WallPropertiesPanel()
     private val floorPanel = JPanel() // Placeholder for floor properties
+    private val borderStylePanel = BorderStylePanel(renderer) // New border style panel
 
     // Keep track of object-specific panels
     private val objectPanels = mutableMapOf<String, JPanel>()
@@ -54,6 +59,7 @@ class ObjectSelectorPanel(private val gridEditor: GridEditor) : JPanel() {
         // Add object types
         objectTypeComboBox.addItem("Wall")
         objectTypeComboBox.addItem("Floor")
+        objectTypeComboBox.addItem("Border") // Add new option for border settings
         // Add future object types here
 
         // Style the combo box
@@ -135,13 +141,25 @@ class ObjectSelectorPanel(private val gridEditor: GridEditor) : JPanel() {
             add(Box.createVerticalGlue())
         }
 
+        // Create Border panel
+        val borderPanel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            background = Color(40, 44, 52)
+
+            // Add the border style panel
+            add(createSection("Border Style", borderStylePanel))
+            add(Box.createVerticalGlue())
+        }
+
         // Add panels to the card layout
         contentPanel.add(wallPanel, "Wall")
         contentPanel.add(floorPanel, "Floor")
+        contentPanel.add(borderPanel, "Border") // Add border panel to card layout
 
         // Store references to panels for later access
         objectPanels["Wall"] = wallPanel
         objectPanels["Floor"] = floorPanel
+        objectPanels["Border"] = borderPanel // Store border panel reference
 
         // Add the content panel to the main panel
         add(contentPanel, BorderLayout.CENTER)

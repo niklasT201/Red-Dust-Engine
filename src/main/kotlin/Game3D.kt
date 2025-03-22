@@ -14,7 +14,7 @@ class Game3D : JPanel() {
     private val renderer = Renderer(800, 600)
     private val renderPanel = RenderPanel()
     private val gridEditor = GridEditor()
-    private val editorPanel = EditorPanel(gridEditor, this) { toggleEditorMode() }
+    private val editorPanel = EditorPanel(gridEditor,renderer, this) { toggleEditorMode() }
     //private val settingsSaver = saving.SettingsSaver(gridEditor)
     private lateinit var menuSystem: MenuSystem
     private var skyColor = Color(135, 206, 235)

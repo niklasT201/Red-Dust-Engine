@@ -1,5 +1,6 @@
 package ui
 
+import Renderer
 import Game3D
 import ObjectType
 import WallObject
@@ -10,7 +11,7 @@ import ui.components.*
 import java.awt.*
 import javax.swing.*
 
-class EditorPanel(var gridEditor: GridEditor, private val game3D: Game3D, private val onModeSwitch: () -> Unit) : JPanel() {
+class EditorPanel(var gridEditor: GridEditor, val renderer: Renderer, private val game3D: Game3D, private val onModeSwitch: () -> Unit) : JPanel() {
     private val resourceManager = ResourceManager()
     private val textureManager = TextureManagerPanel(resourceManager)
     private val modeButton = JButton("Editor Mode")
@@ -18,7 +19,7 @@ class EditorPanel(var gridEditor: GridEditor, private val game3D: Game3D, privat
     private var onWallStyleChange: ((Boolean) -> Unit)? = null
 
     // Component panels
-    private val objectSelectorPanel = ObjectSelectorPanel(gridEditor)
+    private val objectSelectorPanel = ObjectSelectorPanel(gridEditor, renderer)
     private val wallPropertiesPanel = WallPropertiesPanel()
     private val wallStylePanel = WallStylePanel(gridEditor)
     private val toolsPanel: ToolsPanel

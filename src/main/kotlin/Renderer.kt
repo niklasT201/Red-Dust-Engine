@@ -17,9 +17,9 @@ class Renderer(
     private var farPlane = 100.0
 
     // New properties for borders
-    private var borderColor = Color.BLACK
-    private var borderThickness = 2.0f
-    private var drawBorders = true
+    var borderColor = Color.BLACK
+    var borderThickness = 2.0f
+    var drawBorders = false
 
     // Dimensions management
     fun updateDimensions(newWidth: Int, newHeight: Int) {
@@ -120,5 +120,9 @@ class Renderer(
     private fun processWall(wall: Wall, camera: Camera, renderQueue: MutableList<RenderableObject>) {
         val wallProcessor = WallProcessor(nearPlane, width, height, scale)
         wallProcessor.processWall(wall, camera, renderQueue)
+    }
+
+    fun repaint() {
+        // placeholder comment for now
     }
 }
