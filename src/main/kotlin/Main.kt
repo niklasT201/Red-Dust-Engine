@@ -44,6 +44,7 @@ fun main() {
 // default value saving
 // adding physics
 // fixing image sliding
+// optional border adding for single objects and not only all ones
 // improve controls design
 
 // Object List:
