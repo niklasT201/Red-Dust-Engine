@@ -1,3 +1,7 @@
+package render
+
+import Vec3
+import Wall
 import player.Camera
 import kotlin.math.*
 
@@ -96,7 +100,8 @@ class WallProcessor(
                     (centerZ - camera.position.z).pow(2)
         )
 
-        renderQueue.add(RenderableObject.WallInfo(
+        renderQueue.add(
+            RenderableObject.WallInfo(
             distance,
             screenPoints,
             wall.color,

@@ -1,3 +1,8 @@
+package render
+
+import Floor
+import ImageEntry
+import Wall
 import java.awt.Color
 
 // Combined class to store rendering info for both walls and floors

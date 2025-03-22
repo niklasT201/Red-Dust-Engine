@@ -1,3 +1,7 @@
+package render
+
+import Floor
+import Vec3
 import player.Camera
 import kotlin.math.*
 
@@ -84,7 +88,8 @@ class FloorProcessor(
             distance
         }
 
-        renderQueue.add(RenderableObject.FloorInfo(
+        renderQueue.add(
+            RenderableObject.FloorInfo(
             adjustedDistance,
             screenPoints,
             floor.color,

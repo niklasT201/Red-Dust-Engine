@@ -1,4 +1,8 @@
 import player.Camera
+import render.FloorProcessor
+import render.RenderableObject
+import render.TextureRenderer
+import render.WallProcessor
 import java.awt.*
 import kotlin.math.*
 
