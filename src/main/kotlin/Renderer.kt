@@ -16,6 +16,11 @@ class Renderer(
     private var nearPlane = 0.1
     private var farPlane = 100.0
 
+    // New properties for borders
+    private var borderColor = Color.BLACK
+    private var borderThickness = 2.0f
+    private var drawBorders = true
+
     // Dimensions management
     fun updateDimensions(newWidth: Int, newHeight: Int) {
         this.width = newWidth
@@ -64,6 +69,13 @@ class Renderer(
         // Sort all objects by distance (furthest first)
         renderQueue.sortByDescending { it.distance }
 
+        // Store original rendering hints and stroke
+        val originalAntialiasingHint = g2.getRenderingHint(RenderingHints.KEY_ANTIALIASING)
+        val originalStroke = g2.stroke
+
+        // Set up anti-aliasing for smoother borders
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+
         // Draw all objects in sorted order
         for (renderable in renderQueue) {
             val polygon = Polygon(
@@ -83,7 +95,19 @@ class Renderer(
                 g2.color = renderable.color
                 g2.fill(polygon)
             }
+
+            // Draw the border if enabled
+            if (drawBorders) {
+                // Set border stroke and color
+                g2.stroke = BasicStroke(borderThickness)
+                g2.color = borderColor
+                g2.draw(polygon)
+            }
         }
+
+        // Restore original rendering hints and stroke
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, originalAntialiasingHint)
+        g2.stroke = originalStroke
     }
 
     // Process a floor for rendering
