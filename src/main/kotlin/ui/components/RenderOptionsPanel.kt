@@ -140,7 +140,10 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
         background = Color(40, 44, 52)
 
         // Render distance section
-        add(enableRenderDistanceCheckbox)
+        val renderDistCheckboxPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
+        renderDistCheckboxPanel.background = Color(40, 44, 52)
+        renderDistCheckboxPanel.add(enableRenderDistanceCheckbox)
+        add(renderDistCheckboxPanel)
         add(Box.createVerticalStrut(5))
 
         val renderDistancePanel = JPanel().apply {
@@ -149,12 +152,13 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
             add(maxRenderDistanceLabel)
             add(maxRenderDistanceValue)
         }
-        renderDistancePanel.alignmentX = Component.LEFT_ALIGNMENT
-        renderDistancePanel.maximumSize = Dimension(Int.MAX_VALUE, renderDistancePanel.preferredSize.height)
         add(renderDistancePanel)
-        add(maxRenderDistanceTrack)
-        maxRenderDistanceTrack.alignmentX = Component.LEFT_ALIGNMENT
-        maxRenderDistanceTrack.maximumSize = Dimension(Int.MAX_VALUE, maxRenderDistanceTrack.preferredSize.height)
+
+        // Create a panel for the track just like in PlayerOptionsPanel
+        val maxRenderDistancePanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
+        maxRenderDistancePanel.background = Color(40, 44, 52)
+        maxRenderDistancePanel.add(maxRenderDistanceTrack)
+        add(maxRenderDistancePanel)
 
         // Add more space between sections
         add(Box.createVerticalStrut(20))
@@ -163,18 +167,25 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
         add(enableShadowsCheckbox)
         add(Box.createVerticalStrut(5))
 
+        val shadowCheckboxPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
+        shadowCheckboxPanel.background = Color(40, 44, 52)
+        shadowCheckboxPanel.add(enableShadowsCheckbox)
+        add(shadowCheckboxPanel)
+        add(Box.createVerticalStrut(5))
+
         val shadowDistancePanel = JPanel().apply {
             layout = GridLayout(1, 2, 5, 0)
             background = Color(40, 44, 52)
             add(shadowDistanceLabel)
             add(shadowDistanceValue)
         }
-        shadowDistancePanel.alignmentX = Component.LEFT_ALIGNMENT
-        shadowDistancePanel.maximumSize = Dimension(Int.MAX_VALUE, shadowDistancePanel.preferredSize.height)
         add(shadowDistancePanel)
-        add(shadowDistanceTrack)
-        shadowDistanceTrack.alignmentX = Component.LEFT_ALIGNMENT
-        shadowDistanceTrack.maximumSize = Dimension(Int.MAX_VALUE, shadowDistanceTrack.preferredSize.height)
+
+        // Create a panel for the shadow distance track
+        val shadowDistanceTrackPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
+        shadowDistanceTrackPanel.background = Color(40, 44, 52)
+        shadowDistanceTrackPanel.add(shadowDistanceTrack)
+        add(shadowDistanceTrackPanel)
         add(Box.createVerticalStrut(10))
 
         val shadowIntensityPanel = JPanel().apply {
@@ -183,12 +194,13 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
             add(shadowIntensityLabel)
             add(shadowIntensityValue)
         }
-        shadowIntensityPanel.alignmentX = Component.LEFT_ALIGNMENT
-        shadowIntensityPanel.maximumSize = Dimension(Int.MAX_VALUE, shadowIntensityPanel.preferredSize.height)
         add(shadowIntensityPanel)
-        add(shadowIntensityTrack)
-        shadowIntensityTrack.alignmentX = Component.LEFT_ALIGNMENT
-        shadowIntensityTrack.maximumSize = Dimension(Int.MAX_VALUE, shadowIntensityTrack.preferredSize.height)
+
+        // Create a panel for the shadow intensity track
+        val shadowIntensityTrackPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
+        shadowIntensityTrackPanel.background = Color(40, 44, 52)
+        shadowIntensityTrackPanel.add(shadowIntensityTrack)
+        add(shadowIntensityTrackPanel)
         add(Box.createVerticalStrut(10))
 
         val ambientLightPanel = JPanel().apply {
@@ -197,22 +209,21 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
             add(ambientLightLabel)
             add(ambientLightValue)
         }
-        ambientLightPanel.alignmentX = Component.LEFT_ALIGNMENT
-        ambientLightPanel.maximumSize = Dimension(Int.MAX_VALUE, ambientLightPanel.preferredSize.height)
         add(ambientLightPanel)
-        add(ambientLightTrack)
-        ambientLightTrack.alignmentX = Component.LEFT_ALIGNMENT
-        ambientLightTrack.maximumSize = Dimension(Int.MAX_VALUE, ambientLightTrack.preferredSize.height)
+
+        // Create a panel for the ambient light track
+        val ambientLightTrackPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
+        ambientLightTrackPanel.background = Color(40, 44, 52)
+        ambientLightTrackPanel.add(ambientLightTrack)
+        add(ambientLightTrackPanel)
 
         // Add reset button with some space above
         add(Box.createVerticalStrut(20))
 
-        // Change to LEFT alignment for the reset button panel
+        // Reset button panel
         val resetPanel = JPanel(FlowLayout(FlowLayout.LEFT))
         resetPanel.background = Color(40, 44, 52)
         resetPanel.add(resetButton)
-        resetPanel.alignmentX = Component.LEFT_ALIGNMENT
-        resetPanel.maximumSize = Dimension(Int.MAX_VALUE, resetPanel.preferredSize.height)
         add(resetPanel)
 
         // Apply border with appropriate padding
@@ -287,7 +298,7 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
         private val changeListeners = mutableListOf<(Int) -> Unit>()
 
         init {
-            preferredSize = Dimension(150, trackHeight)
+            preferredSize = Dimension(130, trackHeight)
             background = Color(40, 44, 52)
 
             addMouseListener(object : MouseAdapter() {
