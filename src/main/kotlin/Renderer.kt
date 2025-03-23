@@ -16,7 +16,7 @@ class Renderer(
     private var nearPlane = 0.1
     private var farPlane = 100.0
     var enableRenderDistance = true
-    var maxRenderDistance = 30.0
+    var maxRenderDistance = 50.0
 
     // Border properties
     var borderColor = Color.BLACK

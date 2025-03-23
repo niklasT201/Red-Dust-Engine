@@ -337,6 +337,11 @@ class EditorPanel(var gridEditor: GridEditor, val renderer: Renderer, private va
             addComponent(skyOptionsPanel)
         }
 
+        val renderOptionsPanel = RenderOptionsPanel(renderer)
+        val renderOptionsSection = CollapsibleSection("Render Options").apply {
+            addComponent(renderOptionsPanel)
+        }
+
         // Create grid labels panel with error handling
         val gridLabelsPanel = try {
             DisplayOptionsPanel(gridEditor)
@@ -368,6 +373,8 @@ class EditorPanel(var gridEditor: GridEditor, val renderer: Renderer, private va
         playerSectionsPanel.add(playerOptionsSection)
         playerSectionsPanel.add(Box.createVerticalGlue())
 
+        mapSectionsPanel.add(renderOptionsSection)
+        mapSectionsPanel.add(Box.createVerticalStrut(10))
         mapSectionsPanel.add(skyOptionsSection)
         mapSectionsPanel.add(Box.createVerticalStrut(10))
         mapSectionsPanel.add(quickActionsSection)
