@@ -105,20 +105,20 @@ object TextureRenderer {
                         null
                     )
 
-                    // Apply shadow as a semi-transparent overlay AFTER drawing the texture
-                    if (shadowFactor < 1.0) {
-                        // Create a color with alpha based on the shadow factor
-                        val shadowAlpha = ((1.0 - shadowFactor) * 255).toInt()
-                        if (shadowAlpha > 0) {
-                            val shadowColor = Color(0, 0, 0, shadowAlpha)
-                            g2.composite = AlphaComposite.SrcOver
-                            g2.color = shadowColor
-                            g2.fill(trianglePoly)
-                        }
-                    }
-
                     // Restore the clip
                     g2.clip = triangleClip
+                }
+            }
+
+            // Apply shadow to the entire polygon AFTER all triangles are drawn
+            if (shadowFactor < 1.0) {
+                // Create a color with alpha based on the shadow factor
+                val shadowAlpha = ((1.0 - shadowFactor) * 255).toInt()
+                if (shadowAlpha > 0) {
+                    val shadowColor = Color(0, 0, 0, shadowAlpha)
+                    g2.composite = AlphaComposite.SrcOver
+                    g2.color = shadowColor
+                    g2.fill(polygon)  // Fill the entire polygon at once
                 }
             }
         } finally {
