@@ -1,16 +1,20 @@
 package ui.components
 
 import Renderer
-import java.awt.Color
-import java.awt.Component
-import java.awt.Dimension
-import java.awt.GridLayout
+import java.awt.*
+import java.awt.event.*
 import javax.swing.*
 import javax.swing.border.TitledBorder
-import javax.swing.event.ChangeEvent
-import javax.swing.event.ChangeListener
 
-class RenderOptionsPanel(private val renderer: Renderer) : JPanel(), ChangeListener {
+class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
+    // Default values for reset functionality
+    private val defaultRenderDistance = renderer.maxRenderDistance.toInt()
+    private val defaultShadowDistance = renderer.shadowDistance.toInt()
+    private val defaultShadowIntensity = (renderer.shadowIntensity * 100).toInt()
+    private val defaultAmbientLight = (renderer.ambientLight * 100).toInt()
+    private val defaultEnableRenderDistance = renderer.enableRenderDistance
+    private val defaultEnableShadows = renderer.enableShadows
+
     // Render distance components
     private val enableRenderDistanceCheckbox = JCheckBox("Enable Render Distance").apply {
         isSelected = renderer.enableRenderDistance
@@ -19,7 +23,7 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel(), ChangeListe
         alignmentX = Component.LEFT_ALIGNMENT
         addActionListener {
             renderer.enableRenderDistance = isSelected
-            maxRenderDistanceSlider.isEnabled = isSelected
+            maxRenderDistanceTrack.isEnabled = isSelected
             renderer.repaint()
         }
     }
@@ -34,15 +38,14 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel(), ChangeListe
         alignmentX = Component.RIGHT_ALIGNMENT
     }
 
-    private val maxRenderDistanceSlider = JSlider(5, 100, renderer.maxRenderDistance.toInt()).apply {
+    private val maxRenderDistanceTrack = CustomTrack(5, 100, renderer.maxRenderDistance.toInt()).apply {
         background = Color(40, 44, 52)
-        foreground = Color.WHITE
-        paintTicks = true
-        paintLabels = false
-        majorTickSpacing = 25
-        minorTickSpacing = 5
         alignmentX = Component.LEFT_ALIGNMENT
-        addChangeListener(this@RenderOptionsPanel)
+        addChangeListener { newValue ->
+            renderer.maxRenderDistance = newValue.toDouble()
+            maxRenderDistanceValue.text = "$newValue units"
+            renderer.repaint()
+        }
     }
 
     // Shadow components
@@ -53,9 +56,9 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel(), ChangeListe
         alignmentX = Component.LEFT_ALIGNMENT
         addActionListener {
             renderer.enableShadows = isSelected
-            shadowDistanceSlider.isEnabled = isSelected
-            shadowIntensitySlider.isEnabled = isSelected
-            ambientLightSlider.isEnabled = isSelected
+            shadowDistanceTrack.isEnabled = isSelected
+            shadowIntensityTrack.isEnabled = isSelected
+            ambientLightTrack.isEnabled = isSelected
             renderer.repaint()
         }
     }
@@ -70,15 +73,14 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel(), ChangeListe
         alignmentX = Component.RIGHT_ALIGNMENT
     }
 
-    private val shadowDistanceSlider = JSlider(5, 50, renderer.shadowDistance.toInt()).apply {
+    private val shadowDistanceTrack = CustomTrack(5, 50, renderer.shadowDistance.toInt()).apply {
         background = Color(40, 44, 52)
-        foreground = Color.WHITE
-        paintTicks = true
-        paintLabels = false
-        majorTickSpacing = 10
-        minorTickSpacing = 5
         alignmentX = Component.LEFT_ALIGNMENT
-        addChangeListener(this@RenderOptionsPanel)
+        addChangeListener { newValue ->
+            renderer.shadowDistance = newValue.toDouble()
+            shadowDistanceValue.text = "$newValue units"
+            renderer.repaint()
+        }
     }
 
     private val shadowIntensityLabel = JLabel("Shadow Intensity:").apply {
@@ -91,15 +93,14 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel(), ChangeListe
         alignmentX = Component.RIGHT_ALIGNMENT
     }
 
-    private val shadowIntensitySlider = JSlider(0, 100, (renderer.shadowIntensity * 100).toInt()).apply {
+    private val shadowIntensityTrack = CustomTrack(0, 100, (renderer.shadowIntensity * 100).toInt()).apply {
         background = Color(40, 44, 52)
-        foreground = Color.WHITE
-        paintTicks = true
-        paintLabels = false
-        majorTickSpacing = 25
-        minorTickSpacing = 5
         alignmentX = Component.LEFT_ALIGNMENT
-        addChangeListener(this@RenderOptionsPanel)
+        addChangeListener { newValue ->
+            renderer.shadowIntensity = newValue / 100.0
+            shadowIntensityValue.text = "$newValue%"
+            renderer.repaint()
+        }
     }
 
     private val ambientLightLabel = JLabel("Ambient Light:").apply {
@@ -112,15 +113,22 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel(), ChangeListe
         alignmentX = Component.RIGHT_ALIGNMENT
     }
 
-    private val ambientLightSlider = JSlider(0, 100, (renderer.ambientLight * 100).toInt()).apply {
+    private val ambientLightTrack = CustomTrack(0, 100, (renderer.ambientLight * 100).toInt()).apply {
         background = Color(40, 44, 52)
-        foreground = Color.WHITE
-        paintTicks = true
-        paintLabels = false
-        majorTickSpacing = 25
-        minorTickSpacing = 5
         alignmentX = Component.LEFT_ALIGNMENT
-        addChangeListener(this@RenderOptionsPanel)
+        addChangeListener { newValue ->
+            renderer.ambientLight = newValue / 100.0
+            ambientLightValue.text = "$newValue%"
+            renderer.repaint()
+        }
+    }
+
+    private val resetButton = JButton("Reset to Defaults").apply {
+        background = Color(60, 63, 65)
+        foreground = Color.WHITE
+        addActionListener {
+            resetToDefaults()
+        }
     }
 
     init {
@@ -144,10 +152,12 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel(), ChangeListe
         renderDistancePanel.alignmentX = Component.LEFT_ALIGNMENT
         renderDistancePanel.maximumSize = Dimension(Int.MAX_VALUE, renderDistancePanel.preferredSize.height)
         add(renderDistancePanel)
-        add(maxRenderDistanceSlider)
-        maxRenderDistanceSlider.alignmentX = Component.LEFT_ALIGNMENT
-        maxRenderDistanceSlider.maximumSize = Dimension(Int.MAX_VALUE, maxRenderDistanceSlider.preferredSize.height)
-        add(Box.createVerticalStrut(10))
+        add(maxRenderDistanceTrack)
+        maxRenderDistanceTrack.alignmentX = Component.LEFT_ALIGNMENT
+        maxRenderDistanceTrack.maximumSize = Dimension(Int.MAX_VALUE, maxRenderDistanceTrack.preferredSize.height)
+
+        // Add more space between sections
+        add(Box.createVerticalStrut(20))
 
         // Shadow section
         add(enableShadowsCheckbox)
@@ -162,10 +172,10 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel(), ChangeListe
         shadowDistancePanel.alignmentX = Component.LEFT_ALIGNMENT
         shadowDistancePanel.maximumSize = Dimension(Int.MAX_VALUE, shadowDistancePanel.preferredSize.height)
         add(shadowDistancePanel)
-        add(shadowDistanceSlider)
-        shadowDistanceSlider.alignmentX = Component.LEFT_ALIGNMENT
-        shadowDistanceSlider.maximumSize = Dimension(Int.MAX_VALUE, shadowDistanceSlider.preferredSize.height)
-        add(Box.createVerticalStrut(5))
+        add(shadowDistanceTrack)
+        shadowDistanceTrack.alignmentX = Component.LEFT_ALIGNMENT
+        shadowDistanceTrack.maximumSize = Dimension(Int.MAX_VALUE, shadowDistanceTrack.preferredSize.height)
+        add(Box.createVerticalStrut(10))
 
         val shadowIntensityPanel = JPanel().apply {
             layout = GridLayout(1, 2, 5, 0)
@@ -176,10 +186,10 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel(), ChangeListe
         shadowIntensityPanel.alignmentX = Component.LEFT_ALIGNMENT
         shadowIntensityPanel.maximumSize = Dimension(Int.MAX_VALUE, shadowIntensityPanel.preferredSize.height)
         add(shadowIntensityPanel)
-        add(shadowIntensitySlider)
-        shadowIntensitySlider.alignmentX = Component.LEFT_ALIGNMENT
-        shadowIntensitySlider.maximumSize = Dimension(Int.MAX_VALUE, shadowIntensitySlider.preferredSize.height)
-        add(Box.createVerticalStrut(5))
+        add(shadowIntensityTrack)
+        shadowIntensityTrack.alignmentX = Component.LEFT_ALIGNMENT
+        shadowIntensityTrack.maximumSize = Dimension(Int.MAX_VALUE, shadowIntensityTrack.preferredSize.height)
+        add(Box.createVerticalStrut(10))
 
         val ambientLightPanel = JPanel().apply {
             layout = GridLayout(1, 2, 5, 0)
@@ -190,9 +200,19 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel(), ChangeListe
         ambientLightPanel.alignmentX = Component.LEFT_ALIGNMENT
         ambientLightPanel.maximumSize = Dimension(Int.MAX_VALUE, ambientLightPanel.preferredSize.height)
         add(ambientLightPanel)
-        add(ambientLightSlider)
-        ambientLightSlider.alignmentX = Component.LEFT_ALIGNMENT
-        ambientLightSlider.maximumSize = Dimension(Int.MAX_VALUE, ambientLightSlider.preferredSize.height)
+        add(ambientLightTrack)
+        ambientLightTrack.alignmentX = Component.LEFT_ALIGNMENT
+        ambientLightTrack.maximumSize = Dimension(Int.MAX_VALUE, ambientLightTrack.preferredSize.height)
+
+        // Add reset button with some space above
+        add(Box.createVerticalStrut(20))
+
+        val resetPanel = JPanel(FlowLayout(FlowLayout.RIGHT))
+        resetPanel.background = Color(40, 44, 52)
+        resetPanel.add(resetButton)
+        resetPanel.alignmentX = Component.LEFT_ALIGNMENT
+        resetPanel.maximumSize = Dimension(Int.MAX_VALUE, resetPanel.preferredSize.height)
+        add(resetPanel)
 
         // Apply border with appropriate padding
         border = BorderFactory.createCompoundBorder(
@@ -204,42 +224,133 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel(), ChangeListe
                 null,
                 Color.WHITE
             ),
-            BorderFactory.createEmptyBorder(5, 5, 5, 5)
+            BorderFactory.createEmptyBorder(10, 10, 10, 10)
         )
 
-        // Set initial slider states
-        maxRenderDistanceSlider.isEnabled = renderer.enableRenderDistance
-        shadowDistanceSlider.isEnabled = renderer.enableShadows
-        shadowIntensitySlider.isEnabled = renderer.enableShadows
-        ambientLightSlider.isEnabled = renderer.enableShadows
+        // Set initial track states
+        maxRenderDistanceTrack.isEnabled = renderer.enableRenderDistance
+        shadowDistanceTrack.isEnabled = renderer.enableShadows
+        shadowIntensityTrack.isEnabled = renderer.enableShadows
+        ambientLightTrack.isEnabled = renderer.enableShadows
     }
 
-    override fun stateChanged(e: ChangeEvent) {
-        when (e.source) {
-            maxRenderDistanceSlider -> {
-                val value = maxRenderDistanceSlider.value.toDouble()
-                renderer.maxRenderDistance = value
-                maxRenderDistanceValue.text = "${value.toInt()} units"
-                renderer.repaint()
+    private fun resetToDefaults() {
+        // Reset render distance section
+        enableRenderDistanceCheckbox.isSelected = defaultEnableRenderDistance
+        renderer.enableRenderDistance = defaultEnableRenderDistance
+        maxRenderDistanceTrack.value = defaultRenderDistance
+        maxRenderDistanceTrack.isEnabled = defaultEnableRenderDistance
+        renderer.maxRenderDistance = defaultRenderDistance.toDouble()
+        maxRenderDistanceValue.text = "$defaultRenderDistance units"
+
+        // Reset shadow section
+        enableShadowsCheckbox.isSelected = defaultEnableShadows
+        renderer.enableShadows = defaultEnableShadows
+        shadowDistanceTrack.value = defaultShadowDistance
+        shadowDistanceTrack.isEnabled = defaultEnableShadows
+        renderer.shadowDistance = defaultShadowDistance.toDouble()
+        shadowDistanceValue.text = "$defaultShadowDistance units"
+
+        shadowIntensityTrack.value = defaultShadowIntensity
+        shadowIntensityTrack.isEnabled = defaultEnableShadows
+        renderer.shadowIntensity = defaultShadowIntensity / 100.0
+        shadowIntensityValue.text = "$defaultShadowIntensity%"
+
+        ambientLightTrack.value = defaultAmbientLight
+        ambientLightTrack.isEnabled = defaultEnableShadows
+        renderer.ambientLight = defaultAmbientLight / 100.0
+        ambientLightValue.text = "$defaultAmbientLight%"
+
+        // Refresh the renderer
+        renderer.repaint()
+    }
+
+    // Custom slider component based on your PlayerOptionsPanel design
+    private inner class CustomTrack(
+        private val min: Int,
+        private val max: Int,
+        initialValue: Int
+    ) : JPanel() {
+        var value: Int = initialValue
+            set(newValue) {
+                val clampedValue = newValue.coerceIn(min, max)
+                if (field != clampedValue) {
+                    field = clampedValue
+                    repaint()
+                    changeListeners.forEach { it(field) }
+                }
             }
-            shadowDistanceSlider -> {
-                val value = shadowDistanceSlider.value.toDouble()
-                renderer.shadowDistance = value
-                shadowDistanceValue.text = "${value.toInt()} units"
-                renderer.repaint()
-            }
-            shadowIntensitySlider -> {
-                val value = shadowIntensitySlider.value / 100.0
-                renderer.shadowIntensity = value
-                shadowIntensityValue.text = "${(value * 100).toInt()}%"
-                renderer.repaint()
-            }
-            ambientLightSlider -> {
-                val value = ambientLightSlider.value / 100.0
-                renderer.ambientLight = value
-                ambientLightValue.text = "${(value * 100).toInt()}%"
-                renderer.repaint()
-            }
+
+        private val trackHeight = 20  // Taller track to accommodate the text
+        private val markerWidth = 3    // Slim vertical marker instead of knob
+        private val changeListeners = mutableListOf<(Int) -> Unit>()
+
+        init {
+            preferredSize = Dimension(150, trackHeight)
+            background = Color(40, 44, 52)
+
+            addMouseListener(object : MouseAdapter() {
+                override fun mousePressed(e: MouseEvent) {
+                    if (isEnabled) updateValueFromMouse(e.x)
+                }
+            })
+
+            addMouseMotionListener(object : MouseMotionAdapter() {
+                override fun mouseDragged(e: MouseEvent) {
+                    if (isEnabled) updateValueFromMouse(e.x)
+                }
+            })
+        }
+
+        private fun updateValueFromMouse(x: Int) {
+            val trackWidth = width
+            val relativeX = x.coerceIn(0, trackWidth)
+            val newValue = min + ((max - min) * relativeX.toDouble() / trackWidth).toInt()
+            value = newValue
+        }
+
+        fun addChangeListener(listener: (Int) -> Unit) {
+            changeListeners.add(listener)
+        }
+
+        override fun paintComponent(g: Graphics) {
+            super.paintComponent(g)
+            val g2 = g as Graphics2D
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+
+            val alpha = if (isEnabled) 255 else 150
+
+            // Draw track background
+            g2.color = Color(30, 32, 34, alpha)
+            g2.fillRoundRect(0, 0, width, trackHeight, 8, 8)
+
+            // Draw filled portion of track
+            val fillWidth = ((value - min).toDouble() / (max - min) * width).toInt()
+            g2.color = Color(100, 149, 237, alpha) // Cornflower blue
+            g2.fillRoundRect(0, 0, fillWidth, trackHeight, 8, 8)
+
+            // Draw marker at current position (slim vertical line)
+            val markerX = ((value - min).toDouble() / (max - min) * width).toInt() - markerWidth / 2
+            g2.color = Color(255, 255, 255, alpha)
+            g2.fillRect(markerX, 0, markerWidth, trackHeight)
+
+            // Draw value text centered in the track
+            g2.font = Font("SansSerif", Font.BOLD, 12)
+            val valueText = value.toString()
+            val textWidth = g2.fontMetrics.stringWidth(valueText)
+            val textHeight = g2.fontMetrics.height
+
+            // Center text in the track
+            val textX = (width - textWidth) / 2
+            val textY = (trackHeight + textHeight) / 2 - 2
+
+            // Draw text shadow for better readability
+            g2.color = Color(0, 0, 0, alpha - 105)
+            g2.drawString(valueText, textX + 1, textY + 1)
+
+            // Draw text in white
+            g2.color = Color(255, 255, 255, alpha)
+            g2.drawString(valueText, textX, textY)
         }
     }
 }

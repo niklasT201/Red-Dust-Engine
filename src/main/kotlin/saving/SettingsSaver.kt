@@ -7,7 +7,7 @@ import player.Player
 import java.io.*
 import ui.components.DisplayOptionsPanel
 import ui.components.CrosshairShape
-import ui.components.SkyRenderer
+import render.SkyRenderer
 import java.awt.Color
 import java.awt.Image
 import java.awt.image.BufferedImage

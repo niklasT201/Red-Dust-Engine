@@ -1,12 +1,11 @@
 package ui.components
 
 import Game3D
+import render.SkyRenderer
 import java.awt.*
-import java.awt.event.*
 import java.io.File
 import javax.imageio.ImageIO
 import javax.swing.*
-import javax.swing.border.TitledBorder
 import javax.swing.filechooser.FileNameExtensionFilter
 
 enum class SkyDisplayMode {
@@ -220,11 +219,13 @@ class SkyOptionsPanel(private val game3D: Game3D) : JPanel() {
                 // For now, just enable the browse button and wait for user to select image
                 if (skyImage != null) {
                     // We have an image, so we can set the renderer
-                    game3D.setSkyRenderer(SkyRenderer(
+                    game3D.setSkyRenderer(
+                        SkyRenderer(
                         game3D.getSkyColor(),
                         skyImage,
                         displayMode == SkyDisplayMode.IMAGE_TILE
-                    ))
+                    )
+                    )
                 }
                 // Don't revert to COLOR mode here - let the user select an image
             }

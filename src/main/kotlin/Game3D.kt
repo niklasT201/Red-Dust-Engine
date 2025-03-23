@@ -4,7 +4,7 @@ import player.Player
 import ui.EditorPanel
 import ui.MenuSystem
 import ui.components.CrosshairShape
-import ui.components.SkyRenderer
+import render.SkyRenderer
 import java.awt.*
 import java.awt.event.*
 import javax.swing.*
