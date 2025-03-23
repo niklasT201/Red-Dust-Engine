@@ -15,6 +15,8 @@ class Renderer(
     private var scale = 1.0 / tan(fov/2)
     private var nearPlane = 0.1
     private var farPlane = 100.0
+    var enableRenderDistance = true
+    var maxRenderDistance = 30.0
 
     // Border properties
     var borderColor = Color.BLACK
@@ -72,8 +74,15 @@ class Renderer(
             processWall(wall, camera, renderQueue)
         }
 
+        // Filter objects based on render distance (only if enabled)
+        val filteredQueue = if (enableRenderDistance) {
+            renderQueue.filter { it.distance <= maxRenderDistance }
+        } else {
+            renderQueue
+        }
+
         // Sort all objects by distance (furthest first)
-        renderQueue.sortByDescending { it.distance }
+        val sortedQueue = filteredQueue.sortedByDescending { it.distance }
 
         // Store original rendering hints and stroke
         val originalAntialiasingHint = g2.getRenderingHint(RenderingHints.KEY_ANTIALIASING)
@@ -83,7 +92,7 @@ class Renderer(
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
 
         // Draw all objects in sorted order
-        for (renderable in renderQueue) {
+        for (renderable in sortedQueue) {
             val polygon = Polygon(
                 renderable.screenPoints.map { it.first }.toIntArray(),
                 renderable.screenPoints.map { it.second }.toIntArray(),
