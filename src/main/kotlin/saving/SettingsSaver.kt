@@ -106,7 +106,7 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             val outputStream = DataOutputStream(BufferedOutputStream(FileOutputStream(file)))
 
             // Write version for future compatibility
-            outputStream.writeInt(3) // Update to version 3 for border settings
+            outputStream.writeInt(4) // Update to version 4 for shadow and render distance settings
 
             // Write timestamp
             outputStream.writeLong(System.currentTimeMillis())
@@ -119,7 +119,7 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             outputStream.writeDouble(renderer.getNearPlane())
             outputStream.writeDouble(renderer.getFarPlane())
 
-            // --- Border settings section (new in version 3) ---
+            // --- Border settings section ---
             outputStream.writeUTF("BORDER_SECTION")
 
             // Save border visibility
@@ -133,6 +133,22 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             outputStream.writeInt(borderColor.red)
             outputStream.writeInt(borderColor.green)
             outputStream.writeInt(borderColor.blue)
+
+            // --- Render Distance section (new in version 4) ---
+            outputStream.writeUTF("RENDER_DISTANCE_SECTION")
+
+            // Save render distance settings
+            outputStream.writeBoolean(renderer.enableRenderDistance)
+            outputStream.writeDouble(renderer.maxRenderDistance)
+
+            // --- Shadow settings section (new in version 4) ---
+            outputStream.writeUTF("SHADOW_SECTION")
+
+            // Save shadow settings
+            outputStream.writeBoolean(renderer.enableShadows)
+            outputStream.writeDouble(renderer.shadowDistance)
+            outputStream.writeDouble(renderer.shadowIntensity)
+            outputStream.writeDouble(renderer.ambientLight)
 
             // --- Game3D settings section ---
             outputStream.writeUTF("GAME3D_SECTION")
@@ -373,7 +389,7 @@ class SettingsSaver(private val gridEditor: GridEditor) {
 
             // Read and verify version
             val version = inputStream.readInt()
-            if (version < 1 || version > 3) {
+            if (version < 1 || version > 4) {
                 println("Unsupported settings file version: $version")
                 inputStream.close()
                 return false
@@ -426,6 +442,46 @@ class SettingsSaver(private val gridEditor: GridEditor) {
                 } catch (e: Exception) {
                     println("Error loading border settings: ${e.message}")
                     // Continue with defaults if border settings can't be loaded
+                }
+            }
+
+            // If version 4 or higher, read render distance settings
+            if (version >= 4) {
+                try {
+                    val renderDistanceSection = inputStream.readUTF()
+                    if (renderDistanceSection == "RENDER_DISTANCE_SECTION") {
+                        // Read render distance settings
+                        val enableRenderDistance = inputStream.readBoolean()
+                        val maxRenderDistance = inputStream.readDouble()
+
+                        // Apply render distance settings to renderer
+                        renderer.enableRenderDistance = enableRenderDistance
+                        renderer.maxRenderDistance = maxRenderDistance
+                    }
+                } catch (e: Exception) {
+                    println("Error loading render distance settings: ${e.message}")
+                    // Continue with defaults if render distance settings can't be loaded
+                }
+
+                // Try to read shadow settings
+                try {
+                    val shadowSection = inputStream.readUTF()
+                    if (shadowSection == "SHADOW_SECTION") {
+                        // Read shadow settings
+                        val enableShadows = inputStream.readBoolean()
+                        val shadowDistance = inputStream.readDouble()
+                        val shadowIntensity = inputStream.readDouble()
+                        val ambientLight = inputStream.readDouble()
+
+                        // Apply shadow settings to renderer
+                        renderer.enableShadows = enableShadows
+                        renderer.shadowDistance = shadowDistance
+                        renderer.shadowIntensity = shadowIntensity
+                        renderer.ambientLight = ambientLight
+                    }
+                } catch (e: Exception) {
+                    println("Error loading shadow settings: ${e.message}")
+                    // Continue with defaults if shadow settings can't be loaded
                 }
             }
 

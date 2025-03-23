@@ -71,6 +71,7 @@ class SettingsManager(
         if (worldSuccess) {
             findSkyOptionsPanel(rootComponent)?.refreshFromGameState()
             findBorderStylePanel(rootComponent)?.refreshFromGameState()
+            findRenderOptionsPanel(rootComponent)?.refreshFromGameState()
         }
 
         return Triple(displaySuccess, worldSuccess, playerSuccess)
@@ -139,6 +140,20 @@ class SettingsManager(
         if (component is Container) {
             for (i in 0..<component.componentCount) {
                 val result = findBorderStylePanel(component.getComponent(i))
+                if (result != null) return result
+            }
+        }
+
+        return null
+    }
+
+    private fun findRenderOptionsPanel(component: Component?): RenderOptionsPanel? {
+        if (component == null) return null
+        if (component is RenderOptionsPanel) return component
+
+        if (component is Container) {
+            for (i in 0..<component.componentCount) {
+                val result = findRenderOptionsPanel(component.getComponent(i))
                 if (result != null) return result
             }
         }

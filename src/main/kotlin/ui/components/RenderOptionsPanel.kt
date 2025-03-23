@@ -147,10 +147,10 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
         add(Box.createVerticalStrut(5))
 
         val renderDistancePanel = JPanel().apply {
-            layout = GridLayout(1, 2, 5, 0)
+            layout = BorderLayout(5, 0)  // 5px horizontal gap
             background = Color(40, 44, 52)
-            add(maxRenderDistanceLabel)
-            add(maxRenderDistanceValue)
+            add(maxRenderDistanceLabel, BorderLayout.WEST)
+            add(maxRenderDistanceValue, BorderLayout.EAST)
         }
         add(renderDistancePanel)
 
@@ -164,9 +164,6 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
         add(Box.createVerticalStrut(20))
 
         // Shadow section
-        add(enableShadowsCheckbox)
-        add(Box.createVerticalStrut(5))
-
         val shadowCheckboxPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
         shadowCheckboxPanel.background = Color(40, 44, 52)
         shadowCheckboxPanel.add(enableShadowsCheckbox)
@@ -174,10 +171,10 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
         add(Box.createVerticalStrut(5))
 
         val shadowDistancePanel = JPanel().apply {
-            layout = GridLayout(1, 2, 5, 0)
+            layout = BorderLayout(5, 0)
             background = Color(40, 44, 52)
-            add(shadowDistanceLabel)
-            add(shadowDistanceValue)
+            add(shadowDistanceLabel, BorderLayout.WEST)
+            add(shadowDistanceValue, BorderLayout.EAST)
         }
         add(shadowDistancePanel)
 
@@ -189,10 +186,10 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
         add(Box.createVerticalStrut(10))
 
         val shadowIntensityPanel = JPanel().apply {
-            layout = GridLayout(1, 2, 5, 0)
+            layout = BorderLayout(5, 0)
             background = Color(40, 44, 52)
-            add(shadowIntensityLabel)
-            add(shadowIntensityValue)
+            add(shadowIntensityLabel, BorderLayout.WEST)
+            add(shadowIntensityValue, BorderLayout.EAST)
         }
         add(shadowIntensityPanel)
 
@@ -204,10 +201,10 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
         add(Box.createVerticalStrut(10))
 
         val ambientLightPanel = JPanel().apply {
-            layout = GridLayout(1, 2, 5, 0)
+            layout = BorderLayout(5, 0)
             background = Color(40, 44, 52)
-            add(ambientLightLabel)
-            add(ambientLightValue)
+            add(ambientLightLabel, BorderLayout.WEST)
+            add(ambientLightValue, BorderLayout.EAST)
         }
         add(ambientLightPanel)
 
@@ -364,5 +361,27 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
             g2.color = Color(255, 255, 255, alpha)
             g2.drawString(valueText, textX, textY)
         }
+    }
+
+    fun refreshFromGameState() {
+        // Update render distance controls
+        enableRenderDistanceCheckbox.isSelected = renderer.enableRenderDistance
+        maxRenderDistanceTrack.value = renderer.maxRenderDistance.toInt()
+        maxRenderDistanceTrack.isEnabled = renderer.enableRenderDistance
+        maxRenderDistanceValue.text = "${renderer.maxRenderDistance.toInt()} units"
+
+        // Update shadow controls
+        enableShadowsCheckbox.isSelected = renderer.enableShadows
+        shadowDistanceTrack.value = renderer.shadowDistance.toInt()
+        shadowDistanceTrack.isEnabled = renderer.enableShadows
+        shadowDistanceValue.text = "${renderer.shadowDistance.toInt()} units"
+
+        shadowIntensityTrack.value = (renderer.shadowIntensity * 100).toInt()
+        shadowIntensityTrack.isEnabled = renderer.enableShadows
+        shadowIntensityValue.text = "${(renderer.shadowIntensity * 100).toInt()}%"
+
+        ambientLightTrack.value = (renderer.ambientLight * 100).toInt()
+        ambientLightTrack.isEnabled = renderer.enableShadows
+        ambientLightValue.text = "${(renderer.ambientLight * 100).toInt()}%"
     }
 }

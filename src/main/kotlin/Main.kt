@@ -46,6 +46,9 @@ fun main() {
 // fixing image sliding
 // optional border adding for single objects and not only all ones
 // improve controls design
+// render panel value fix
+// shadow color
+// shadow around distance area
 
 // Object List:
 // Pillar, breakable walls and floors, PropObject, Doors, Triggers, Elevator, Light Sources, Items, 3D Object Support
