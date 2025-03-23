@@ -7,12 +7,14 @@ import java.awt.geom.Point2D
 import kotlin.math.*
 
 object TextureRenderer {
+    // Original method now with an optional shadow factor parameter
     fun drawTexturedPolygon(
         g2: Graphics2D,
         polygon: Polygon,
         textureEntry: ImageEntry,
         textureCoords: List<Pair<Double, Double>>,
-        screenPoints: List<Pair<Int, Int>>
+        screenPoints: List<Pair<Int, Int>>,
+        shadowFactor: Double = 1.0
     ) {
         if (screenPoints.size < 3 || textureCoords.size != screenPoints.size) return
 
@@ -23,6 +25,9 @@ object TextureRenderer {
         // Set up clipping to the polygon
         val originalClip = g2.clip
         g2.clip = polygon
+
+        // Save the original composite
+        val originalComposite = g2.composite
 
         try {
             // Create triangular mesh
@@ -100,13 +105,26 @@ object TextureRenderer {
                         null
                     )
 
+                    // Apply shadow as a semi-transparent overlay AFTER drawing the texture
+                    if (shadowFactor < 1.0) {
+                        // Create a color with alpha based on the shadow factor
+                        val shadowAlpha = ((1.0 - shadowFactor) * 255).toInt()
+                        if (shadowAlpha > 0) {
+                            val shadowColor = Color(0, 0, 0, shadowAlpha)
+                            g2.composite = AlphaComposite.SrcOver
+                            g2.color = shadowColor
+                            g2.fill(trianglePoly)
+                        }
+                    }
+
                     // Restore the clip
                     g2.clip = triangleClip
                 }
             }
         } finally {
-            // Restore original clip
+            // Restore original clip and composite
             g2.clip = originalClip
+            g2.composite = originalComposite
         }
     }
 

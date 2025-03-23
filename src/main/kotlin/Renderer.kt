@@ -16,10 +16,16 @@ class Renderer(
     private var nearPlane = 0.1
     private var farPlane = 100.0
 
-    // New properties for borders
+    // Border properties
     var borderColor = Color.BLACK
     var borderThickness = 2.0f
     var drawBorders = false
+
+    // New lighting properties for distance-based shadows
+    var enableShadows = true
+    var shadowDistance = 20.0  // Distance at which maximum darkening occurs
+    var shadowIntensity = 0.7  // How much objects darken at max distance (0.0-1.0)
+    var ambientLight = 0.3     // Minimum light level (0.0-1.0)
 
     // Dimensions management
     fun updateDimensions(newWidth: Int, newHeight: Int) {
@@ -84,15 +90,30 @@ class Renderer(
                 renderable.screenPoints.size
             )
 
+            // Calculate shadow factor based on distance (1.0 = no shadow, closer to 0.0 = darker)
+            val shadowFactor = if (enableShadows) {
+                calculateShadowFactor(renderable.distance)
+            } else {
+                1.0 // No shadow if disabled
+            }
+
             // Check if we have a texture for this object
             if (renderable.texture != null) {
+                // Draw textured polygon with shadow factor
                 TextureRenderer.drawTexturedPolygon(
                     g2, polygon, renderable.texture!!,
-                    renderable.textureCoords, renderable.screenPoints
+                    renderable.textureCoords, renderable.screenPoints,
+                    shadowFactor
                 )
             } else {
-                // Fall back to solid color if no texture
-                g2.color = renderable.color
+                // For solid colors, apply shadow directly to the color
+                val shadedColor = if (enableShadows) {
+                    applyShadowToColor(renderable.color, shadowFactor)
+                } else {
+                    renderable.color
+                }
+
+                g2.color = shadedColor
                 g2.fill(polygon)
             }
 
@@ -108,6 +129,25 @@ class Renderer(
         // Restore original rendering hints and stroke
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, originalAntialiasingHint)
         g2.stroke = originalStroke
+    }
+
+    // Calculate shadow factor based on distance
+    private fun calculateShadowFactor(distance: Double): Double {
+        // Calculate how much light reaches the object (1.0 = full brightness, 0.0 = complete darkness)
+        val distanceFactor = minOf(distance / shadowDistance, 1.0)
+
+        // Apply shadow intensity and ensure we don't go below ambient light level
+        return maxOf(1.0 - (distanceFactor * shadowIntensity), ambientLight)
+    }
+
+    // Apply shadow factor to a color
+    private fun applyShadowToColor(color: Color, shadowFactor: Double): Color {
+        return Color(
+            (color.red * shadowFactor).toInt(),
+            (color.green * shadowFactor).toInt(),
+            (color.blue * shadowFactor).toInt(),
+            color.alpha
+        )
     }
 
     // Process a floor for rendering
