@@ -207,7 +207,8 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
         // Add reset button with some space above
         add(Box.createVerticalStrut(20))
 
-        val resetPanel = JPanel(FlowLayout(FlowLayout.RIGHT))
+        // Change to LEFT alignment for the reset button panel
+        val resetPanel = JPanel(FlowLayout(FlowLayout.LEFT))
         resetPanel.background = Color(40, 44, 52)
         resetPanel.add(resetButton)
         resetPanel.alignmentX = Component.LEFT_ALIGNMENT
