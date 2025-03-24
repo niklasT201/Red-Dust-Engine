@@ -106,7 +106,7 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             val outputStream = DataOutputStream(BufferedOutputStream(FileOutputStream(file)))
 
             // Write version for future compatibility
-            outputStream.writeInt(5) // Update to version 5 for visibility radius settings
+            outputStream.writeInt(6) // Update to version 6 for visibility radius settings
 
             // Write timestamp
             outputStream.writeLong(System.currentTimeMillis())
@@ -149,6 +149,12 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             outputStream.writeDouble(renderer.shadowDistance)
             outputStream.writeDouble(renderer.shadowIntensity)
             outputStream.writeDouble(renderer.ambientLight)
+
+            // NEW: Save shadow color
+            val shadowColor = renderer.shadowColor
+            outputStream.writeInt(shadowColor.red)
+            outputStream.writeInt(shadowColor.green)
+            outputStream.writeInt(shadowColor.blue)
 
             // --- Visibility Radius section (new in version 5) ---
             outputStream.writeUTF("VISIBILITY_RADIUS_SECTION")
@@ -403,7 +409,7 @@ class SettingsSaver(private val gridEditor: GridEditor) {
 
             // Read and verify version
             val version = inputStream.readInt()
-            if (version < 1 || version > 5) {
+            if (version < 1 || version > 6) {
                 println("Unsupported settings file version: $version")
                 inputStream.close()
                 return false
@@ -487,11 +493,22 @@ class SettingsSaver(private val gridEditor: GridEditor) {
                         val shadowIntensity = inputStream.readDouble()
                         val ambientLight = inputStream.readDouble()
 
+                        // NEW in version 6: Read shadow color if available
+                        val shadowColor = if (version >= 6) {
+                            val red = inputStream.readInt()
+                            val green = inputStream.readInt()
+                            val blue = inputStream.readInt()
+                            Color(red, green, blue)
+                        } else {
+                            Color.BLACK // Default shadow color
+                        }
+
                         // Apply shadow settings to renderer
                         renderer.enableShadows = enableShadows
                         renderer.shadowDistance = shadowDistance
                         renderer.shadowIntensity = shadowIntensity
                         renderer.ambientLight = ambientLight
+                        renderer.shadowColor = shadowColor
                     }
                 } catch (e: Exception) {
                     println("Error loading shadow settings: ${e.message}")
