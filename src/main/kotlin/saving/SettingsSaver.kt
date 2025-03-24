@@ -106,7 +106,7 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             val outputStream = DataOutputStream(BufferedOutputStream(FileOutputStream(file)))
 
             // Write version for future compatibility
-            outputStream.writeInt(4) // Update to version 4 for shadow and render distance settings
+            outputStream.writeInt(5) // Update to version 5 for visibility radius settings
 
             // Write timestamp
             outputStream.writeLong(System.currentTimeMillis())
@@ -134,14 +134,14 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             outputStream.writeInt(borderColor.green)
             outputStream.writeInt(borderColor.blue)
 
-            // --- Render Distance section (new in version 4) ---
+            // --- Render Distance section ---
             outputStream.writeUTF("RENDER_DISTANCE_SECTION")
 
             // Save render distance settings
             outputStream.writeBoolean(renderer.enableRenderDistance)
             outputStream.writeDouble(renderer.maxRenderDistance)
 
-            // --- Shadow settings section (new in version 4) ---
+            // --- Shadow settings section ---
             outputStream.writeUTF("SHADOW_SECTION")
 
             // Save shadow settings
@@ -149,6 +149,20 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             outputStream.writeDouble(renderer.shadowDistance)
             outputStream.writeDouble(renderer.shadowIntensity)
             outputStream.writeDouble(renderer.ambientLight)
+
+            // --- Visibility Radius section (new in version 5) ---
+            outputStream.writeUTF("VISIBILITY_RADIUS_SECTION")
+
+            // Save visibility radius settings
+            outputStream.writeBoolean(renderer.enableVisibilityRadius)
+            outputStream.writeDouble(renderer.visibilityRadius)
+            outputStream.writeDouble(renderer.visibilityFalloff)
+
+            // Save outside color
+            val outsideColor = renderer.outsideColor
+            outputStream.writeInt(outsideColor.red)
+            outputStream.writeInt(outsideColor.green)
+            outputStream.writeInt(outsideColor.blue)
 
             // --- Game3D settings section ---
             outputStream.writeUTF("GAME3D_SECTION")
@@ -389,7 +403,7 @@ class SettingsSaver(private val gridEditor: GridEditor) {
 
             // Read and verify version
             val version = inputStream.readInt()
-            if (version < 1 || version > 4) {
+            if (version < 1 || version > 5) {
                 println("Unsupported settings file version: $version")
                 inputStream.close()
                 return false
@@ -482,6 +496,33 @@ class SettingsSaver(private val gridEditor: GridEditor) {
                 } catch (e: Exception) {
                     println("Error loading shadow settings: ${e.message}")
                     // Continue with defaults if shadow settings can't be loaded
+                }
+            }
+
+            // If version 5 or higher, read visibility radius settings
+            if (version >= 5) {
+                try {
+                    val visibilitySection = inputStream.readUTF()
+                    if (visibilitySection == "VISIBILITY_RADIUS_SECTION") {
+                        // Read visibility radius settings
+                        val enableVisibilityRadius = inputStream.readBoolean()
+                        val visibilityRadius = inputStream.readDouble()
+                        val visibilityFalloff = inputStream.readDouble()
+
+                        // Read outside color
+                        val red = inputStream.readInt()
+                        val green = inputStream.readInt()
+                        val blue = inputStream.readInt()
+
+                        // Apply visibility radius settings to renderer
+                        renderer.enableVisibilityRadius = enableVisibilityRadius
+                        renderer.visibilityRadius = visibilityRadius
+                        renderer.visibilityFalloff = visibilityFalloff
+                        renderer.outsideColor = Color(red, green, blue)
+                    }
+                } catch (e: Exception) {
+                    println("Error loading visibility radius settings: ${e.message}")
+                    // Continue with defaults if visibility radius settings can't be loaded
                 }
             }
 

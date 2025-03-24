@@ -29,6 +29,12 @@ class Renderer(
     var shadowIntensity = 0.7  // How much objects darken at max distance (0.0-1.0)
     var ambientLight = 0.3     // Minimum light level (0.0-1.0)
 
+    // New visibility radius properties
+    var enableVisibilityRadius = false
+    var visibilityRadius = 50.0 // Distance within which objects are visible
+    var visibilityFalloff = 1.0 // Width of the gradient edge (0 = hard edge, higher = more gradual falloff)
+    var outsideColor = Color.BLACK // Color for areas outside visibility radius
+
     // Dimensions management
     fun updateDimensions(newWidth: Int, newHeight: Int) {
         this.width = newWidth
@@ -87,9 +93,16 @@ class Renderer(
         // Store original rendering hints and stroke
         val originalAntialiasingHint = g2.getRenderingHint(RenderingHints.KEY_ANTIALIASING)
         val originalStroke = g2.stroke
+        val originalComposite = g2.composite
 
         // Set up anti-aliasing for smoother borders
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+
+        // If visibility radius is enabled, first draw the scene completely black
+        if (enableVisibilityRadius && enableRenderDistance) {
+            g2.color = outsideColor
+            g2.fillRect(0, 0, width, height)
+        }
 
         // Draw all objects in sorted order
         for (renderable in sortedQueue) {
@@ -104,6 +117,21 @@ class Renderer(
                 calculateShadowFactor(renderable.distance)
             } else {
                 1.0 // No shadow if disabled
+            }
+
+            // Calculate visibility factor based on distance (for visibility radius feature)
+            val visibilityFactor = if (enableVisibilityRadius && enableRenderDistance) {
+                calculateVisibilityFactor(renderable.distance)
+            } else {
+                1.0 // Fully visible if visibility radius is disabled
+            }
+
+            // Skip rendering objects that are completely invisible (optimization)
+            if (visibilityFactor <= 0.01) continue
+
+            // Apply visibility factor using AlphaComposite for smooth blending
+            if (enableVisibilityRadius && enableRenderDistance && visibilityFactor < 1.0) {
+                g2.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, visibilityFactor.toFloat())
             }
 
             // Check if we have a texture for this object
@@ -133,11 +161,17 @@ class Renderer(
                 g2.color = borderColor
                 g2.draw(polygon)
             }
+
+            // Reset composite if it was changed
+            if (enableVisibilityRadius && enableRenderDistance && visibilityFactor < 1.0) {
+                g2.composite = originalComposite
+            }
         }
 
         // Restore original rendering hints and stroke
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, originalAntialiasingHint)
         g2.stroke = originalStroke
+        g2.composite = originalComposite
     }
 
     // Calculate shadow factor based on distance
@@ -147,6 +181,23 @@ class Renderer(
 
         // Apply shadow intensity and ensure we don't go below ambient light level
         return maxOf(1.0 - (distanceFactor * shadowIntensity), ambientLight)
+    }
+
+    // Calculate visibility factor based on distance (for visibility radius feature)
+    private fun calculateVisibilityFactor(distance: Double): Double {
+        // If distance is less than visibility radius - falloff, it's fully visible
+        if (distance < visibilityRadius - visibilityFalloff) {
+            return 1.0
+        }
+
+        // If distance is more than visibility radius, it's not visible
+        if (distance > visibilityRadius) {
+            return 0.0
+        }
+
+        // Otherwise, calculate a smooth falloff using the distance from the edge
+        val edgeDistance = visibilityRadius - distance
+        return edgeDistance / visibilityFalloff
     }
 
     // Apply shadow factor to a color

@@ -14,6 +14,11 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
     private val defaultAmbientLight = (renderer.ambientLight * 100).toInt()
     private val defaultEnableRenderDistance = renderer.enableRenderDistance
     private val defaultEnableShadows = renderer.enableShadows
+    // New default values for visibility zone
+    private val defaultEnableVisibilityRadius = renderer.enableVisibilityRadius
+    private val defaultVisibilityRadius = renderer.visibilityRadius.toInt()
+    private val defaultVisibilityFalloff = renderer.visibilityFalloff.toInt()
+    private val defaultOutsideColor = renderer.outsideColor
 
     // Render distance components
     private val enableRenderDistanceCheckbox = JCheckBox("Enable Render Distance").apply {
@@ -123,6 +128,83 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
         }
     }
 
+    // New visibility zone components
+    private val enableVisibilityRadiusCheckbox = JCheckBox("Enable Visibility Zone").apply {
+        isSelected = renderer.enableVisibilityRadius
+        background = Color(40, 44, 52)
+        foreground = Color.WHITE
+        alignmentX = Component.LEFT_ALIGNMENT
+        addActionListener {
+            renderer.enableVisibilityRadius = isSelected
+            visibilityRadiusTrack.isEnabled = isSelected
+            visibilityFalloffTrack.isEnabled = isSelected
+            outsideColorButton.isEnabled = isSelected
+            renderer.repaint()
+        }
+    }
+
+    private val visibilityRadiusLabel = JLabel("Visibility Radius:").apply {
+        foreground = Color.WHITE
+        alignmentX = Component.LEFT_ALIGNMENT
+    }
+
+    private val visibilityRadiusValue = JLabel("${renderer.visibilityRadius.toInt()} units").apply {
+        foreground = Color.WHITE
+        alignmentX = Component.RIGHT_ALIGNMENT
+    }
+
+    private val visibilityRadiusTrack = CustomTrack(10, 100, renderer.visibilityRadius.toInt()).apply {
+        background = Color(40, 44, 52)
+        alignmentX = Component.LEFT_ALIGNMENT
+        addChangeListener { newValue ->
+            renderer.visibilityRadius = newValue.toDouble()
+            visibilityRadiusValue.text = "$newValue units"
+            renderer.repaint()
+        }
+    }
+
+    private val visibilityFalloffLabel = JLabel("Edge Falloff:").apply {
+        foreground = Color.WHITE
+        alignmentX = Component.LEFT_ALIGNMENT
+    }
+
+    private val visibilityFalloffValue = JLabel("${renderer.visibilityFalloff.toInt()} units").apply {
+        foreground = Color.WHITE
+        alignmentX = Component.RIGHT_ALIGNMENT
+    }
+
+    private val visibilityFalloffTrack = CustomTrack(0, 10, renderer.visibilityFalloff.toInt()).apply {
+        background = Color(40, 44, 52)
+        alignmentX = Component.LEFT_ALIGNMENT
+        addChangeListener { newValue ->
+            renderer.visibilityFalloff = newValue.toDouble()
+            visibilityFalloffValue.text = "$newValue units"
+            renderer.repaint()
+        }
+    }
+
+    private val outsideColorLabel = JLabel("Outside Color:").apply {
+        foreground = Color.WHITE
+        alignmentX = Component.LEFT_ALIGNMENT
+    }
+
+    private val outsideColorButton = JButton().apply {
+        background = renderer.outsideColor
+        preferredSize = Dimension(30, 20)
+        addActionListener {
+            val newColor = JColorChooser.showDialog(
+                this@RenderOptionsPanel,
+                "Choose Outside Color",
+                renderer.outsideColor
+            )
+            if (newColor != null) {
+                background = newColor
+                renderer.outsideColor = newColor
+                renderer.repaint()
+            }
+        }
+    }
+
     private val resetButton = JButton("Reset to Defaults").apply {
         background = Color(60, 63, 65)
         foreground = Color.WHITE
@@ -214,6 +296,61 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
         ambientLightTrackPanel.add(ambientLightTrack)
         add(ambientLightTrackPanel)
 
+        // Add more space between sections
+        add(Box.createVerticalStrut(20))
+
+        // New Visibility Zone section
+        val visibilityCheckboxPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
+        visibilityCheckboxPanel.background = Color(40, 44, 52)
+        visibilityCheckboxPanel.add(enableVisibilityRadiusCheckbox)
+        add(visibilityCheckboxPanel)
+        add(Box.createVerticalStrut(5))
+
+        val visibilityRadiusPanel = JPanel().apply {
+            layout = BorderLayout(5, 0)
+            background = Color(40, 44, 52)
+            add(visibilityRadiusLabel, BorderLayout.WEST)
+            add(visibilityRadiusValue, BorderLayout.EAST)
+        }
+        add(visibilityRadiusPanel)
+
+        // Create a panel for the visibility radius track
+        val visibilityRadiusTrackPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
+        visibilityRadiusTrackPanel.background = Color(40, 44, 52)
+        visibilityRadiusTrackPanel.add(visibilityRadiusTrack)
+        add(visibilityRadiusTrackPanel)
+        add(Box.createVerticalStrut(10))
+
+        val visibilityFalloffPanel = JPanel().apply {
+            layout = BorderLayout(5, 0)
+            background = Color(40, 44, 52)
+            add(visibilityFalloffLabel, BorderLayout.WEST)
+            add(visibilityFalloffValue, BorderLayout.EAST)
+        }
+        add(visibilityFalloffPanel)
+
+        // Create a panel for the visibility falloff track
+        val visibilityFalloffTrackPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
+        visibilityFalloffTrackPanel.background = Color(40, 44, 52)
+        visibilityFalloffTrackPanel.add(visibilityFalloffTrack)
+        add(visibilityFalloffTrackPanel)
+        add(Box.createVerticalStrut(10))
+
+        val outsideColorPanel = JPanel().apply {
+            layout = BorderLayout(5, 0)
+            background = Color(40, 44, 52)
+            add(outsideColorLabel, BorderLayout.WEST)
+
+            // Create a container for the color button to prevent it from expanding
+            val colorButtonContainer = JPanel(FlowLayout(FlowLayout.RIGHT, 0, 0))
+            colorButtonContainer.background = Color(40, 44, 52)
+            colorButtonContainer.add(outsideColorButton)
+
+            add(colorButtonContainer, BorderLayout.EAST)
+        }
+        add(outsideColorPanel)
+        add(Box.createVerticalStrut(10))
+
         // Add reset button with some space above
         add(Box.createVerticalStrut(20))
 
@@ -241,6 +378,11 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
         shadowDistanceTrack.isEnabled = renderer.enableShadows
         shadowIntensityTrack.isEnabled = renderer.enableShadows
         ambientLightTrack.isEnabled = renderer.enableShadows
+
+        // Set initial states for visibility controls
+        visibilityRadiusTrack.isEnabled = renderer.enableVisibilityRadius
+        visibilityFalloffTrack.isEnabled = renderer.enableVisibilityRadius
+        outsideColorButton.isEnabled = renderer.enableVisibilityRadius
     }
 
     private fun resetToDefaults() {
@@ -269,6 +411,23 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
         ambientLightTrack.isEnabled = defaultEnableShadows
         renderer.ambientLight = defaultAmbientLight / 100.0
         ambientLightValue.text = "$defaultAmbientLight%"
+
+        // Reset visibility zone section
+        enableVisibilityRadiusCheckbox.isSelected = defaultEnableVisibilityRadius
+        renderer.enableVisibilityRadius = defaultEnableVisibilityRadius
+        visibilityRadiusTrack.value = defaultVisibilityRadius
+        visibilityRadiusTrack.isEnabled = defaultEnableVisibilityRadius
+        renderer.visibilityRadius = defaultVisibilityRadius.toDouble()
+        visibilityRadiusValue.text = "$defaultVisibilityRadius units"
+
+        visibilityFalloffTrack.value = defaultVisibilityFalloff
+        visibilityFalloffTrack.isEnabled = defaultEnableVisibilityRadius
+        renderer.visibilityFalloff = defaultVisibilityFalloff.toDouble()
+        visibilityFalloffValue.text = "$defaultVisibilityFalloff units"
+
+        outsideColorButton.background = defaultOutsideColor
+        outsideColorButton.isEnabled = defaultEnableVisibilityRadius
+        renderer.outsideColor = defaultOutsideColor
 
         // Refresh the renderer
         renderer.repaint()
@@ -383,5 +542,18 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
         ambientLightTrack.value = (renderer.ambientLight * 100).toInt()
         ambientLightTrack.isEnabled = renderer.enableShadows
         ambientLightValue.text = "${(renderer.ambientLight * 100).toInt()}%"
+
+        // Update visibility zone controls
+        enableVisibilityRadiusCheckbox.isSelected = renderer.enableVisibilityRadius
+        visibilityRadiusTrack.value = renderer.visibilityRadius.toInt()
+        visibilityRadiusTrack.isEnabled = renderer.enableVisibilityRadius
+        visibilityRadiusValue.text = "${renderer.visibilityRadius.toInt()} units"
+
+        visibilityFalloffTrack.value = renderer.visibilityFalloff.toInt()
+        visibilityFalloffTrack.isEnabled = renderer.enableVisibilityRadius
+        visibilityFalloffValue.text = "${renderer.visibilityFalloff.toInt()} units"
+
+        outsideColorButton.background = renderer.outsideColor
+        outsideColorButton.isEnabled = renderer.enableVisibilityRadius
     }
 }

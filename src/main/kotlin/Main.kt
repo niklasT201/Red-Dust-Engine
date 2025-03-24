@@ -53,11 +53,10 @@ fun main() {
 // Object List:
 // Pillar, breakable walls and floors, PropObject, Doors, Triggers, Elevator, Light Sources, Items, 3D Object Support
 
-// optional shadows
 // weapon system
+// render screen with sniper like view
 // create own weapons
 // damage system
-// all objects in editor menu
 
 // UI:
 // physics optional
