@@ -236,10 +236,12 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
         }
         add(renderDistancePanel)
 
-        // Create a panel for the track with BorderLayout to allow expansion
+        // Create a panel for the track with BorderLayout
         val maxRenderDistancePanel = JPanel(BorderLayout(0, 0))
         maxRenderDistancePanel.background = Color(40, 44, 52)
         maxRenderDistancePanel.add(maxRenderDistanceTrack, BorderLayout.CENTER)
+        // Set a maximum size to ensure it doesn't get too big
+        maxRenderDistancePanel.maximumSize = Dimension(Short.MAX_VALUE.toInt(), maxRenderDistanceTrack.preferredSize.height)
         add(maxRenderDistancePanel)
 
         // Add more space between sections
@@ -261,9 +263,10 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
         add(shadowDistancePanel)
 
         // Create a panel for the shadow distance track
-        val shadowDistanceTrackPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
+        val shadowDistanceTrackPanel = JPanel(BorderLayout(0, 0))
         shadowDistanceTrackPanel.background = Color(40, 44, 52)
-        shadowDistanceTrackPanel.add(shadowDistanceTrack)
+        shadowDistanceTrackPanel.add(shadowDistanceTrack, BorderLayout.CENTER)
+        shadowDistanceTrackPanel.maximumSize = Dimension(Short.MAX_VALUE.toInt(), shadowDistanceTrack.preferredSize.height)
         add(shadowDistanceTrackPanel)
         add(Box.createVerticalStrut(10))
 
@@ -276,9 +279,10 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
         add(shadowIntensityPanel)
 
         // Create a panel for the shadow intensity track
-        val shadowIntensityTrackPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
+        val shadowIntensityTrackPanel = JPanel(BorderLayout(0, 0))
         shadowIntensityTrackPanel.background = Color(40, 44, 52)
-        shadowIntensityTrackPanel.add(shadowIntensityTrack)
+        shadowIntensityTrackPanel.add(shadowIntensityTrack, BorderLayout.CENTER)
+        shadowIntensityTrackPanel.maximumSize = Dimension(Short.MAX_VALUE.toInt(), shadowIntensityTrack.preferredSize.height)
         add(shadowIntensityTrackPanel)
         add(Box.createVerticalStrut(10))
 
@@ -291,9 +295,10 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
         add(ambientLightPanel)
 
         // Create a panel for the ambient light track
-        val ambientLightTrackPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
+        val ambientLightTrackPanel = JPanel(BorderLayout(0, 0))
         ambientLightTrackPanel.background = Color(40, 44, 52)
-        ambientLightTrackPanel.add(ambientLightTrack)
+        ambientLightTrackPanel.add(ambientLightTrack, BorderLayout.CENTER)
+        ambientLightTrackPanel.maximumSize = Dimension(Short.MAX_VALUE.toInt(), ambientLightTrack.preferredSize.height)
         add(ambientLightTrackPanel)
 
         // Add more space between sections
@@ -315,9 +320,10 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
         add(visibilityRadiusPanel)
 
         // Create a panel for the visibility radius track
-        val visibilityRadiusTrackPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
+        val visibilityRadiusTrackPanel = JPanel(BorderLayout(0, 0))
         visibilityRadiusTrackPanel.background = Color(40, 44, 52)
-        visibilityRadiusTrackPanel.add(visibilityRadiusTrack)
+        visibilityRadiusTrackPanel.add(visibilityRadiusTrack, BorderLayout.CENTER)
+        visibilityRadiusTrackPanel.maximumSize = Dimension(Short.MAX_VALUE.toInt(), visibilityRadiusTrack.preferredSize.height)
         add(visibilityRadiusTrackPanel)
         add(Box.createVerticalStrut(10))
 
@@ -330,9 +336,10 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
         add(visibilityFalloffPanel)
 
         // Create a panel for the visibility falloff track
-        val visibilityFalloffTrackPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
+        val visibilityFalloffTrackPanel = JPanel(BorderLayout(0, 0))
         visibilityFalloffTrackPanel.background = Color(40, 44, 52)
-        visibilityFalloffTrackPanel.add(visibilityFalloffTrack)
+        visibilityFalloffTrackPanel.add(visibilityFalloffTrack, BorderLayout.CENTER)
+        visibilityFalloffTrackPanel.maximumSize = Dimension(Short.MAX_VALUE.toInt(), visibilityFalloffTrack.preferredSize.height)
         add(visibilityFalloffTrackPanel)
         add(Box.createVerticalStrut(10))
 
