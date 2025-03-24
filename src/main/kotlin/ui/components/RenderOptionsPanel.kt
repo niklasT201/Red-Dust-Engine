@@ -236,10 +236,10 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
         }
         add(renderDistancePanel)
 
-        // Create a panel for the track just like in PlayerOptionsPanel
-        val maxRenderDistancePanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
+        // Create a panel for the track with BorderLayout to allow expansion
+        val maxRenderDistancePanel = JPanel(BorderLayout(0, 0))
         maxRenderDistancePanel.background = Color(40, 44, 52)
-        maxRenderDistancePanel.add(maxRenderDistanceTrack)
+        maxRenderDistancePanel.add(maxRenderDistanceTrack, BorderLayout.CENTER)
         add(maxRenderDistancePanel)
 
         // Add more space between sections
@@ -454,6 +454,7 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
         private val changeListeners = mutableListOf<(Int) -> Unit>()
 
         init {
+            minimumSize = Dimension(50, trackHeight)
             preferredSize = Dimension(130, trackHeight)
             background = Color(40, 44, 52)
 
