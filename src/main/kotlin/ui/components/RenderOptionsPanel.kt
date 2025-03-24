@@ -128,6 +128,28 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
         }
     }
 
+    private val shadowColorLabel = JLabel("Shadow Color:").apply {
+        foreground = Color.WHITE
+        alignmentX = Component.LEFT_ALIGNMENT
+    }
+
+    private val shadowColorButton = JButton().apply {
+        background = renderer.shadowColor
+        preferredSize = Dimension(30, 20)
+        addActionListener {
+            val newColor = JColorChooser.showDialog(
+                this@RenderOptionsPanel,
+                "Choose Shadow Color",
+                renderer.shadowColor
+            )
+            if (newColor != null) {
+                background = newColor
+                renderer.shadowColor = newColor
+                renderer.repaint()
+            }
+        }
+    }
+
     // New visibility zone components
     private val enableVisibilityRadiusCheckbox = JCheckBox("Enable Visibility Zone").apply {
         isSelected = renderer.enableVisibilityRadius
@@ -304,6 +326,21 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
         // Add more space between sections
         add(Box.createVerticalStrut(20))
 
+        val shadowColorPanel = JPanel().apply {
+            layout = BorderLayout(5, 0)
+            background = Color(40, 44, 52)
+            add(shadowColorLabel, BorderLayout.WEST)
+
+            // Create a container for the color button to prevent it from expanding
+            val colorButtonContainer = JPanel(FlowLayout(FlowLayout.RIGHT, 0, 0))
+            colorButtonContainer.background = Color(40, 44, 52)
+            colorButtonContainer.add(shadowColorButton)
+
+            add(colorButtonContainer, BorderLayout.EAST)
+        }
+        add(shadowColorPanel)
+        add(Box.createVerticalStrut(10))
+
         // New Visibility Zone section
         val visibilityCheckboxPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
         visibilityCheckboxPanel.background = Color(40, 44, 52)
@@ -436,6 +473,10 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
         outsideColorButton.isEnabled = defaultEnableVisibilityRadius
         renderer.outsideColor = defaultOutsideColor
 
+        val defaultShadowColor = Color.BLACK
+        shadowColorButton.background = defaultShadowColor
+        renderer.shadowColor = defaultShadowColor
+
         // Refresh the renderer
         renderer.repaint()
     }
@@ -563,5 +604,7 @@ class RenderOptionsPanel(private val renderer: Renderer) : JPanel() {
 
         outsideColorButton.background = renderer.outsideColor
         outsideColorButton.isEnabled = renderer.enableVisibilityRadius
+
+        shadowColorButton.background = renderer.shadowColor
     }
 }

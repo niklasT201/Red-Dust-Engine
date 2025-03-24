@@ -23,13 +23,14 @@ class Renderer(
     var borderThickness = 2.0f
     var drawBorders = false
 
-    // New lighting properties for distance-based shadows
+    // Distance-based shadows
     var enableShadows = true
     var shadowDistance = 20.0  // Distance at which maximum darkening occurs
     var shadowIntensity = 0.7  // How much objects darken at max distance (0.0-1.0)
     var ambientLight = 0.3     // Minimum light level (0.0-1.0)
+    var shadowColor = Color.BLACK
 
-    // New visibility radius properties
+    // Radius properties
     var enableVisibilityRadius = false
     var visibilityRadius = 50.0 // Distance within which objects are visible
     var visibilityFalloff = 1.0 // Width of the gradient edge (0 = hard edge, higher = more gradual falloff)
@@ -202,10 +203,17 @@ class Renderer(
 
     // Apply shadow factor to a color
     private fun applyShadowToColor(color: Color, shadowFactor: Double): Color {
+        // Interpolate between the original color and the shadow color based on shadow factor
+        val interpolationFactor = 1.0 - shadowFactor
+
+        val shadedRed = minOf(255, (color.red * (1 - interpolationFactor) + shadowColor.red * interpolationFactor).toInt())
+        val shadedGreen = minOf(255, (color.green * (1 - interpolationFactor) + shadowColor.green * interpolationFactor).toInt())
+        val shadedBlue = minOf(255, (color.blue * (1 - interpolationFactor) + shadowColor.blue * interpolationFactor).toInt())
+
         return Color(
-            (color.red * shadowFactor).toInt(),
-            (color.green * shadowFactor).toInt(),
-            (color.blue * shadowFactor).toInt(),
+            shadedRed,
+            shadedGreen,
+            shadedBlue,
             color.alpha
         )
     }
