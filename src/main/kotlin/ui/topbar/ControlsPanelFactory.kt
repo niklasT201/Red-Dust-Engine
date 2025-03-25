@@ -2,7 +2,6 @@ package ui.topbar
 
 import controls.KeyBindingManager
 import java.awt.*
-import java.awt.event.KeyEvent
 import javax.swing.*
 import javax.swing.border.CompoundBorder
 import javax.swing.border.EmptyBorder

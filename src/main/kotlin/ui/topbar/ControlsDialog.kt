@@ -1,11 +1,9 @@
 package ui.topbar
 
 import java.awt.*
-import java.awt.event.ItemEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.*
-import javax.swing.border.CompoundBorder
 import javax.swing.border.EmptyBorder
 
 class ControlsDialog(
@@ -14,6 +12,7 @@ class ControlsDialog(
 ) {
     private lateinit var dialog: JDialog
     private lateinit var configurableTable: JTable
+    private lateinit var cardPanel: JPanel
 
     fun show() {
         dialog = JDialog(SwingUtilities.getWindowAncestor(parentComponent) as? JFrame, "Keyboard Controls", true)
@@ -38,45 +37,12 @@ class ControlsDialog(
             // Title Panel
             add(createTitlePanel(), BorderLayout.NORTH)
 
-            // Card layout for switching views
-            val cardPanel = JPanel(CardLayout())
-            cardPanel.isOpaque = false
-
-            // Create configurable controls panel
-            val configurablePanel = ControlsPanelFactory.createConfigurableControlsPanel(dialog, controlsManager)
-            cardPanel.add(configurablePanel, "configurable")
-
-            // Save reference to the configurable table
-            configurableTable = findConfigurableTable(configurablePanel)
-
-            // Create fixed controls panel
-            val fixedOnlyPanel = JPanel(BorderLayout())
-            fixedOnlyPanel.isOpaque = false
-            fixedOnlyPanel.add(ControlsPanelFactory.createFixedControlsPanel(), BorderLayout.CENTER)
-            cardPanel.add(fixedOnlyPanel, "fixed")
-
-            add(cardPanel, BorderLayout.CENTER)
+            // Toggle Panel
+            add(createTogglePanel(), BorderLayout.CENTER)
 
             // Button Panel
             val (buttonPanel, resetButton, saveButton) = createButtonPanel()
             add(buttonPanel, BorderLayout.SOUTH)
-
-            // Toggle listener
-            val showFixedControls = createToggleCheckbox()
-            showFixedControls.addItemListener { e ->
-                val cardLayout = cardPanel.layout as CardLayout
-                if (e.stateChange == ItemEvent.SELECTED) {
-                    cardLayout.show(cardPanel, "fixed")
-                    // Hide reset and save buttons when showing fixed controls
-                    resetButton.isVisible = false
-                    saveButton.isVisible = false
-                } else {
-                    cardLayout.show(cardPanel, "configurable")
-                    // Show reset and save buttons when showing configurable controls
-                    resetButton.isVisible = true
-                    saveButton.isVisible = true
-                }
-            }
         }
 
         dialog.add(mainPanel)
@@ -84,6 +50,97 @@ class ControlsDialog(
         dialog.minimumSize = Dimension(500, 500)
         dialog.setLocationRelativeTo(SwingUtilities.getWindowAncestor(parentComponent))
         dialog.isVisible = true
+    }
+
+    private fun createTogglePanel(): JPanel {
+        val togglePanel = JPanel(BorderLayout())
+        togglePanel.isOpaque = false
+
+        // Create card panel for switching views
+        cardPanel = JPanel(CardLayout())
+        cardPanel.isOpaque = false
+
+        // Create configurable controls panel
+        val configurablePanel = ControlsPanelFactory.createConfigurableControlsPanel(dialog, controlsManager)
+        cardPanel.add(configurablePanel, "configurable")
+
+        // Save reference to the configurable table
+        configurableTable = findConfigurableTable(configurablePanel)
+
+        // Create fixed controls panel
+        val fixedOnlyPanel = JPanel(BorderLayout())
+        fixedOnlyPanel.isOpaque = false
+        fixedOnlyPanel.add(ControlsPanelFactory.createFixedControlsPanel(), BorderLayout.CENTER)
+        cardPanel.add(fixedOnlyPanel, "fixed")
+
+        // Segmented toggle buttons
+        val toggleButtonPanel = JPanel(FlowLayout(FlowLayout.CENTER))
+        toggleButtonPanel.isOpaque = false
+
+        val configurableButton = createSegmentedButton("Configurable Keys", true)
+        val fixedButton = createSegmentedButton("Fixed Keys", false)
+
+        val buttonGroup = ButtonGroup()
+        buttonGroup.add(configurableButton)
+        buttonGroup.add(fixedButton)
+
+        configurableButton.isSelected = true  // Default to configurable keys
+
+        configurableButton.addActionListener {
+            (cardPanel.layout as CardLayout).show(cardPanel, "configurable")
+        }
+
+        fixedButton.addActionListener {
+            (cardPanel.layout as CardLayout).show(cardPanel, "fixed")
+        }
+
+        toggleButtonPanel.add(configurableButton)
+        toggleButtonPanel.add(fixedButton)
+
+        togglePanel.add(toggleButtonPanel, BorderLayout.NORTH)
+        togglePanel.add(cardPanel, BorderLayout.CENTER)
+
+        return togglePanel
+    }
+
+    private fun createSegmentedButton(text: String, isFirst: Boolean): JToggleButton {
+        return JToggleButton(text).apply {
+            foreground = Color.WHITE
+            background = Color(45, 48, 55)
+            font = Font("Arial", Font.BOLD, 12)
+            preferredSize = Dimension(150, 30)
+            isFocusPainted = false
+
+            // Create custom border for segmented look
+            border = BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Color(80, 83, 85)),
+                BorderFactory.createEmptyBorder(5, 15, 5, 15)
+            )
+
+            // Modify first/last button border to create segmented appearance
+            if (isFirst) {
+                border = BorderFactory.createCompoundBorder(
+                    BorderFactory.createMatteBorder(1, 1, 1, 0, Color(80, 83, 85)),
+                    BorderFactory.createEmptyBorder(5, 15, 5, 15)
+                )
+            } else {
+                border = BorderFactory.createCompoundBorder(
+                    BorderFactory.createMatteBorder(1, 0, 1, 1, Color(80, 83, 85)),
+                    BorderFactory.createEmptyBorder(5, 15, 5, 15)
+                )
+            }
+
+            // Hover and selection effects
+            addMouseListener(object : MouseAdapter() {
+                override fun mouseEntered(e: MouseEvent) {
+                    background = if (!isSelected) Color(60, 63, 65) else Color(220, 95, 60)
+                }
+
+                override fun mouseExited(e: MouseEvent) {
+                    background = if (!isSelected) Color(45, 48, 55) else Color(220, 95, 60)
+                }
+            })
+        }
     }
 
     private fun createTitlePanel(): JPanel {
