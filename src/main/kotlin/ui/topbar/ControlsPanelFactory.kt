@@ -10,17 +10,16 @@ import javax.swing.table.DefaultTableModel
 import javax.swing.table.TableCellRenderer
 
 object ControlsPanelFactory {
-    // UI Colors
-    private val backgroundColor = Color(32, 34, 37)
+    // Updated color scheme to match about dialog
+    private val backgroundColor = Color(35, 38, 45)
     private val foregroundColor = Color(220, 221, 222)
-    private val accentColor = Color(114, 137, 218)
-    private val hoverColor = Color(66, 70, 77)
-    private val borderColor = Color(47, 49, 54)
-    private val headerColor = Color(47, 49, 54)
+    private val accentColor = Color(220, 95, 60)
+    private val borderColor = Color(25, 28, 35)
+    private val headerColor = Color(45, 48, 55)
 
     fun createConfigurableControlsPanel(dialog: JDialog, controlsManager: ControlsManager): JPanel {
         val panel = JPanel(BorderLayout())
-        panel.background = backgroundColor
+        panel.isOpaque = false
         panel.border = EmptyBorder(0, 0, 0, 0)
 
         // Get all configurable key bindings
@@ -58,16 +57,16 @@ object ControlsPanelFactory {
             override fun prepareRenderer(renderer: TableCellRenderer, row: Int, column: Int): Component {
                 val component = super.prepareRenderer(renderer, row, column)
                 component.background = when {
-                    isRowSelected(row) -> accentColor
+                    isRowSelected(row) -> accentColor.darker()
                     row % 2 == 0 -> backgroundColor
-                    else -> backgroundColor.darker()
+                    else -> backgroundColor.brighter()
                 }
-                component.foreground = foregroundColor
+                component.foreground = Color.WHITE
 
                 // Add padding to the cell contents
                 if (component is JLabel) {
                     // Add left padding to the text
-                    component.border = EmptyBorder(0, 15, 0, 15)
+                    component.border = EmptyBorder(8, 15, 8, 15)
 
                     // Set alignment based on column
                     component.horizontalAlignment = when (column) {
@@ -81,15 +80,15 @@ object ControlsPanelFactory {
             }
         }.apply {
             background = backgroundColor
-            foreground = foregroundColor
+            foreground = Color.WHITE
             gridColor = borderColor
-            rowHeight = 30
+            rowHeight = 35
             setShowGrid(false)
             showHorizontalLines = true
             intercellSpacing = Dimension(0, 1)
             tableHeader.background = headerColor
-            tableHeader.foreground = foregroundColor
-            tableHeader.font = Font("SansSerif", Font.BOLD, 12)
+            tableHeader.foreground = Color.WHITE
+            tableHeader.font = Font("Arial", Font.BOLD, 12)
             font = Font("SansSerif", Font.PLAIN, 12)
             selectionBackground = accentColor
             selectionForeground = Color.WHITE
@@ -114,7 +113,7 @@ object ControlsPanelFactory {
                     )
 
                     if (component is JLabel) {
-                        component.border = EmptyBorder(5, 15, 5, 15)
+                        component.border = EmptyBorder(10, 15, 10, 15)
 
                         // Center the "Key" column header
                         if (column == 1) {
@@ -135,7 +134,7 @@ object ControlsPanelFactory {
             viewport.background = backgroundColor
             border = CompoundBorder(
                 EmptyBorder(0, 0, 0, 0),
-                border
+                BorderFactory.createLineBorder(borderColor)
             )
         }
 
@@ -146,7 +145,7 @@ object ControlsPanelFactory {
 
     fun createFixedControlsPanel(): JPanel {
         val panel = JPanel(BorderLayout())
-        panel.background = backgroundColor
+        panel.isOpaque = false
         panel.border = CompoundBorder(
             CompoundBorder(
                 EmptyBorder(10, 0, 0, 0),
@@ -157,14 +156,14 @@ object ControlsPanelFactory {
 
         // Create title
         val titleLabel = JLabel("FIXED CONTROLS (CANNOT BE CHANGED)")
-        titleLabel.foreground = foregroundColor
-        titleLabel.font = Font("SansSerif", Font.BOLD, 14)
+        titleLabel.foreground = Color(220, 95, 60)
+        titleLabel.font = Font("Impact", Font.BOLD, 16)
         titleLabel.border = EmptyBorder(0, 0, 10, 0)
         panel.add(titleLabel, BorderLayout.NORTH)
 
         // Create grid panel for fixed controls
         val gridPanel = JPanel(GridLayout(0, 2, 20, 5))
-        gridPanel.background = backgroundColor
+        gridPanel.isOpaque = false
 
         // Map of fixed controls
         val fixedControls = mapOf(
@@ -189,11 +188,11 @@ object ControlsPanelFactory {
         // Add control labels
         fixedControls.forEach { (action, key) ->
             val actionLabel = JLabel(action)
-            actionLabel.foreground = foregroundColor.darker()
-            actionLabel.font = Font("SansSerif", Font.PLAIN, 12)
+            actionLabel.foreground = Color(180, 180, 180)
+            actionLabel.font = Font("Arial", Font.PLAIN, 12)
 
             val keyLabel = JLabel(key)
-            keyLabel.foreground = foregroundColor.darker()
+            keyLabel.foreground = Color(220, 95, 60)
             keyLabel.font = Font("Monospace", Font.BOLD, 12)
             keyLabel.horizontalAlignment = SwingConstants.RIGHT
 
