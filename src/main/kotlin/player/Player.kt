@@ -182,26 +182,27 @@ class Player(
     }
 
     private fun checkFloorCollision(x: Double, feetY: Double, z: Double, floors: List<Floor>): Pair<Boolean, Double> {
-        // Find the highest floor below the player's feet
+        // Find the highest floor at or below the player's potential feet position
+        var highestCollidingFloorY = Double.NEGATIVE_INFINITY // Use a more descriptive name
         var hasCollision = false
-        var floorY = Double.NEGATIVE_INFINITY
 
         for (floor in floors) {
             // Check if player is within the floor's horizontal boundaries
             if (x >= floor.x1 - playerRadius && x <= floor.x2 + playerRadius &&
                 z >= floor.z1 - playerRadius && z <= floor.z2 + playerRadius) {
 
-                // Check if feet are at or below floor level AND the player isn't too far below
-                // Only register a collision if the player is close to the floor (not far underneath)
-                val distanceBelow = floor.y - feetY
-                if (feetY <= floor.y && distanceBelow <= 0.1 && floor.y > floorY) {
-                    floorY = floor.y
-                    hasCollision = true
+                // Check if the potential feet position is at or below this floor's level.
+                if (feetY <= floor.y) {
+                    // This floor is a potential candidate for collision.
+                    if (floor.y > highestCollidingFloorY) {
+                        highestCollidingFloorY = floor.y
+                        hasCollision = true
+                    }
                 }
             }
         }
 
-        return Pair(hasCollision, floorY)
+        return Pair(hasCollision, highestCollidingFloorY)
     }
 
     private fun checkCeilingCollision(x: Double, headY: Double, z: Double, floors: List<Floor>): Pair<Boolean, Double> {
