@@ -13,6 +13,13 @@ class Player(
     var playerHeight: Double = 1.7,  // Distance from eyes to feet
     var headClearance: Double = 0.3   // Extra space needed above the head
 ) {
+    // Gravity-related properties
+    private var gravityEnabled: Boolean = false
+    private var verticalVelocity: Double = 0.0
+    private val gravity: Double = 0.01 // Acceleration due to gravity
+    private val jumpStrength: Double = 0.2
+    private val terminalVelocity: Double = -0.5
+
     // Getter for player position (via camera)
     val position: Vec3 get() = camera.position
 
@@ -46,6 +53,20 @@ class Player(
         this.headClearance = headClearance
     }
 
+    fun setGravity(enabled: Boolean) {
+        gravityEnabled = enabled
+        // Reset vertical velocity when toggling gravity
+        verticalVelocity = 0.0
+    }
+
+    // New method to handle jumping
+    fun jump() {
+        // Only jump if on ground (vertically stationary)
+        if (gravityEnabled && verticalVelocity == 0.0) {
+            verticalVelocity = jumpStrength
+        }
+    }
+
     // Movement and collision
     fun move(forward: Double, right: Double, up: Double, walls: List<Wall>, floors: List<Floor>) {
         // Calculate movement based on camera direction
@@ -57,7 +78,18 @@ class Player(
         // Calculate new position using forward and right vectors
         val newX = camera.position.x + (forward * forwardX + right * rightX) * moveSpeed
         val newZ = camera.position.z + (forward * forwardZ + right * rightZ) * moveSpeed
-        val newY = camera.position.y + up * moveSpeed
+
+        // Modify vertical movement for gravity
+        var newY = camera.position.y
+        if (gravityEnabled) {
+            // Apply gravity
+            verticalVelocity -= gravity
+            verticalVelocity = maxOf(verticalVelocity, terminalVelocity)
+            newY += verticalVelocity
+        } else {
+            newY += up * moveSpeed
+            verticalVelocity = 0.0
+        }
 
         // Collision detection for walls
         val canMove = checkWallCollision(newX, newZ, walls)
@@ -87,12 +119,13 @@ class Player(
             }
         }
         // Check if moving down onto or through a floor
-        else if (up < 0) {
+        else if (up < 0 || gravityEnabled) {
             // When moving down, check if feet will hit a floor
             val floorCollision = checkFloorCollision(camera.position.x, newFeetY, camera.position.z, floors)
             if (floorCollision.first) {
                 // Hit floor, place feet exactly on floor
                 camera.position.y = floorCollision.second + playerHeight
+                verticalVelocity = 0.0
             } else {
                 // No floor collision, move freely downward
                 camera.position.y = newY

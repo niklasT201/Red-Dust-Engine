@@ -368,9 +368,16 @@ class EditorPanel(var gridEditor: GridEditor, val renderer: Renderer, private va
             addComponent(debugOptionsPanel)
         }
 
+        val playersettingsPanel = PlayerSettingsPanel(game3D)
+        val playerSettingsSection = CollapsibleSection("Player Settings").apply {
+            addComponent(playersettingsPanel)
+        }
+
         playerSectionsPanel.add(debugOptionsSection)
         playerSectionsPanel.add(Box.createVerticalStrut(10))
         playerSectionsPanel.add(playerOptionsSection)
+        playerSectionsPanel.add(Box.createVerticalStrut(10))
+        playerSectionsPanel.add(playerSettingsSection)
         playerSectionsPanel.add(Box.createVerticalGlue())
 
         mapSectionsPanel.add(renderOptionsSection)

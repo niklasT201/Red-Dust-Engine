@@ -49,7 +49,7 @@ fun main() {
 // add shader support
 // add way to build the game
 // seperate game3d class
-// remove mouse pointer
+// gravity panel added
 
 // Object List:
 // Pillar, breakable walls and floors, PropObject, Doors, Triggers, Elevator, Light Sources, Items, 3D Object Support

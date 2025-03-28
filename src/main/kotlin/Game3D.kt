@@ -25,6 +25,8 @@ class Game3D : JPanel() {
     private val floors = mutableListOf<Floor>()
     private var isEditorMode = true
 
+    var isGravityEnabled: Boolean = false // Default state
+
     // --- Cursor Management ---
     private val blankCursor: Cursor
     private val defaultCursor: Cursor = Cursor.getDefaultCursor()
@@ -177,6 +179,11 @@ class Game3D : JPanel() {
         addPredefinedPillars()
 
         //SwingUtilities.invokeLater { settingsSaver.loadPlayerSettings(player, this) }
+    }
+
+    fun changeGravityEnabled(enabled: Boolean) {
+        isGravityEnabled = enabled
+        player.setGravity(enabled) // Update player state as well
     }
 
     // Helper method to get existing floor levels from the grid
@@ -438,8 +445,17 @@ class Game3D : JPanel() {
             if (KeyBindings.MOVE_BACKWARD in keysPressed) forward -= 1.0
             if (KeyBindings.MOVE_LEFT in keysPressed) right -= 1.0
             if (KeyBindings.MOVE_RIGHT in keysPressed) right += 1.0
-            if (KeyBindings.FLY_UP in keysPressed) up += 1.0
-            if (KeyBindings.FLY_DOWN in keysPressed) up -= 1.0
+
+            if (isGravityEnabled) {
+                // Gravity ON: Check for JUMP key
+                if (KeyBindings.JUMP in keysPressed) {
+                    player.jump() // Attempt to jump
+                }
+            } else {
+                // Gravity OFF: Check for FLY keys
+                if (KeyBindings.FLY_UP in keysPressed) up += 1.0
+                if (KeyBindings.FLY_DOWN in keysPressed) up -= 1.0
+            }
 
             // Move player with collected input and pass floors list
             player.move(forward, right, up, walls, floors)
