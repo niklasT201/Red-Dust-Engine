@@ -7,6 +7,7 @@ import ui.components.CrosshairShape
 import render.SkyRenderer
 import java.awt.*
 import java.awt.event.*
+import java.awt.image.BufferedImage
 import javax.swing.*
 
 class Game3D : JPanel() {
@@ -23,6 +24,10 @@ class Game3D : JPanel() {
     private val walls = mutableListOf<Wall>()
     private val floors = mutableListOf<Floor>()
     private var isEditorMode = true
+
+    // --- Cursor Management ---
+    private val blankCursor: Cursor
+    private val defaultCursor: Cursor = Cursor.getDefaultCursor()
 
     private var frameCount = 0
     private var lastFpsUpdateTime = System.currentTimeMillis()
@@ -53,6 +58,13 @@ class Game3D : JPanel() {
 
     init {
         layout = BorderLayout()
+
+        // --- Create Blank Cursor ---
+        val cursorImg = BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB)
+        // Create a blank cursor from the transparent image
+        blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(
+            cursorImg, Point(0, 0), "blank cursor"
+        )
 
         // Add property change listener to GridEditor
         gridEditor.addPropertyChangeListener("gridChanged") {
@@ -240,6 +252,9 @@ class Game3D : JPanel() {
         if (isEditorMode) {
             cardLayout.show(rightPanel, "editor")
             editorPanel.setModeButtonText("Editor Mode")
+
+            renderPanel.cursor = defaultCursor
+
             SwingUtilities.invokeLater {
                 gridEditor.requestFocusInWindow()
             }
@@ -265,6 +280,7 @@ class Game3D : JPanel() {
 
             cardLayout.show(rightPanel, "game")
             editorPanel.setModeButtonText("Game Mode")
+            renderPanel.cursor = blankCursor
             renderPanel.requestFocusInWindow()
         }
     }
@@ -428,7 +444,12 @@ class Game3D : JPanel() {
             // Move player with collected input and pass floors list
             player.move(forward, right, up, walls, floors)
 
-            gridEditor.repaint()  // Update the grid editor to show new player position
+            // Check if the renderPanel still has the blank cursor
+            if (renderPanel.cursor != blankCursor) {
+                renderPanel.cursor = blankCursor
+            }
+
+            gridEditor.repaint()
         }
 
         // Calculate FPS for every frame
