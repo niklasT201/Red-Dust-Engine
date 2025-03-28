@@ -14,11 +14,11 @@ class Player(
     var headClearance: Double = 0.3   // Extra space needed above the head
 ) {
     // Gravity-related properties
-    private var gravityEnabled: Boolean = false
+    var gravityEnabled: Boolean = false
     private var verticalVelocity: Double = 0.0
-    private val gravity: Double = 0.01 // Acceleration due to gravity
-    private val jumpStrength: Double = 0.2
-    private val terminalVelocity: Double = -0.5
+    var gravity: Double = 0.01 // Acceleration due to gravity
+    var jumpStrength: Double = 0.2
+    var terminalVelocity: Double = -0.5
 
     // Getter for player position (via camera)
     val position: Vec3 get() = camera.position

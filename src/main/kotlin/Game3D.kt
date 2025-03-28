@@ -11,7 +11,7 @@ import java.awt.image.BufferedImage
 import javax.swing.*
 
 class Game3D : JPanel() {
-    private val player = Player()
+    val player = Player()
     private val renderer = Renderer(800, 600)
     private val renderPanel = RenderPanel()
     private val gridEditor = GridEditor()

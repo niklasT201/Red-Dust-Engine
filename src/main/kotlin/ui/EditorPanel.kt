@@ -360,7 +360,7 @@ class EditorPanel(var gridEditor: GridEditor, val renderer: Renderer, private va
 
         // Player tab sections
         val playerOptionsPanel = PlayerOptionsPanel(game3D)
-        val playerOptionsSection = CollapsibleSection("Player Options").apply {
+        val playerOptionsSection = CollapsibleSection("Crosshair Settings").apply {
             addComponent(playerOptionsPanel)
         }
         val debugOptionsPanel = DebugOptionsPanel(game3D)
