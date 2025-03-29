@@ -268,8 +268,8 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             val file = File("$SETTINGS_DIR/$PLAYER_SETTINGS_FILE")
             val outputStream = DataOutputStream(BufferedOutputStream(FileOutputStream(file)))
 
-            // ----> UPDATE VERSION TO 4 <----
-            outputStream.writeInt(4) // Version 4 of the settings format
+            // ----> UPDATE VERSION TO 5 <----
+            outputStream.writeInt(5) // Version 5 of the settings format
 
             // Write timestamp
             outputStream.writeLong(System.currentTimeMillis())
@@ -286,13 +286,16 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             // Add camera rotation speed
             outputStream.writeDouble(player.camera.accessRotationSpeed())
 
+            // ---- INVERT Y SETTING
+            outputStream.writeBoolean(player.camera.accessInvertY())
+
             // ---- GRAVITY SETTINGS ----
             outputStream.writeBoolean(player.gravityEnabled)
             outputStream.writeDouble(player.gravity)
             outputStream.writeDouble(player.jumpStrength)
             outputStream.writeDouble(player.terminalVelocity)
 
-            // --- Crosshair settings section ---
+            // --- Crosshair settings section
             outputStream.writeUTF("CROSSHAIR_SECTION")
 
             // Only write crosshair settings if Game3D is provided
@@ -650,7 +653,7 @@ class SettingsSaver(private val gridEditor: GridEditor) {
 
             // Read and verify version
             val version = inputStream.readInt()
-            if (version < 1 || version > 4) {
+            if (version < 1 || version > 5) {
                 println("Unsupported settings file version: $version")
                 inputStream.close()
                 return false
@@ -681,6 +684,22 @@ class SettingsSaver(private val gridEditor: GridEditor) {
 
             // Apply camera settings
             player.camera.changeRotationSpeed(rotationSpeed)
+
+            if (version >= 5) {
+                try {
+                    val invertY = inputStream.readBoolean()
+                    player.camera.changeInvertY(invertY) // Apply the loaded setting
+                } catch (e: EOFException) {
+                    println("Reached end of file unexpectedly while reading invert Y setting (v5). Using default.")
+                    player.camera.changeInvertY(false) // Default if reading fails
+                } catch (e: IOException) {
+                    println("Error reading invert Y setting (v5): ${e.message}. Using default.")
+                    player.camera.changeInvertY(false) // Default if reading fails
+                }
+            } else {
+                // If loading older version, ensure default is set
+                player.camera.changeInvertY(false)
+            }
 
             // ---- GRAVITY SETTINGS ----
             if (version >= 4) {

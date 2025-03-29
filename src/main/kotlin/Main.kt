@@ -46,7 +46,6 @@ fun main() {
 // optional border adding for single objects and not only all ones
 // add shader support
 // mouse control panel more responsive
-// invert y working right
 // add way to build the game
 // seperate game3d class
 
