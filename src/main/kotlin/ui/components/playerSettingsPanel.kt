@@ -522,7 +522,14 @@ class PlayerSettingsPanel(private val player: Player, private val game3D: Game3D
         jumpStrengthSpinner.value = player.jumpStrength
         terminalVelocitySpinner.value = kotlin.math.abs(player.terminalVelocity)
 
+        // Update enabled state of gravity components
         updateGravityComponentStates(player.gravityEnabled)
+
         isInitializing = false
+        repaint() // Ensure panel redraws if needed
+    }
+
+    fun refreshFromGameState() {
+        updateAllSettingsDisplay()
     }
 }

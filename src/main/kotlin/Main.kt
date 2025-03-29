@@ -48,6 +48,8 @@ fun main() {
 // maybe change KeyBindingCellEditor design
 // add shader support
 // mouse control panel more responsive
+// when loading gravity check, jump isnt working
+// invert y working right
 // add way to build the game
 // seperate game3d class
 

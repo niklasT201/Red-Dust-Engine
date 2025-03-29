@@ -63,8 +63,10 @@ class SettingsManager(
         // After loading settings, refresh the UI components
         val rootComponent = SwingUtilities.getWindowAncestor(displayOptionsPanel)
         if (playerSuccess) {
-            findPlayerOptionsPanel(rootComponent)?.refreshFromGameState()
+            findCrosshairDebugOptionsPanel(rootComponent)?.refreshFromGameState()
             findDebugOptionsPanel(rootComponent)?.refreshFromGameState()
+            findMouseControlSettingsPanel(rootComponent)?.updateAllSettingsDisplay()
+            findPlayerSettingsPanel(rootComponent)?.refreshFromGameState()
         }
 
         // Refresh Sky Options Panel after loading world settings
@@ -91,13 +93,13 @@ class SettingsManager(
         return null
     }
 
-    private fun findPlayerOptionsPanel(component: Component?): PlayerOptionsPanel? {
+    private fun findCrosshairDebugOptionsPanel(component: Component?): PlayerOptionsPanel? {
         if (component == null) return null
         if (component is PlayerOptionsPanel) return component
 
         if (component is Container) {
             for (i in 0..<component.componentCount) {
-                val result = findPlayerOptionsPanel(component.getComponent(i))
+                val result = findCrosshairDebugOptionsPanel(component.getComponent(i))
                 if (result != null) return result
             }
         }
@@ -159,5 +161,32 @@ class SettingsManager(
         }
 
         return null
+    }
+
+    private fun findMouseControlSettingsPanel(component: Component?): MouseControlSettingsPanel? {
+        if (component == null) return null
+        if (component is MouseControlSettingsPanel) return component
+
+        if (component is Container) {
+            for (i in 0..<component.componentCount) {
+                val result = findMouseControlSettingsPanel(component.getComponent(i))
+                if (result != null) return result
+            }
+        }
+        return null
+    }
+
+    private fun findPlayerSettingsPanel(component: Component?): PlayerSettingsPanel? {
+        if (component == null) return null
+        if (component is PlayerSettingsPanel) return component // Check for the correct type
+
+        if (component is Container) {
+            for (i in 0..<component.componentCount) {
+                // Recursive call to search children
+                val result = findPlayerSettingsPanel(component.getComponent(i))
+                if (result != null) return result
+            }
+        }
+        return null // Not found in this branch
     }
 }

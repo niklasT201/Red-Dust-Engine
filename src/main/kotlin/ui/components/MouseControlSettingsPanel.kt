@@ -619,7 +619,7 @@ class MouseControlSettingsPanel(private val camera: Camera, private val renderer
         }
     }
 
-    private fun updateAllSettingsDisplay() {
+    fun updateAllSettingsDisplay() {
         isInitializing = true
 
         rotationSpeedSpinner.value = camera.accessRotationSpeed()
