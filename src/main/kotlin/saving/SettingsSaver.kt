@@ -268,8 +268,8 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             val file = File("$SETTINGS_DIR/$PLAYER_SETTINGS_FILE")
             val outputStream = DataOutputStream(BufferedOutputStream(FileOutputStream(file)))
 
-            // Update version to 3 since we're adding debug options
-            outputStream.writeInt(3) // Version 3 of the settings format
+            // ----> UPDATE VERSION TO 4 <----
+            outputStream.writeInt(4) // Version 4 of the settings format
 
             // Write timestamp
             outputStream.writeLong(System.currentTimeMillis())
@@ -285,6 +285,12 @@ class SettingsSaver(private val gridEditor: GridEditor) {
 
             // Add camera rotation speed
             outputStream.writeDouble(player.camera.accessRotationSpeed())
+
+            // ---- GRAVITY SETTINGS ----
+            outputStream.writeBoolean(player.gravityEnabled)
+            outputStream.writeDouble(player.gravity)
+            outputStream.writeDouble(player.jumpStrength)
+            outputStream.writeDouble(player.terminalVelocity)
 
             // --- Crosshair settings section ---
             outputStream.writeUTF("CROSSHAIR_SECTION")
@@ -644,7 +650,7 @@ class SettingsSaver(private val gridEditor: GridEditor) {
 
             // Read and verify version
             val version = inputStream.readInt()
-            if (version < 1 || version > 3) {
+            if (version < 1 || version > 4) {
                 println("Unsupported settings file version: $version")
                 inputStream.close()
                 return false
@@ -675,6 +681,27 @@ class SettingsSaver(private val gridEditor: GridEditor) {
 
             // Apply camera settings
             player.camera.changeRotationSpeed(rotationSpeed)
+
+            // ---- GRAVITY SETTINGS ----
+            if (version >= 4) {
+                try {
+                    val gravityEnabled = inputStream.readBoolean()
+                    val gravity = inputStream.readDouble()
+                    val jumpStrength = inputStream.readDouble()
+                    val terminalVelocity = inputStream.readDouble()
+
+                    // Apply gravity settings directly to player object
+                    player.gravityEnabled = gravityEnabled
+                    player.gravity = gravity
+                    player.jumpStrength = jumpStrength
+                    player.terminalVelocity = terminalVelocity
+                    player.setGravity(gravityEnabled) // Call this if needed
+
+                } catch (e: Exception) {
+                    println("Error loading gravity settings (file version $version): ${e.message}")
+                    // Continue with default gravity settings if loading fails
+                }
+            }
 
             // Read crosshair settings if version is 2 or higher and if Game3D is provided
             if (version >= 2 && game3D != null) {

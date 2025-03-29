@@ -47,6 +47,7 @@ fun main() {
 // optional border adding for single objects and not only all ones
 // maybe change KeyBindingCellEditor design
 // add shader support
+// mouse control panel more responsive
 // add way to build the game
 // seperate game3d class
 
