@@ -1,6 +1,7 @@
 package ui.components
 
 import Game3D
+import player.Player
 import java.awt.*
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
@@ -8,7 +9,18 @@ import javax.swing.*
 import javax.swing.border.EmptyBorder
 import javax.swing.event.ChangeListener
 
-class PlayerSettingsPanel(private val game3D: Game3D) : JPanel() {
+class PlayerSettingsPanel(private val player: Player, private val game3D: Game3D) : JPanel() {
+    companion object {
+        // Define default values - match the ones from Player class constructor
+        private const val DEFAULT_MOVE_SPEED = 0.05
+        private const val DEFAULT_PLAYER_RADIUS = 0.3
+        private const val DEFAULT_PLAYER_HEIGHT = 1.7
+        private const val DEFAULT_HEAD_CLEARANCE = 0.3
+        private const val DEFAULT_GRAVITY_ENABLED = false
+        private const val DEFAULT_GRAVITY = 0.01
+        private const val DEFAULT_JUMP_STRENGTH = 0.2
+        private const val DEFAULT_TERMINAL_VELOCITY = -0.5
+    }
 
     // --- Components for Player Settings ---
     private val gravityToggle: JCheckBox
@@ -34,8 +46,7 @@ class PlayerSettingsPanel(private val game3D: Game3D) : JPanel() {
     private val CONTROL_BORDER_COLOR = Color(80, 83, 85)
 
     init {
-        val player = game3D.player
-
+        val player = player
         // Gravity Toggle - Styled
         gravityToggle = createStyledCheckBox("Enable Gravity", player.gravityEnabled).apply {
             addActionListener {
@@ -337,8 +348,17 @@ class PlayerSettingsPanel(private val game3D: Game3D) : JPanel() {
                     })
 
                     addActionListener {
-                        // Call your reset method here if you have one
-                        // For now, just refresh the display
+                        // Reset player values to defaults
+                        game3D.player.moveSpeed = DEFAULT_MOVE_SPEED
+                        game3D.player.playerRadius = DEFAULT_PLAYER_RADIUS
+                        game3D.player.playerHeight = DEFAULT_PLAYER_HEIGHT
+                        game3D.player.headClearance = DEFAULT_HEAD_CLEARANCE
+                        game3D.player.gravity = DEFAULT_GRAVITY
+                        game3D.player.jumpStrength = DEFAULT_JUMP_STRENGTH
+                        game3D.player.terminalVelocity = DEFAULT_TERMINAL_VELOCITY
+                        game3D.changeGravityEnabled(DEFAULT_GRAVITY_ENABLED)
+
+                        // Update UI to reflect these changes
                         updateAllSettingsDisplay()
                     }
                 })
@@ -353,7 +373,7 @@ class PlayerSettingsPanel(private val game3D: Game3D) : JPanel() {
         terminalVelocitySpinner.isEnabled = isEnabled
     }
 
-    fun updateAllSettingsDisplay() {
+    private fun updateAllSettingsDisplay() {
         isInitializing = true
         val player = game3D.player
 
