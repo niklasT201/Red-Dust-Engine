@@ -1,157 +1,91 @@
 package ui.components
 
-import Game3D // Import your main game class
+import player.Player
 import java.awt.Color
 import java.awt.Component
-import java.awt.FlowLayout
+import java.awt.Dimension
+import java.awt.GridLayout
 import javax.swing.*
 import javax.swing.border.TitledBorder
+import javax.swing.event.ChangeEvent
 import javax.swing.event.ChangeListener
 
-class PlayerSettingsPanel(private val game3D: Game3D) : JPanel() {
+class PlayerSettingsPanel(private val player: Player) : JPanel(), ChangeListener {
+    // UI Components
+    private val gravityToggle = JCheckBox("Enable Gravity").apply {
+        background = Color(40, 44, 52)
+        foreground = Color.WHITE
+        isSelected = player.gravityEnabled
+        alignmentX = Component.LEFT_ALIGNMENT
+        addActionListener {
+            player.setGravity(isSelected)
+        }
+    }
 
-    // --- Components for Player Settings ---
-    private val gravityToggle: JCheckBox
-    private val moveSpeedSpinner: JSpinner
-    private val playerRadiusSpinner: JSpinner
-    private val playerHeightSpinner: JSpinner
-    private val headClearanceSpinner: JSpinner
-    private val gravityForceSpinner: JSpinner // Renamed from 'gravity' to avoid conflict
-    private val jumpStrengthSpinner: JSpinner
-    private val terminalVelocitySpinner: JSpinner
+    // Sliders for numeric values with labels
+    private val moveSpeedSlider = createSlider(1, 50, (player.moveSpeed * 100).toInt(), "Move Speed: ")
+    private val playerRadiusSlider = createSlider(1, 100, (player.playerRadius * 100).toInt(), "Player Radius: ")
+    private val playerHeightSlider = createSlider(100, 250, (player.playerHeight * 100).toInt(), "Player Height: ")
+    private val headClearanceSlider = createSlider(1, 100, (player.headClearance * 100).toInt(), "Head Clearance: ")
+    private val gravitySlider = createSlider(1, 50, (player.gravity * 1000).toInt(), "Gravity: ")
+    private val jumpStrengthSlider = createSlider(1, 100, (player.jumpStrength * 100).toInt(), "Jump Strength: ")
+    private val terminalVelocitySlider = createSlider(1, 100, (-player.terminalVelocity * 100).toInt(), "Terminal Velocity: ")
 
-    // Flag to prevent recursive updates during initialization
-    private var isInitializing = true
+    // Labels to display current values
+    private val moveSpeedLabel = JLabel("${player.moveSpeed}")
+    private val playerRadiusLabel = JLabel("${player.playerRadius}")
+    private val playerHeightLabel = JLabel("${player.playerHeight}")
+    private val headClearanceLabel = JLabel("${player.headClearance}")
+    private val gravityLabel = JLabel("${player.gravity}")
+    private val jumpStrengthLabel = JLabel("${player.jumpStrength}")
+    private val terminalVelocityLabel = JLabel("${player.terminalVelocity}")
+
+    // Reset button
+    private val resetButton = JButton("Reset to Defaults").apply {
+        background = Color(60, 63, 65)
+        foreground = Color.WHITE
+        addActionListener {
+            resetToDefaults()
+        }
+    }
 
     init {
-        val player = game3D.player // Get reference to player object
-
-        // Gravity Toggle
-        gravityToggle = JCheckBox("Enable Gravity", player.gravityEnabled).apply {
-            background = Color(40, 44, 52)
-            foreground = Color.WHITE
-            alignmentX = Component.LEFT_ALIGNMENT
-            addActionListener {
-                game3D.changeGravityEnabled(isSelected) // Assumes this method exists in Game3D
-                updateGravityComponentStates(isSelected) // Enable/disable gravity spinners
-            }
-        }
-
-        // Move Speed Spinner
-        moveSpeedSpinner = JSpinner(
-            SpinnerNumberModel(player.moveSpeed, 0.001, 1.0, 0.005) // value, min, max, step
-        ).apply {
-            addChangeListener(createNumericChangeListener { player.moveSpeed = it })
-        }
-
-        // Player Radius Spinner
-        playerRadiusSpinner = JSpinner(
-            SpinnerNumberModel(player.playerRadius, 0.1, 1.0, 0.05)
-        ).apply {
-            addChangeListener(createNumericChangeListener { player.playerRadius = it })
-        }
-
-        // Player Height Spinner
-        playerHeightSpinner = JSpinner(
-            SpinnerNumberModel(player.playerHeight, 0.5, 3.0, 0.1)
-        ).apply {
-            addChangeListener(createNumericChangeListener { player.playerHeight = it })
-        }
-
-        // Head Clearance Spinner
-        headClearanceSpinner = JSpinner(
-            SpinnerNumberModel(player.headClearance, 0.0, 1.0, 0.05)
-        ).apply {
-            addChangeListener(createNumericChangeListener { player.headClearance = it })
-        }
-
-        // Gravity Force Spinner
-        gravityForceSpinner = JSpinner(
-            SpinnerNumberModel(player.gravity, 0.0, 0.1, 0.001) // Gravity force should be positive
-        ).apply {
-            addChangeListener(createNumericChangeListener { player.gravity = it })
-        }
-
-        // Jump Strength Spinner
-        jumpStrengthSpinner = JSpinner(
-            SpinnerNumberModel(player.jumpStrength, 0.0, 1.0, 0.01) // Jump strength usually positive
-        ).apply {
-            addChangeListener(createNumericChangeListener { player.jumpStrength = it })
-        }
-
-        // Terminal Velocity Spinner
-        // Note: Model stores positive value, but we apply it negatively in Player class
-        terminalVelocitySpinner = JSpinner(
-            SpinnerNumberModel(kotlin.math.abs(player.terminalVelocity), 0.0, 2.0, 0.05)
-        ).apply {
-            addChangeListener(createNumericChangeListener {
-                // Store absolute value, Player class handles making it negative
-                player.terminalVelocity = -it // Ensure it's set negatively in the player
-            })
-        }
-
-        // --- Setup Panel Layout ---
         setupPanel()
-
-        // --- Final Initialization Steps ---
-        updateGravityComponentStates(player.gravityEnabled) // Set initial enabled state
-        isInitializing = false // Allow listeners to function now
     }
-
-    // Helper function to create ChangeListener for spinners
-    private fun createNumericChangeListener(updateAction: (Double) -> Unit): ChangeListener {
-        return ChangeListener { e ->
-            if (!isInitializing) { // Only update if not during setup
-                val spinner = e.source as JSpinner
-                val value = (spinner.value as? Number)?.toDouble() ?: 0.0 // Safely get value
-                updateAction(value)
-            }
-        }
-    }
-
-    // Helper function to create a row with label and spinner
-    private fun createSettingRow(labelText: String, component: JComponent): JPanel {
-        val panel = JPanel(FlowLayout(FlowLayout.LEFT, 5, 2)).apply { // Use FlowLayout for horizontal arrangement
-            background = Color(40, 44, 52) // Match style
-            alignmentX = Component.LEFT_ALIGNMENT
-
-            val label = JLabel(labelText).apply {
-                foreground = Color.WHITE
-                // Optional: Set preferred size for alignment
-                // preferredSize = Dimension(100, preferredSize.height)
-            }
-            // Set spinner preferred size for consistency
-            component.preferredSize = component.preferredSize.apply { width = 80 }
-
-            add(label)
-            add(component)
-        }
-        return panel
-    }
-
 
     private fun setupPanel() {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         background = Color(40, 44, 52)
 
-        // Add components using the helper function for rows
-        add(createSettingRow("Move Speed:", moveSpeedSpinner))
-        add(createSettingRow("Player Radius:", playerRadiusSpinner))
-        add(createSettingRow("Player Height:", playerHeightSpinner))
-        add(createSettingRow("Head Clearance:", headClearanceSpinner))
-        add(Box.createVerticalStrut(10)) // Spacer
+        // Create panels for each section
+        val movementPanel = createSectionPanel("Movement")
+        movementPanel.add(createLabeledSlider("Move Speed:", moveSpeedSlider, moveSpeedLabel))
+        movementPanel.add(createLabeledSlider("Player Radius:", playerRadiusSlider, playerRadiusLabel))
+        movementPanel.add(createLabeledSlider("Player Height:", playerHeightSlider, playerHeightLabel))
+        movementPanel.add(createLabeledSlider("Head Clearance:", headClearanceSlider, headClearanceLabel))
 
-        // Add gravity toggle separately as it's not a label/spinner pair
-        add(gravityToggle)
-        add(Box.createVerticalStrut(5)) // Spacer
+        val physicsPanel = createSectionPanel("Physics")
+        physicsPanel.add(gravityToggle)
+        physicsPanel.add(Box.createVerticalStrut(5))
+        physicsPanel.add(createLabeledSlider("Gravity:", gravitySlider, gravityLabel))
+        physicsPanel.add(createLabeledSlider("Jump Strength:", jumpStrengthSlider, jumpStrengthLabel))
+        physicsPanel.add(createLabeledSlider("Terminal Velocity:", terminalVelocitySlider, terminalVelocityLabel))
 
-        // Add gravity-related spinners
-        add(createSettingRow("Gravity Force:", gravityForceSpinner))
-        add(createSettingRow("Jump Strength:", jumpStrengthSpinner))
-        add(createSettingRow("Term. Velocity:", terminalVelocitySpinner)) // abs value shown
+        // Add sections to main panel
+        add(movementPanel)
+        add(Box.createVerticalStrut(10))
+        add(physicsPanel)
+        add(Box.createVerticalStrut(10))
 
+        // Add reset button
+        val buttonPanel = JPanel().apply {
+            background = Color(40, 44, 52)
+            add(resetButton)
+        }
+        add(buttonPanel)
+        add(Box.createVerticalGlue())
 
-        // Apply border
+        // Apply border with appropriate padding
         border = BorderFactory.createCompoundBorder(
             BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color(70, 73, 75)),
@@ -161,33 +95,143 @@ class PlayerSettingsPanel(private val game3D: Game3D) : JPanel() {
                 null,
                 Color.WHITE
             ),
-            BorderFactory.createEmptyBorder(5, 5, 5, 5)
+            BorderFactory.createEmptyBorder(10, 10, 10, 10)
         )
 
-        alignmentX = Component.LEFT_ALIGNMENT
+        // Set preferred size
+        preferredSize = Dimension(300, 500)
     }
 
-    // Enable/disable gravity-related spinners based on toggle state
-    private fun updateGravityComponentStates(isEnabled: Boolean) {
-        gravityForceSpinner.isEnabled = isEnabled
-        jumpStrengthSpinner.isEnabled = isEnabled
-        terminalVelocitySpinner.isEnabled = isEnabled
+    private fun createSectionPanel(title: String): JPanel {
+        val panel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            background = Color(40, 44, 52)
+            border = BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder(
+                    BorderFactory.createLineBorder(Color(70, 73, 75)),
+                    title,
+                    TitledBorder.LEFT,
+                    TitledBorder.TOP,
+                    null,
+                    Color.WHITE
+                ),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+            )
+            alignmentX = Component.LEFT_ALIGNMENT
+        }
+        return panel
     }
 
-    fun updateAllSettingsDisplay() {
-        isInitializing = true // Prevent listeners firing during update
-        val player = game3D.player
+    private fun createSlider(min: Int, max: Int, value: Int, sliderName: String): JSlider {
+        val slider = JSlider(JSlider.HORIZONTAL, min, max, value)
+        slider.background = Color(40, 44, 52)
+        slider.foreground = Color.WHITE
+        slider.paintTicks = true
+        slider.paintLabels = false
+        slider.majorTickSpacing = (max - min) / 5
+        slider.minorTickSpacing = (max - min) / 10
+        slider.name = sliderName
+        slider.addChangeListener(this@PlayerSettingsPanel)
+        return slider
+    }
 
-        gravityToggle.isSelected = player.gravityEnabled
-        moveSpeedSpinner.value = player.moveSpeed
-        playerRadiusSpinner.value = player.playerRadius
-        playerHeightSpinner.value = player.playerHeight
-        headClearanceSpinner.value = player.headClearance
-        gravityForceSpinner.value = player.gravity
-        jumpStrengthSpinner.value = player.jumpStrength
-        terminalVelocitySpinner.value = kotlin.math.abs(player.terminalVelocity) // Display absolute value
+    private fun createLabeledSlider(labelText: String, slider: JSlider, valueLabel: JLabel): JPanel {
+        val panel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            background = Color(40, 44, 52)
+            alignmentX = Component.LEFT_ALIGNMENT
+        }
 
-        updateGravityComponentStates(player.gravityEnabled) // Sync enabled state too
-        isInitializing = false
+        val labelPanel = JPanel().apply {
+            layout = GridLayout(1, 2)
+            background = Color(40, 44, 52)
+            alignmentX = Component.LEFT_ALIGNMENT
+        }
+
+        val textLabel = JLabel(labelText).apply {
+            foreground = Color.WHITE
+        }
+
+        valueLabel.foreground = Color.WHITE
+
+        labelPanel.add(textLabel)
+        labelPanel.add(valueLabel)
+
+        panel.add(labelPanel)
+        panel.add(slider)
+        panel.add(Box.createVerticalStrut(5))
+
+        return panel
+    }
+
+    override fun stateChanged(e: ChangeEvent) {
+        val source = e.source as JSlider
+
+        when (source) {
+            moveSpeedSlider -> {
+                val value = source.value / 100.0
+                player.moveSpeed = value
+                moveSpeedLabel.text = String.format("%.2f", value)
+            }
+            playerRadiusSlider -> {
+                val value = source.value / 100.0
+                player.playerRadius = value
+                playerRadiusLabel.text = String.format("%.2f", value)
+            }
+            playerHeightSlider -> {
+                val value = source.value / 100.0
+                player.playerHeight = value
+                playerHeightLabel.text = String.format("%.2f", value)
+            }
+            headClearanceSlider -> {
+                val value = source.value / 100.0
+                player.headClearance = value
+                headClearanceLabel.text = String.format("%.2f", value)
+            }
+            gravitySlider -> {
+                val value = source.value / 1000.0
+                player.gravity = value
+                gravityLabel.text = String.format("%.3f", value)
+            }
+            jumpStrengthSlider -> {
+                val value = source.value / 100.0
+                player.jumpStrength = value
+                jumpStrengthLabel.text = String.format("%.2f", value)
+            }
+            terminalVelocitySlider -> {
+                val value = -(source.value / 100.0)
+                player.terminalVelocity = value
+                terminalVelocityLabel.text = String.format("%.2f", value)
+            }
+        }
+
+        // Update all player settings at once for movement-related changes
+        if (source in listOf(moveSpeedSlider, playerRadiusSlider, playerHeightSlider, headClearanceSlider)) {
+            player.setMovementSettings(
+                player.moveSpeed,
+                player.playerRadius,
+                player.playerHeight,
+                player.headClearance
+            )
+        }
+    }
+
+    private fun resetToDefaults() {
+        // Default values from the Player class constructor
+        moveSpeedSlider.value = 5 // 0.05
+        playerRadiusSlider.value = 30 // 0.3
+        playerHeightSlider.value = 170 // 1.7
+        headClearanceSlider.value = 30 // 0.3
+        gravityToggle.isSelected = false
+        gravitySlider.value = 10 // 0.01
+        jumpStrengthSlider.value = 20 // 0.2
+        terminalVelocitySlider.value = 50 // -0.5
+
+        // Update the player with default values
+        player.setMovementSettings(0.05, 0.3, 1.7, 0.3)
+        player.setGravity(false)
+        player.gravity = 0.01
+        player.jumpStrength = 0.2
+        player.terminalVelocity = -0.5
     }
 }
