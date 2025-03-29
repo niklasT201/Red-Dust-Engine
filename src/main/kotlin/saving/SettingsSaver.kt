@@ -685,22 +685,36 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             // ---- GRAVITY SETTINGS ----
             if (version >= 4) {
                 try {
-                    val gravityEnabled = inputStream.readBoolean()
+                    // Read the values from the file
+                    val loadedGravityEnabled = inputStream.readBoolean()
                     val gravity = inputStream.readDouble()
                     val jumpStrength = inputStream.readDouble()
                     val terminalVelocity = inputStream.readDouble()
 
-                    // Apply gravity settings directly to player object
-                    player.gravityEnabled = gravityEnabled
+                    // Apply gravity parameters directly
                     player.gravity = gravity
                     player.jumpStrength = jumpStrength
                     player.terminalVelocity = terminalVelocity
-                    player.setGravity(gravityEnabled) // Call this if needed
+                    player.setGravity(loadedGravityEnabled)
 
-                } catch (e: Exception) {
+                    game3D?.isGravityEnabled = loadedGravityEnabled
+
+                } catch (e: EOFException) {
+                    println("Reached end of file unexpectedly while reading gravity settings (file version $version). Using defaults.")
+                    // Apply default gravity state if reading failed
+                    player.setGravity(false) // Or your default value
+                    game3D?.isGravityEnabled = false
+                }
+                catch (e: Exception) {
                     println("Error loading gravity settings (file version $version): ${e.message}")
                     // Continue with default gravity settings if loading fails
+                    player.setGravity(false) // Or your default value
+                    game3D?.isGravityEnabled = false
                 }
+            } else {
+                // If loading an older version without gravity settings, ensure defaults are set
+                player.setGravity(false) // Or your default value
+                game3D?.isGravityEnabled = false
             }
 
             // Read crosshair settings if version is 2 or higher and if Game3D is provided
