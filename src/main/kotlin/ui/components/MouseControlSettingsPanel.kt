@@ -53,7 +53,12 @@ class MouseControlSettingsPanel(private val camera: Camera, private val renderer
         )
 
         // Create checkbox
-        invertYAxisCheckbox = createStyledCheckBox("Invert Y-Axis", false)
+        invertYAxisCheckbox = createStyledCheckBox("Invert Y-Axis", camera.accessInvertY())
+        invertYAxisCheckbox.addActionListener { // Use ActionListener or ItemListener
+            if (!isInitializing) { // Prevent action during initial setup/reset
+                camera.changeInvertY(invertYAxisCheckbox.isSelected)
+            }
+        }
 
         fovSlider = createStyledSlider(
             (renderer.getFov() * 180 / PI).toInt(), 30, 90
@@ -543,7 +548,7 @@ class MouseControlSettingsPanel(private val camera: Camera, private val renderer
                     // Reset values to defaults
                     camera.changeRotationSpeed(DEFAULT_ROTATION_SPEED)
                     renderer.setFov(DEFAULT_FOV)
-                    invertYAxisCheckbox.isSelected = false
+                    camera.changeInvertY(false)
 
                     // Update UI to reflect these changes
                     updateAllSettingsDisplay()
@@ -626,6 +631,7 @@ class MouseControlSettingsPanel(private val camera: Camera, private val renderer
         fovSpinner.value = renderer.getFov()
         sensitivitySlider.value = (camera.accessRotationSpeed() * 10000).toInt()
         fovSlider.value = (renderer.getFov() * 180 / PI).toInt()
+        invertYAxisCheckbox.isSelected = camera.accessInvertY()
 
         isInitializing = false
         repaint()

@@ -42,7 +42,6 @@ fun main() {
 // improve general ui design
 // fix visible floor tile border
 // default value saving
-// adding physics
 // fixing image sliding
 // optional border adding for single objects and not only all ones
 // add shader support

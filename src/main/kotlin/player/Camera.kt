@@ -10,14 +10,20 @@ class Camera(
 ) {
     // Change from private val to var to allow modification
     var rotationSpeed = 0.003
+    var invertY: Boolean = false
 
     // Add setter method to allow controlled changes
     fun changeRotationSpeed(speed: Double) {
         rotationSpeed = speed
     }
 
+    fun changeInvertY(inverted: Boolean) {
+        this.invertY = inverted
+    }
+
     // Getter for settings saving
     fun accessRotationSpeed(): Double = rotationSpeed
+    fun accessInvertY(): Boolean = invertY
 
     fun rotate(dx: Double, dy: Double) {
         // Update yaw (horizontal rotation)
@@ -26,8 +32,10 @@ class Camera(
         // Normalize yaw to stay within -PI to PI range
         yaw = normalizeAngle(yaw)
 
+        val effectiveDy = if (invertY) -dy else dy
+
         // Update and clamp pitch (vertical rotation)
-        pitch = (pitch - dy * rotationSpeed).coerceIn(-PI/3, PI/3)
+        pitch = (pitch - effectiveDy * rotationSpeed).coerceIn(-PI / 3, PI / 3)
     }
 
     private fun normalizeAngle(angle: Double): Double {
