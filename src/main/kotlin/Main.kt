@@ -45,10 +45,8 @@ fun main() {
 // adding physics
 // fixing image sliding
 // optional border adding for single objects and not only all ones
-// maybe change KeyBindingCellEditor design
 // add shader support
 // mouse control panel more responsive
-// when loading gravity check, jump isnt working
 // invert y working right
 // add way to build the game
 // seperate game3d class
@@ -62,7 +60,6 @@ fun main() {
 // damage system
 
 // UI:
-// physics optional
 // blood options
 // open world or level based
 

@@ -15,8 +15,7 @@ class KeyBindingCellEditor(
     private var currentRow = -1
     private var currentValue: String? = null
 
-    private val backgroundColor = Color(32, 34, 37)
-    private val accentColor = Color(114, 137, 218)
+    private val editorBackgroundColor = Color(114, 137, 218)
 
     init {
         val textField = component as JTextField
@@ -55,27 +54,18 @@ class KeyBindingCellEditor(
                 if (keyName != null) {
                     val conflictingAction = controlsManager.keyBindingManager.getConflictingBinding(e.keyCode, keyName)
                     if (conflictingAction != null) {
-                        // Show conflict warning with custom styling
-                        val optionPane = JOptionPane(
-                            "<html><body style='font-family:SansSerif;font-size:12;color:black;'>" +
-                                    "This key is already assigned to:<br/>" +
-                                    "<b>${controlsManager.keyBindingManager.getBindingDisplayName(conflictingAction)}</b><br/><br/>" +
-                                    "If you proceed, it will be unassigned from that action.</body></html>",
-                            JOptionPane.WARNING_MESSAGE,
-                            JOptionPane.OK_CANCEL_OPTION
-                        )
+                        val message = "<html><body style='font-family:SansSerif;'>" +
+                                "This key is already assigned to:<br/>" +
+                                "<b style='color:rgb(220,95,60);'>${controlsManager.keyBindingManager.getBindingDisplayName(conflictingAction)}</b><br/><br/>" +
+                                "Do you want to unassign it from that action and assign it here?</body></html>"
 
-                        // Style the option pane
-                        val frame = SwingUtilities.getWindowAncestor(table) as? JFrame
-                        val dialog = optionPane.createDialog(frame, "Key Conflict")
-                        dialog.contentPane.background = backgroundColor
-                        dialog.setLocationRelativeTo(frame) // Center the dialog
-                        dialog.isVisible = true
+                        val parentWindow = SwingUtilities.getWindowAncestor(table)
+                        val result = StyledWarningDialog.showWarning(parentWindow, "Key Conflict", message)
 
-                        val result = optionPane.value
-                        if (result == null || result != JOptionPane.OK_OPTION) {
+                        if (result != StyledWarningDialog.Result.OK) {
                             // User canceled
                             cancelCellEditing()
+                            e.consume()
                             return
                         }
                     }
@@ -104,7 +94,7 @@ class KeyBindingCellEditor(
         currentValue = null
 
         val textField = super.getTableCellEditorComponent(table, "Press Any Key", isSelected, row, column) as JTextField
-        textField.background = accentColor
+        textField.background = editorBackgroundColor
         textField.foreground = Color.WHITE
         textField.border = BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(Color.WHITE, 1),
@@ -112,37 +102,44 @@ class KeyBindingCellEditor(
         )
         textField.font = Font("SansSerif", Font.BOLD, 12)
 
+        // Request focus immediately so key events are captured
+        SwingUtilities.invokeLater { textField.requestFocusInWindow() }
+
         return textField
     }
 
     override fun stopCellEditing(): Boolean {
-        component as JTextField
-
         // Get the action name
         val actionName = table.getValueAt(currentRow, 0).toString()
 
-        // Find the key in keyBindingManager
-        val keyName = controlsManager.keyBindingManager.getConfigurableBindings().entries
+        val keyEnumName = controlsManager.keyBindingManager.getConfigurableBindings().entries
             .find { controlsManager.keyBindingManager.getBindingDisplayName(it.key) == actionName }?.key
 
-        if (keyName != null && currentValue != null) {
+        if (keyEnumName != null && currentValue != null) {
             val keyCode = currentValue!!.toInt()
-            controlsManager.keyBindingManager.setKeyBinding(keyName, keyCode)
 
-            // Reload table to show any conflicting bindings that were resolved
+            println("Attempting to bind '$actionName' (Enum: $keyEnumName) to key code $keyCode")
+
+            controlsManager.keyBindingManager.setKeyBinding(keyEnumName, keyCode)
+
             SwingUtilities.invokeLater {
+                println("Refreshing table after binding...")
                 controlsManager.refreshTable(table)
             }
+        } else {
+            println("Skipping binding: keyEnumName=$keyEnumName, currentValue=$currentValue")
         }
 
         return super.stopCellEditing()
     }
 
     override fun getCellEditorValue(): Any {
-        return if (currentValue != null) {
+        return if (currentValue != null && currentValue != KeyBindingManager.KEY_UNBOUND.toString()) {
             KeyEvent.getKeyText(currentValue!!.toInt())
+        } else if (currentValue == KeyBindingManager.KEY_UNBOUND.toString()) {
+            "None"
         } else {
-            super.getCellEditorValue()
+            table.getValueAt(currentRow, 1) ?: ""
         }
     }
 }
