@@ -3,6 +3,7 @@ package ui.components
 import Game3D
 import player.Player
 import java.awt.*
+import java.awt.event.ComponentEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.*
@@ -44,6 +45,9 @@ class PlayerSettingsPanel(private val player: Player, private val game3D: Game3D
     private val SECONDARY_TEXT_COLOR = Color(180, 180, 180)
     private val CONTROL_BG_COLOR = Color(60, 63, 65)
     private val CONTROL_BORDER_COLOR = Color(80, 83, 85)
+
+    // Map to store the full label texts (for resizing with ellipsis)
+    private val labelTextMap = mutableMapOf<JLabel, String>()
 
     init {
         val player = player
@@ -106,6 +110,13 @@ class PlayerSettingsPanel(private val player: Player, private val game3D: Game3D
         // --- Final Initialization Steps ---
         updateGravityComponentStates(player.gravityEnabled)
         isInitializing = false
+
+        // Add a component listener to handle resizing
+        addComponentListener(object : java.awt.event.ComponentAdapter() {
+            override fun componentResized(e: ComponentEvent) {
+                resizeLabels()
+            }
+        })
     }
 
     // Helper function to create ChangeListener for spinners
@@ -141,12 +152,20 @@ class PlayerSettingsPanel(private val player: Player, private val game3D: Game3D
         }
     }
 
-    // Create styled JSpinner
+    // Create styled JSpinner with responsive sizing
     private fun createStyledSpinner(model: SpinnerModel): JSpinner {
         return JSpinner(model).apply {
             background = CONTROL_BG_COLOR
             foreground = TEXT_COLOR
-            preferredSize = Dimension(80, 25)
+
+            // Make spinner resize with panel
+            val minWidth = 60
+            val prefWidth = 80
+            val maxWidth = 120
+
+            minimumSize = Dimension(minWidth, 25)
+            preferredSize = Dimension(prefWidth, 25)
+            maximumSize = Dimension(maxWidth, 25)
 
             // Style the text field component of the spinner
             (editor as? JSpinner.DefaultEditor)?.let { editor ->
@@ -167,23 +186,47 @@ class PlayerSettingsPanel(private val player: Player, private val game3D: Game3D
         }
     }
 
-    // Create styled label
+    // Create styled label with ellipsis capability
     private fun createStyledLabel(text: String): JLabel {
         return JLabel(text).apply {
             foreground = TEXT_COLOR
             font = Font("Arial", Font.BOLD, 12)
+
+            // Store the original text for resizing
+            labelTextMap[this] = text
         }
     }
 
-    // Helper function to create a styled setting row
+    // Helper function to create a styled setting row with GridBagLayout for responsiveness
     private fun createSettingRow(labelText: String, component: JComponent): JPanel {
         return JPanel().apply {
-            layout = BorderLayout(10, 0)
+            layout = GridBagLayout()
             background = DARKER_BG_COLOR
             border = EmptyBorder(5, 10, 5, 10)
 
-            add(createStyledLabel(labelText), BorderLayout.WEST)
-            add(component, BorderLayout.EAST)
+            val label = createStyledLabel(labelText)
+
+            // GridBag constraints for the label
+            val labelConstraints = GridBagConstraints().apply {
+                gridx = 0
+                gridy = 0
+                weightx = 0.7
+                fill = GridBagConstraints.HORIZONTAL
+                anchor = GridBagConstraints.WEST
+                insets = Insets(0, 0, 0, 10)
+            }
+
+            // GridBag constraints for the component
+            val componentConstraints = GridBagConstraints().apply {
+                gridx = 1
+                gridy = 0
+                weightx = 0.3
+                fill = GridBagConstraints.HORIZONTAL
+                anchor = GridBagConstraints.EAST
+            }
+
+            add(label, labelConstraints)
+            add(component, componentConstraints)
 
             // Add subtle highlight effect on hover
             addMouseListener(object : MouseAdapter() {
@@ -195,6 +238,33 @@ class PlayerSettingsPanel(private val player: Player, private val game3D: Game3D
                     background = DARKER_BG_COLOR
                 }
             })
+        }
+    }
+
+    // Method to resize labels with ellipsis when space is limited
+    private fun resizeLabels() {
+        labelTextMap.forEach { (label, fullText) ->
+            val metrics = label.getFontMetrics(label.font)
+            val availableWidth = label.width - 10  // Leave some padding
+
+            if (availableWidth <= 0) return  // Skip if not properly laid out yet
+
+            if (metrics.stringWidth(fullText) > availableWidth) {
+                // Need to truncate
+                var truncatedText = fullText
+                while (metrics.stringWidth(truncatedText + "...") > availableWidth && truncatedText.isNotEmpty()) {
+                    truncatedText = truncatedText.dropLast(1)
+                }
+
+                if (truncatedText.isNotEmpty()) {
+                    label.text = truncatedText + "..."
+                } else {
+                    label.text = "..."
+                }
+            } else {
+                // Restore original text
+                label.text = fullText
+            }
         }
     }
 
@@ -232,7 +302,7 @@ class PlayerSettingsPanel(private val player: Player, private val game3D: Game3D
         background = BACKGROUND_COLOR
 
         // Create main content panel with gradient background
-        add(object : JPanel() {
+        val contentPanel = object : JPanel() {
             override fun paintComponent(g: Graphics) {
                 super.paintComponent(g)
                 val g2d = g as Graphics2D
@@ -246,124 +316,190 @@ class PlayerSettingsPanel(private val player: Player, private val game3D: Game3D
         }.apply {
             layout = BorderLayout()
             border = EmptyBorder(15, 15, 15, 15)
+        }
 
-            // Title Panel
-            add(JPanel().apply {
-                layout = BorderLayout(0, 5)
-                isOpaque = false
+        add(contentPanel, BorderLayout.CENTER)
 
-                // Title
-                add(JLabel("PLAYER SETTINGS", SwingConstants.CENTER).apply {
-                    foreground = ACCENT_COLOR
-                    font = Font("Impact", Font.BOLD, 18)
-                    border = EmptyBorder(0, 0, 5, 0)
-                }, BorderLayout.NORTH)
+        // Title Panel
+        val titlePanel = JPanel().apply {
+            layout = BorderLayout(0, 5)
+            isOpaque = false
 
-                // Stylized separator
-                add(createStylizedSeparator(), BorderLayout.CENTER)
+            // Title
+            add(JLabel("PLAYER SETTINGS", SwingConstants.CENTER).apply {
+                foreground = ACCENT_COLOR
+                font = Font("Impact", Font.BOLD, 18)
+                border = EmptyBorder(0, 0, 5, 0)
             }, BorderLayout.NORTH)
 
-            // Settings Content Panel
+            // Stylized separator
+            add(createStylizedSeparator(), BorderLayout.CENTER)
+        }
+
+        contentPanel.add(titlePanel, BorderLayout.NORTH)
+
+        // Settings Content Panel - using GridBagLayout for better responsiveness
+        val settingsPanel = JPanel().apply {
+            layout = GridBagLayout()
+            isOpaque = false
+            border = EmptyBorder(10, 5, 10, 5)
+        }
+
+        contentPanel.add(settingsPanel, BorderLayout.CENTER)
+
+        // Setup GridBagConstraints for the main layout
+        val gbc = GridBagConstraints().apply {
+            fill = GridBagConstraints.HORIZONTAL
+            weightx = 1.0
+            gridx = 0
+            insets = Insets(0, 0, 10, 0)
+        }
+
+        // Basic Physics Settings Section
+        val basicSettingsPanel = JPanel().apply {
+            layout = GridBagLayout()
+            isOpaque = false
+            border = BorderFactory.createEmptyBorder(0, 0, 0, 0)
+
+            val labelGbc = GridBagConstraints().apply {
+                gridx = 0
+                gridy = 0
+                weightx = 1.0
+                fill = GridBagConstraints.HORIZONTAL
+                anchor = GridBagConstraints.WEST
+                insets = Insets(0, 5, 5, 0)
+            }
+
+            add(JLabel("Basic Settings").apply {
+                foreground = ACCENT_COLOR
+                font = Font("Arial", Font.BOLD, 14)
+                border = EmptyBorder(0, 5, 5, 0)
+            }, labelGbc)
+
+            val rowGbc = GridBagConstraints().apply {
+                gridx = 0
+                weightx = 1.0
+                fill = GridBagConstraints.HORIZONTAL
+                insets = Insets(2, 0, 2, 0)
+            }
+
+            rowGbc.gridy = 1
+            add(createSettingRow("Move Speed:", moveSpeedSpinner), rowGbc)
+
+            rowGbc.gridy = 2
+            add(createSettingRow("Player Radius:", playerRadiusSpinner), rowGbc)
+
+            rowGbc.gridy = 3
+            add(createSettingRow("Player Height:", playerHeightSpinner), rowGbc)
+
+            rowGbc.gridy = 4
+            add(createSettingRow("Head Clearance:", headClearanceSpinner), rowGbc)
+        }
+
+        gbc.gridy = 0
+        settingsPanel.add(basicSettingsPanel, gbc)
+
+        // Gravity Settings Section
+        val gravitySettingsPanel = JPanel().apply {
+            layout = GridBagLayout()
+            isOpaque = false
+            border = BorderFactory.createEmptyBorder(0, 0, 0, 0)
+
+            val toggleGbc = GridBagConstraints().apply {
+                gridx = 0
+                gridy = 0
+                weightx = 1.0
+                fill = GridBagConstraints.HORIZONTAL
+                anchor = GridBagConstraints.WEST
+                insets = Insets(0, 0, 5, 0)
+            }
+
+            // Gravity Toggle in its own panel
             add(JPanel().apply {
-                layout = BoxLayout(this, BoxLayout.Y_AXIS)
-                isOpaque = false
-                border = EmptyBorder(10, 5, 10, 5)
+                layout = BorderLayout()
+                background = DARKER_BG_COLOR
+                border = EmptyBorder(5, 10, 5, 10)
+                add(gravityToggle, BorderLayout.WEST)
+            }, toggleGbc)
 
-                // Basic Physics Settings Section
-                add(JPanel().apply {
-                    layout = BoxLayout(this, BoxLayout.Y_AXIS)
-                    isOpaque = false
-                    alignmentX = Component.LEFT_ALIGNMENT
+            val labelGbc = GridBagConstraints().apply {
+                gridx = 0
+                gridy = 1
+                weightx = 1.0
+                fill = GridBagConstraints.HORIZONTAL
+                anchor = GridBagConstraints.WEST
+                insets = Insets(5, 5, 5, 0)
+            }
 
-                    add(JLabel("Basic Settings").apply {
-                        foreground = ACCENT_COLOR
-                        font = Font("Arial", Font.BOLD, 14)
-                        alignmentX = Component.LEFT_ALIGNMENT
-                        border = EmptyBorder(0, 5, 5, 0)
-                    })
+            add(JLabel("Gravity Parameters").apply {
+                foreground = ACCENT_COLOR
+                font = Font("Arial", Font.BOLD, 14)
+                border = EmptyBorder(5, 5, 5, 0)
+            }, labelGbc)
 
-                    add(createSettingRow("Move Speed:", moveSpeedSpinner))
-                    add(createSettingRow("Player Radius:", playerRadiusSpinner))
-                    add(createSettingRow("Player Height:", playerHeightSpinner))
-                    add(createSettingRow("Head Clearance:", headClearanceSpinner))
-                })
+            val rowGbc = GridBagConstraints().apply {
+                gridx = 0
+                weightx = 1.0
+                fill = GridBagConstraints.HORIZONTAL
+                insets = Insets(2, 0, 2, 0)
+            }
 
-                add(Box.createVerticalStrut(15))
+            rowGbc.gridy = 2
+            add(createSettingRow("Gravity Force:", gravityForceSpinner), rowGbc)
 
-                // Gravity Settings Section
-                add(JPanel().apply {
-                    layout = BoxLayout(this, BoxLayout.Y_AXIS)
-                    isOpaque = false
-                    alignmentX = Component.LEFT_ALIGNMENT
+            rowGbc.gridy = 3
+            add(createSettingRow("Jump Strength:", jumpStrengthSpinner), rowGbc)
 
-                    // Gravity Toggle in its own panel
-                    add(JPanel().apply {
-                        layout = BorderLayout()
-                        background = DARKER_BG_COLOR
-                        border = EmptyBorder(5, 10, 5, 10)
-                        add(gravityToggle, BorderLayout.WEST)
-                    })
+            rowGbc.gridy = 4
+            add(createSettingRow("Term. Velocity:", terminalVelocitySpinner), rowGbc)
+        }
 
-                    add(Box.createVerticalStrut(5))
+        gbc.gridy = 1
+        settingsPanel.add(gravitySettingsPanel, gbc)
 
-                    // Only add label if gravity is a section by itself
-                    add(JLabel("Gravity Parameters").apply {
-                        foreground = ACCENT_COLOR
-                        font = Font("Arial", Font.BOLD, 14)
-                        alignmentX = Component.LEFT_ALIGNMENT
-                        border = EmptyBorder(5, 5, 5, 0)
-                    })
+        // Add reset button at bottom
+        contentPanel.add(JPanel().apply {
+            isOpaque = false
+            layout = FlowLayout(FlowLayout.RIGHT)
 
-                    add(createSettingRow("Gravity Force:", gravityForceSpinner))
-                    add(createSettingRow("Jump Strength:", jumpStrengthSpinner))
-                    add(createSettingRow("Term. Velocity:", terminalVelocitySpinner))
-                })
-            }, BorderLayout.CENTER)
+            add(JButton("Reset to Defaults").apply {
+                foreground = TEXT_COLOR
+                background = CONTROL_BG_COLOR
+                font = Font("Arial", Font.BOLD, 12)
+                preferredSize = Dimension(130, 28)
+                isFocusPainted = false
+                border = BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(CONTROL_BORDER_COLOR),
+                    BorderFactory.createEmptyBorder(4, 10, 4, 10)
+                )
 
-            // Add reset button at bottom (optional)
-            add(JPanel().apply {
-                isOpaque = false
-                layout = FlowLayout(FlowLayout.RIGHT)
+                // Hover effect
+                addMouseListener(object : MouseAdapter() {
+                    override fun mouseEntered(e: MouseEvent) {
+                        background = CONTROL_BORDER_COLOR
+                    }
 
-                add(JButton("Reset to Defaults").apply {
-                    foreground = TEXT_COLOR
-                    background = CONTROL_BG_COLOR
-                    font = Font("Arial", Font.BOLD, 12)
-                    preferredSize = Dimension(130, 28)
-                    isFocusPainted = false
-                    border = BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(CONTROL_BORDER_COLOR),
-                        BorderFactory.createEmptyBorder(4, 10, 4, 10)
-                    )
-
-                    // Hover effect
-                    addMouseListener(object : MouseAdapter() {
-                        override fun mouseEntered(e: MouseEvent) {
-                            background = CONTROL_BORDER_COLOR
-                        }
-
-                        override fun mouseExited(e: MouseEvent) {
-                            background = CONTROL_BG_COLOR
-                        }
-                    })
-
-                    addActionListener {
-                        // Reset player values to defaults
-                        game3D.player.moveSpeed = DEFAULT_MOVE_SPEED
-                        game3D.player.playerRadius = DEFAULT_PLAYER_RADIUS
-                        game3D.player.playerHeight = DEFAULT_PLAYER_HEIGHT
-                        game3D.player.headClearance = DEFAULT_HEAD_CLEARANCE
-                        game3D.player.gravity = DEFAULT_GRAVITY
-                        game3D.player.jumpStrength = DEFAULT_JUMP_STRENGTH
-                        game3D.player.terminalVelocity = DEFAULT_TERMINAL_VELOCITY
-                        game3D.changeGravityEnabled(DEFAULT_GRAVITY_ENABLED)
-
-                        // Update UI to reflect these changes
-                        updateAllSettingsDisplay()
+                    override fun mouseExited(e: MouseEvent) {
+                        background = CONTROL_BG_COLOR
                     }
                 })
-            }, BorderLayout.SOUTH)
-        }, BorderLayout.CENTER)
+
+                addActionListener {
+                    // Reset player values to defaults
+                    game3D.player.moveSpeed = DEFAULT_MOVE_SPEED
+                    game3D.player.playerRadius = DEFAULT_PLAYER_RADIUS
+                    game3D.player.playerHeight = DEFAULT_PLAYER_HEIGHT
+                    game3D.player.headClearance = DEFAULT_HEAD_CLEARANCE
+                    game3D.player.gravity = DEFAULT_GRAVITY
+                    game3D.player.jumpStrength = DEFAULT_JUMP_STRENGTH
+                    game3D.player.terminalVelocity = DEFAULT_TERMINAL_VELOCITY
+                    game3D.changeGravityEnabled(DEFAULT_GRAVITY_ENABLED)
+
+                    // Update UI to reflect these changes
+                    updateAllSettingsDisplay()
+                }
+            })
+        }, BorderLayout.SOUTH)
     }
 
     // Enable/disable gravity-related spinners based on toggle state
