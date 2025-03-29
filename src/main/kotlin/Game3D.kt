@@ -12,7 +12,7 @@ import javax.swing.*
 
 class Game3D : JPanel() {
     val player = Player()
-    private val renderer = Renderer(800, 600)
+    val renderer = Renderer(800, 600)
     private val renderPanel = RenderPanel()
     private val gridEditor = GridEditor()
     private val editorPanel = EditorPanel(gridEditor,renderer, this) { toggleEditorMode() }

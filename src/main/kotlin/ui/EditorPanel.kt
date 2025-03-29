@@ -373,11 +373,18 @@ class EditorPanel(var gridEditor: GridEditor, val renderer: Renderer, private va
             addComponent(playerSettingsPanel)
         }
 
+        val mouseControlPanel = MouseControlSettingsPanel(game3D.player.camera, game3D.renderer)
+        val mouseSettingsSection = CollapsibleSection("Mouse Controls").apply {
+            addComponent(mouseControlPanel)
+        }
+
         playerSectionsPanel.add(debugOptionsSection)
         playerSectionsPanel.add(Box.createVerticalStrut(10))
         playerSectionsPanel.add(playerOptionsSection)
         playerSectionsPanel.add(Box.createVerticalStrut(10))
         playerSectionsPanel.add(playerSettingsSection)
+        playerSectionsPanel.add(Box.createVerticalStrut(10))
+        playerSectionsPanel.add(mouseSettingsSection)
         playerSectionsPanel.add(Box.createVerticalGlue())
 
         mapSectionsPanel.add(renderOptionsSection)
