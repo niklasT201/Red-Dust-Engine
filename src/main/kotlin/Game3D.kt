@@ -13,7 +13,6 @@ import javax.swing.*
 class Game3D : JPanel() {
     val player = Player()
     val renderer = Renderer(800, 600)
-    private val renderPanel = RenderPanel()
     private val gridEditor = GridEditor()
     private val editorPanel = EditorPanel(gridEditor,renderer, this) { toggleEditorMode() }
     //private val settingsSaver = saving.SettingsSaver(gridEditor)
@@ -23,7 +22,7 @@ class Game3D : JPanel() {
     private val keysPressed = mutableSetOf<Int>()
     private val walls = mutableListOf<Wall>()
     private val floors = mutableListOf<Floor>()
-    private var isEditorMode = true
+    var isEditorMode = true
 
     var isGravityEnabled: Boolean = false // Default state
 
@@ -33,15 +32,9 @@ class Game3D : JPanel() {
 
     private var frameCount = 0
     private var lastFpsUpdateTime = System.currentTimeMillis()
-    private var currentFps = 0
-    private var isFpsCounterVisible = true
-    private var isDirectionVisible = true
-    private var isPositionVisible = true
+    var currentFps = 0
 
-    private var isCrosshairVisible = true
-    private var crosshairSize = 10
-    private var crosshairColor = Color.WHITE
-    private var crosshairShape = CrosshairShape.PLUS
+    private val renderPanel = RenderPanel(this, skyRenderer, renderer, player, walls, floors)
 
     // Right panel with card layout to switch between grid editor and game view
     private val rightPanel = JPanel(CardLayout()).apply {
@@ -292,121 +285,28 @@ class Game3D : JPanel() {
         }
     }
 
-    inner class RenderPanel : JPanel() {
-        override fun paintComponent(g: Graphics) {
-            super.paintComponent(g)
-            val g2 = g as Graphics2D
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-
-            // Use the sky color property instead of hardcoded value
-            skyRenderer.render(g2, width, height)
-
-            renderer.drawScene(g2, walls, floors, player.camera)
-
-            if (!isEditorMode) {
-                // Draw crosshair only if it's visible
-                if (isCrosshairVisible) {
-                    g2.color = crosshairColor
-
-                    when (crosshairShape) {
-                        CrosshairShape.PLUS -> {
-                            g2.drawLine(width/2 - crosshairSize, height/2, width/2 + crosshairSize, height/2)
-                            g2.drawLine(width/2, height/2 - crosshairSize, width/2, height/2 + crosshairSize)
-                        }
-                        CrosshairShape.X -> {
-                            g2.drawLine(width/2 - crosshairSize, height/2 - crosshairSize, width/2 + crosshairSize, height/2 + crosshairSize)
-                            g2.drawLine(width/2 - crosshairSize, height/2 + crosshairSize, width/2 + crosshairSize, height/2 - crosshairSize)
-                        }
-                        CrosshairShape.DOT -> {
-                            val dotSize = crosshairSize / 3
-                            g2.fillOval(width/2 - dotSize, height/2 - dotSize, dotSize * 2, dotSize * 2)
-                        }
-                        CrosshairShape.CIRCLE -> {
-                            g2.drawOval(width/2 - crosshairSize, height/2 - crosshairSize, crosshairSize * 2, crosshairSize * 2)
-                        }
-                    }
-                }
-
-                g2.font = Font("Monospace", Font.BOLD, 14)
-                g2.color = Color.WHITE
-
-                // Draw FPS counter independently of other debug info
-                if (isFpsCounterVisible) {
-                    g2.drawString("FPS: $currentFps", 10, 20)
-                }
-
-                // Conditionally draw debug information
-                // Get cardinal direction from player
-                val direction = player.getCardinalDirection()
-
-                // Get angles in degrees for display
-                val yawDegrees = player.getYawDegrees()
-
-                // Draw debug information
-                // Adjust y-position based on whether FPS is also being shown
-                val startY = if (isFpsCounterVisible) 40 else 20
-                var currentY = startY
-                if (isDirectionVisible) {
-                    g2.drawString("Direction: $direction (${yawDegrees}°)", 10, currentY)
-                    currentY += 20
-                }
-                if (isPositionVisible) {
-                    g2.drawString("Position: (${String.format("%.1f", player.position.x)}, ${String.format("%.1f", player.position.y)}, ${String.format("%.1f", player.position.z)})", 10, currentY)
-                }
-            }
-        }
-    }
-
-    fun isCrosshairVisible(): Boolean = isCrosshairVisible
-
-    fun setCrosshairVisible(visible: Boolean) {
-        isCrosshairVisible = visible
-        renderPanel.repaint()  // Refresh the display when changed
-    }
-
-    fun getCrosshairSize(): Int = crosshairSize
-
-    fun setCrosshairSize(size: Int) {
-        crosshairSize = size
-        renderPanel.repaint()  // Refresh the display when changed
-    }
-
-    fun getCrosshairColor(): Color = crosshairColor?: Color.WHITE
-
-    fun setCrosshairColor(color: Color) {
-        crosshairColor = color
-        renderPanel.repaint()  // Refresh the display when changed
-    }
-
-    fun getCrosshairShape(): CrosshairShape = crosshairShape
-
-    fun setCrosshairShape(shape: CrosshairShape) {
-        crosshairShape = shape
-        renderPanel.repaint()  // Refresh the display when changed
-    }
-
-    fun isDirectionVisible(): Boolean = isDirectionVisible
-    fun setDirectionVisible(visible: Boolean) {
-        isDirectionVisible = visible
-        renderPanel.repaint()
-    }
-
-    fun isPositionVisible(): Boolean = isPositionVisible
-    fun setPositionVisible(visible: Boolean) {
-        isPositionVisible = visible
-        renderPanel.repaint()
-    }
+    fun isCrosshairVisible(): Boolean = renderPanel.isCrosshairVisible()
+    fun setCrosshairVisible(visible: Boolean) = renderPanel.setCrosshairVisible(visible)
+    fun getCrosshairSize(): Int = renderPanel.getCrosshairSize()
+    fun setCrosshairSize(size: Int) = renderPanel.setCrosshairSize(size)
+    fun getCrosshairColor(): Color = renderPanel.getCrosshairColor()
+    fun setCrosshairColor(color: Color) = renderPanel.setCrosshairColor(color)
+    fun getCrosshairShape(): CrosshairShape = renderPanel.getCrosshairShape()
+    fun setCrosshairShape(shape: CrosshairShape) = renderPanel.setCrosshairShape(shape)
+    fun isDirectionVisible(): Boolean = renderPanel.isDirectionVisible()
+    fun setDirectionVisible(visible: Boolean) = renderPanel.setDirectionVisible(visible)
+    fun isPositionVisible(): Boolean = renderPanel.isPositionVisible()
+    fun setPositionVisible(visible: Boolean) = renderPanel.setPositionVisible(visible)
+    fun setFpsCounterVisible(visible: Boolean) = renderPanel.setFpsCounterVisible(visible)
+    fun isFpsCounterVisible(): Boolean = renderPanel.isFpsCounterVisible()
 
     fun getSkyRenderer(): SkyRenderer = skyRenderer
-
     fun setSkyRenderer(renderer: SkyRenderer) {
         skyRenderer = renderer
         skyColor = renderer.skyColor  // Keep skyColor in sync with renderer
         renderPanel.repaint()
     }
     fun getSkyColor(): Color = skyColor
-
-    // Setter for skyColor
     fun setSkyColor(color: Color) {
         skyColor = color
         renderPanel.background = skyColor
@@ -425,14 +325,6 @@ class Game3D : JPanel() {
             lastFpsUpdateTime = currentTime
         }
     }
-
-    // Add these getters and setters for FPS counter visibility
-    fun setFpsCounterVisible(visible: Boolean) {
-        isFpsCounterVisible = visible
-        renderPanel.repaint()
-    }
-
-    fun isFpsCounterVisible(): Boolean = isFpsCounterVisible
 
     fun update() {
         if (!isEditorMode) {
