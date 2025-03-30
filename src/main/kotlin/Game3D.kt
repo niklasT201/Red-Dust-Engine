@@ -23,7 +23,7 @@ class Game3D : JPanel() {
     private var lastFpsUpdateTime = System.currentTimeMillis()
     var currentFps = 0
 
-    private val renderPanel = RenderPanel(this, skyRenderer, renderer, player, walls, floors)
+    private val renderPanel = RenderPanel(this, renderer, player, walls, floors)
 
     private val gridEditor = GridEditor()
     private val editorPanel = EditorPanel(gridEditor,renderer, this) { toggleEditorMode() }

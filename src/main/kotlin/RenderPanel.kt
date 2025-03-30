@@ -1,11 +1,9 @@
 import ui.components.CrosshairShape
-import render.SkyRenderer
 import java.awt.*
 import javax.swing.JPanel
 
 class RenderPanel(
     private val game3D: Game3D,
-    private val skyRenderer: SkyRenderer,
     private val renderer: Renderer,
     private val player: player.Player,
     private val walls: List<Wall>,
@@ -33,7 +31,8 @@ class RenderPanel(
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
 
         // Use the sky color property instead of hardcoded value
-        skyRenderer.render(g2, width, height)
+        val currentSkyRenderer = game3D.getSkyRenderer()
+        currentSkyRenderer.render(g2, width, height)
 
         renderer.drawScene(g2, walls, floors, player.camera)
 

@@ -78,6 +78,8 @@ class KeyBindingManager {
         defaultBindings["PILLAR_SHORTCUT"] = KeyEvent.VK_3
         defaultBindings["PLAYER_SPAWN_SHORTCUT"] = KeyEvent.VK_4
 
+        defaultBindings["WEAPON_UI_TOGGLE"] = KeyEvent.VK_U
+
         // Undo/Redo Keys (fixed)
         defaultBindings["UNDO"] = UNDO_KEY // Ctrl+Z
         defaultBindings["REDO"] = REDO_KEY // Ctrl+Y
@@ -273,13 +275,15 @@ object KeyBindings {
     const val ROTATE_SOUTH = KeyEvent.VK_S
     const val ROTATE_EAST = KeyEvent.VK_O
     const val ROTATE_WEST = KeyEvent.VK_W
+    const val TOGGLE_WEAPON_UI = KeyEvent.VK_U
 
     // Shortcuts (fixed)
     const val ROTATE_WALL = KeyEvent.VK_R
     const val WALL_SHORTCUT = KeyEvent.VK_1
     const val FLOOR_SHORTCUT = KeyEvent.VK_2
     const val PILLAR_SHORTCUT = KeyEvent.VK_3
-    const val PLAYER_SPAWN_SHORTCUT = KeyEvent.VK_4
+    const val WATER_SHORTCUT = KeyEvent.VK_4
+    const val PLAYER_SPAWN_SHORTCUT = KeyEvent.VK_5
 
     // Undo/Redo keys (fixed)
     const val UNDO = KeyBindingManager.UNDO_KEY

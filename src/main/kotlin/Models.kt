@@ -4,6 +4,7 @@ import java.awt.Image
 data class Vec3(var x: Double, var y: Double, var z: Double)
 data class Wall(val start: Vec3, val end: Vec3, val height: Double, val color: Color, val texture: ImageEntry? = null,  val textureMapping: TextureMapping = TextureMapping())
 data class Floor(val x1: Double, val z1: Double, val x2: Double, val z2: Double, val y: Double, val color: Color, val texture: ImageEntry? = null,  val textureMapping: TextureMapping = TextureMapping())
+data class WaterSurface(val x1: Double, val z1: Double, val x2: Double, val z2: Double, val y: Double, val depth: Double, val waveHeight: Double, val waveSpeed: Double, val damagePerSecond: Double, val color: Color, val texture: ImageEntry? = null, val textureMapping: TextureMapping = TextureMapping())
 
 data class TextureMapping(
     val scale: Double = 1.0,
