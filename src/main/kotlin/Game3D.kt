@@ -13,28 +13,29 @@ import javax.swing.*
 class Game3D : JPanel() {
     val player = Player()
     val renderer = Renderer(800, 600)
-    private val gridEditor = GridEditor()
-    private val editorPanel = EditorPanel(gridEditor,renderer, this) { toggleEditorMode() }
-    //private val settingsSaver = saving.SettingsSaver(gridEditor)
-    private lateinit var menuSystem: MenuSystem
-    private var skyColor = Color(135, 206, 235)
-    private var skyRenderer: SkyRenderer = SkyRenderer(skyColor)
-    private val keysPressed = mutableSetOf<Int>()
     private val walls = mutableListOf<Wall>()
     private val floors = mutableListOf<Floor>()
     var isEditorMode = true
-
-    var isGravityEnabled: Boolean = false // Default state
-
-    // --- Cursor Management ---
-    private val blankCursor: Cursor
-    private val defaultCursor: Cursor = Cursor.getDefaultCursor()
+    private var skyColor = Color(135, 206, 235)
+    private var skyRenderer: SkyRenderer = SkyRenderer(skyColor)
 
     private var frameCount = 0
     private var lastFpsUpdateTime = System.currentTimeMillis()
     var currentFps = 0
 
     private val renderPanel = RenderPanel(this, skyRenderer, renderer, player, walls, floors)
+
+    private val gridEditor = GridEditor()
+    private val editorPanel = EditorPanel(gridEditor,renderer, this) { toggleEditorMode() }
+    //private val settingsSaver = saving.SettingsSaver(gridEditor)
+    private lateinit var menuSystem: MenuSystem
+    private val keysPressed = mutableSetOf<Int>()
+
+    var isGravityEnabled: Boolean = false // Default state
+
+    // --- Cursor Management ---
+    private val blankCursor: Cursor
+    private val defaultCursor: Cursor = Cursor.getDefaultCursor()
 
     // Right panel with card layout to switch between grid editor and game view
     private val rightPanel = JPanel(CardLayout()).apply {
