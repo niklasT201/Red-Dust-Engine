@@ -170,7 +170,6 @@ class Game3D : JPanel() {
 
         setupInputHandling()
         updateMode()
-        addPredefinedPillars()
 
         //SwingUtilities.invokeLater { settingsSaver.loadPlayerSettings(player, this) }
     }
@@ -370,98 +369,9 @@ class Game3D : JPanel() {
     private fun updateWalls(newWalls: List<Wall>) {
         walls.clear()
         walls.addAll(newWalls)
+        walls.addAll(gridEditor.generatePillars())
 
         floors.clear()
         floors.addAll(gridEditor.generateFloors())
-    }
-
-    private fun addPredefinedPillars() {
-        // Define some predefined pillars at specific locations
-        val predefinedPillars = listOf(
-            // Simple square pillar at position (-5, 0, -5)
-            createPillar(
-                position = Vec3(-5.0, 0.0, -5.0),
-                height = 4.0,
-                width = 1.0,
-                color = Color(180, 170, 150)
-            ),
-
-            // Taller ornate pillar at position (5, 0, -5)
-            createPillar(
-                position = Vec3(5.0, 0.0, -5.0),
-                height = 6.0,
-                width = 1.2,
-                color = Color(190, 180, 160)
-            ),
-
-            // Shorter wide pillar at position (-5, 0, 5)
-            createPillar(
-                position = Vec3(-5.0, 0.0, 5.0),
-                height = 3.0,
-                width = 1.5,
-                color = Color(170, 160, 140)
-            ),
-
-            // Standard pillar at position (5, 0, 5)
-            createPillar(
-                position = Vec3(5.0, 0.0, 5.0),
-                height = 4.5,
-                width = 1.0,
-                color = Color(185, 175, 155)
-            ),
-
-            // Center pillar
-            createPillar(
-                position = Vec3(0.0, 0.0, 0.0),
-                height = 5.0,
-                width = 1.3,
-                color = Color(195, 185, 165)
-            )
-        )
-
-        // Add all the pillar walls to our game's walls list
-        walls.addAll(predefinedPillars.flatten())
-    }
-
-    // Helper function to create a single pillar's walls
-    private fun createPillar(position: Vec3, height: Double, width: Double, color: Color): List<Wall> {
-        val halfWidth = width / 2
-        val x = position.x
-        val y = position.y
-        val z = position.z
-
-        // Create a more complex pillar with base, shaft and top
-        val pillarWalls = mutableListOf<Wall>()
-
-        // Base of the pillar (slightly wider)
-        val baseHeight = 0.5
-        val baseWidth = width * 1.2
-        val baseHalfWidth = baseWidth / 2
-
-        // Base walls
-        pillarWalls.add(Wall(Vec3(x - baseHalfWidth, y, z - baseHalfWidth), Vec3(x + baseHalfWidth, y, z - baseHalfWidth), baseHeight, color))
-        pillarWalls.add(Wall(Vec3(x + baseHalfWidth, y, z - baseHalfWidth), Vec3(x + baseHalfWidth, y, z + baseHalfWidth), baseHeight, color))
-        pillarWalls.add(Wall(Vec3(x + baseHalfWidth, y, z + baseHalfWidth), Vec3(x - baseHalfWidth, y, z + baseHalfWidth), baseHeight, color))
-        pillarWalls.add(Wall(Vec3(x - baseHalfWidth, y, z + baseHalfWidth), Vec3(x - baseHalfWidth, y, z - baseHalfWidth), baseHeight, color))
-
-        // Main shaft of the pillar
-        val shaftHeight = height - 1.0 // Reserve space for base and top
-        pillarWalls.add(Wall(Vec3(x - halfWidth, y + baseHeight, z - halfWidth), Vec3(x + halfWidth, y + baseHeight, z - halfWidth), shaftHeight, color))
-        pillarWalls.add(Wall(Vec3(x + halfWidth, y + baseHeight, z - halfWidth), Vec3(x + halfWidth, y + baseHeight, z + halfWidth), shaftHeight, color))
-        pillarWalls.add(Wall(Vec3(x + halfWidth, y + baseHeight, z + halfWidth), Vec3(x - halfWidth, y + baseHeight, z + halfWidth), shaftHeight, color))
-        pillarWalls.add(Wall(Vec3(x - halfWidth, y + baseHeight, z + halfWidth), Vec3(x - halfWidth, y + baseHeight, z - halfWidth), shaftHeight, color))
-
-        // Top of the pillar (slightly wider again)
-        val topHeight = 0.5
-        val topWidth = width * 1.1
-        val topHalfWidth = topWidth / 2
-        val topY = y + baseHeight + shaftHeight
-
-        pillarWalls.add(Wall(Vec3(x - topHalfWidth, topY, z - topHalfWidth), Vec3(x + topHalfWidth, topY, z - topHalfWidth), topHeight, color))
-        pillarWalls.add(Wall(Vec3(x + topHalfWidth, topY, z - topHalfWidth), Vec3(x + topHalfWidth, topY, z + topHalfWidth), topHeight, color))
-        pillarWalls.add(Wall(Vec3(x + topHalfWidth, topY, z + topHalfWidth), Vec3(x - topHalfWidth, topY, z + topHalfWidth), topHeight, color))
-        pillarWalls.add(Wall(Vec3(x - topHalfWidth, topY, z + topHalfWidth), Vec3(x - topHalfWidth, topY, z - topHalfWidth), topHeight, color))
-
-        return pillarWalls
     }
 }

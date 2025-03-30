@@ -81,6 +81,7 @@ sealed class GameObject {
 enum class ObjectType {
     FLOOR,
     WALL,
+    PILLAR,
     PROP, // For future use with other objects
     PLAYER_SPAWN  // New object type for player spawn
 }
@@ -118,4 +119,15 @@ data class FloorObject(
     override val height = 0.0
     override val width = 2.0
     override val direction = Direction.NORTH
+}
+
+data class PillarObject(
+    override val color: Color = Color(180, 170, 150),
+    override val height: Double = 4.0,
+    override val width: Double = 1.0,
+    override val direction: Direction = Direction.NORTH,
+    override val texture: ImageEntry? = null,
+    val floorHeight: Double
+) : GameObject() {
+    override val type = ObjectType.PILLAR
 }

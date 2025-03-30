@@ -3,6 +3,7 @@ package grideditor
 import AddObjectCommand
 import FloorObject
 import GridCell
+import PillarObject
 import PlayerSpawnObject
 import RemoveObjectCommand
 import WallObject
@@ -148,6 +149,7 @@ class GridInputHandler(private val editor: GridEditor) {
         // Object type key bindings
         windowInputMap.put(KeyStroke.getKeyStroke(KeyBindings.WALL_SHORTCUT, 0), "select_wall")
         windowInputMap.put(KeyStroke.getKeyStroke(KeyBindings.FLOOR_SHORTCUT, 0), "select_floor")
+        windowInputMap.put(KeyStroke.getKeyStroke(KeyBindings.PILLAR_SHORTCUT, 0), "select_pillar")
         windowInputMap.put(KeyStroke.getKeyStroke(KeyBindings.PLAYER_SPAWN_SHORTCUT, 0), "select_player_spawn")
 
         val undoKeystroke = KeyStroke.getKeyStroke(KeyBindings.UNDO, KeyEvent.CTRL_DOWN_MASK)
@@ -191,6 +193,11 @@ class GridInputHandler(private val editor: GridEditor) {
         editor.actionMap.put("select_floor", object : AbstractAction() {
             override fun actionPerformed(e: ActionEvent) {
                 editor.setObjectType(ObjectType.FLOOR)
+            }
+        })
+        editor.actionMap.put("select_pillar", object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent) {
+                editor.setObjectType(ObjectType.PILLAR)
             }
         })
         editor.actionMap.put("select_player_spawn", object : AbstractAction() {
@@ -319,6 +326,13 @@ class GridInputHandler(private val editor: GridEditor) {
 
                         PlayerSpawnObject(offsetX = offsetX, offsetY = offsetY)
                     }
+                    ObjectType.PILLAR -> PillarObject(
+                        color = editor.currentWallColor,
+                        height = editor.currentWallHeight,
+                        width = editor.currentPillarWidth,
+                        floorHeight = editor.currentFloorHeight,
+                        texture = editor.currentWallTexture
+                    )
                     ObjectType.PROP -> null
                 }
 

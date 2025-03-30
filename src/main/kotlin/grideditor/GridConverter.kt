@@ -2,14 +2,12 @@ package grideditor
 
 import Floor
 import FloorObject
+import PillarObject
 import Vec3
 import Wall
 import WallCoords
 import WallObject
 
-/**
- * Handles conversion between grid data and game world objects
- */
 class GridConverter(private val editor: GridEditor) {
 
     fun worldToGrid(x: Double, z: Double): Pair<Double, Double> {
@@ -134,5 +132,107 @@ class GridConverter(private val editor: GridEditor) {
             }
         }
         return floors
+    }
+
+    fun generatePillars(): List<Wall> {
+        val pillarWalls = mutableListOf<Wall>()
+
+        editor.grid.forEach { (pos, cell) ->
+            cell.objectsByFloor.keys.sorted().forEach { floor ->
+                val objectsInFloor = cell.objectsByFloor[floor] ?: return@forEach
+                val floorHeight = floor * editor.floorHeight // Calculate Y position for this floor level
+
+                // Process ONLY PillarObjects on this floor
+                objectsInFloor.filterIsInstance<PillarObject>().forEach { obj ->
+                    val (x, y) = pos // Grid coordinates
+                    // Calculate center of the grid cell in game coordinates
+                    val cellCenterX = -x * editor.baseScale + editor.baseScale / 2.0
+                    val cellCenterZ = y * editor.baseScale + editor.baseScale / 2.0
+
+                    // The base of the pillar (slightly wider)
+                    val baseHeight = 0.5
+                    val baseWidth = obj.width * 1.2
+                    val baseHalfWidth = baseWidth / 2.0
+
+                    // The main shaft height (reserving space for base and top)
+                    val shaftHeight = obj.height - 1.0
+                    val shaftHalfWidth = obj.width / 2.0
+
+                    // The top of the pillar (slightly wider than shaft, narrower than base)
+                    val topHeight = 0.5
+                    val topWidth = obj.width * 1.1
+                    val topHalfWidth = topWidth / 2.0
+                    val topY = floorHeight + baseHeight + shaftHeight
+
+                    // BASE walls
+                    pillarWalls.add(Wall(
+                        Vec3(cellCenterX - baseHalfWidth, floorHeight, cellCenterZ - baseHalfWidth),
+                        Vec3(cellCenterX + baseHalfWidth, floorHeight, cellCenterZ - baseHalfWidth),
+                        baseHeight, obj.color, obj.texture
+                    ))
+                    pillarWalls.add(Wall(
+                        Vec3(cellCenterX + baseHalfWidth, floorHeight, cellCenterZ - baseHalfWidth),
+                        Vec3(cellCenterX + baseHalfWidth, floorHeight, cellCenterZ + baseHalfWidth),
+                        baseHeight, obj.color, obj.texture
+                    ))
+                    pillarWalls.add(Wall(
+                        Vec3(cellCenterX + baseHalfWidth, floorHeight, cellCenterZ + baseHalfWidth),
+                        Vec3(cellCenterX - baseHalfWidth, floorHeight, cellCenterZ + baseHalfWidth),
+                        baseHeight, obj.color, obj.texture
+                    ))
+                    pillarWalls.add(Wall(
+                        Vec3(cellCenterX - baseHalfWidth, floorHeight, cellCenterZ + baseHalfWidth),
+                        Vec3(cellCenterX - baseHalfWidth, floorHeight, cellCenterZ - baseHalfWidth),
+                        baseHeight, obj.color, obj.texture
+                    ))
+
+                    // SHAFT walls (positioned on top of the base)
+                    pillarWalls.add(Wall(
+                        Vec3(cellCenterX - shaftHalfWidth, floorHeight + baseHeight, cellCenterZ - shaftHalfWidth),
+                        Vec3(cellCenterX + shaftHalfWidth, floorHeight + baseHeight, cellCenterZ - shaftHalfWidth),
+                        shaftHeight, obj.color, obj.texture
+                    ))
+                    pillarWalls.add(Wall(
+                        Vec3(cellCenterX + shaftHalfWidth, floorHeight + baseHeight, cellCenterZ - shaftHalfWidth),
+                        Vec3(cellCenterX + shaftHalfWidth, floorHeight + baseHeight, cellCenterZ + shaftHalfWidth),
+                        shaftHeight, obj.color, obj.texture
+                    ))
+                    pillarWalls.add(Wall(
+                        Vec3(cellCenterX + shaftHalfWidth, floorHeight + baseHeight, cellCenterZ + shaftHalfWidth),
+                        Vec3(cellCenterX - shaftHalfWidth, floorHeight + baseHeight, cellCenterZ + shaftHalfWidth),
+                        shaftHeight, obj.color, obj.texture
+                    ))
+                    pillarWalls.add(Wall(
+                        Vec3(cellCenterX - shaftHalfWidth, floorHeight + baseHeight, cellCenterZ + shaftHalfWidth),
+                        Vec3(cellCenterX - shaftHalfWidth, floorHeight + baseHeight, cellCenterZ - shaftHalfWidth),
+                        shaftHeight, obj.color, obj.texture
+                    ))
+
+                    // TOP walls (positioned on top of the shaft)
+                    pillarWalls.add(Wall(
+                        Vec3(cellCenterX - topHalfWidth, topY, cellCenterZ - topHalfWidth),
+                        Vec3(cellCenterX + topHalfWidth, topY, cellCenterZ - topHalfWidth),
+                        topHeight, obj.color, obj.texture
+                    ))
+                    pillarWalls.add(Wall(
+                        Vec3(cellCenterX + topHalfWidth, topY, cellCenterZ - topHalfWidth),
+                        Vec3(cellCenterX + topHalfWidth, topY, cellCenterZ + topHalfWidth),
+                        topHeight, obj.color, obj.texture
+                    ))
+                    pillarWalls.add(Wall(
+                        Vec3(cellCenterX + topHalfWidth, topY, cellCenterZ + topHalfWidth),
+                        Vec3(cellCenterX - topHalfWidth, topY, cellCenterZ + topHalfWidth),
+                        topHeight, obj.color, obj.texture
+                    ))
+                    pillarWalls.add(Wall(
+                        Vec3(cellCenterX - topHalfWidth, topY, cellCenterZ + topHalfWidth),
+                        Vec3(cellCenterX - topHalfWidth, topY, cellCenterZ - topHalfWidth),
+                        topHeight, obj.color, obj.texture
+                    ))
+                }
+            }
+        }
+
+        return pillarWalls
     }
 }

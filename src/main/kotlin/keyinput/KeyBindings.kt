@@ -39,7 +39,7 @@ class KeyBindingManager {
     // List of fixed keys (the ones users cannot change)
     private val fixedKeys = listOf(
         "ROTATE_NORTH", "ROTATE_SOUTH", "ROTATE_EAST", "ROTATE_WEST",
-        "ROTATE_WALL", "WALL_SHORTCUT", "FLOOR_SHORTCUT", "PLAYER_SPAWN_SHORTCUT",
+        "ROTATE_WALL", "WALL_SHORTCUT", "FLOOR_SHORTCUT", "PILLAR_SHORTCUT","PLAYER_SPAWN_SHORTCUT",
         "UNDO", "REDO"
     )
 
@@ -75,7 +75,8 @@ class KeyBindingManager {
         defaultBindings["ROTATE_WALL"] = KeyEvent.VK_R
         defaultBindings["WALL_SHORTCUT"] = KeyEvent.VK_1
         defaultBindings["FLOOR_SHORTCUT"] = KeyEvent.VK_2
-        defaultBindings["PLAYER_SPAWN_SHORTCUT"] = KeyEvent.VK_3
+        defaultBindings["PILLAR_SHORTCUT"] = KeyEvent.VK_3
+        defaultBindings["PLAYER_SPAWN_SHORTCUT"] = KeyEvent.VK_4
 
         // Undo/Redo Keys (fixed)
         defaultBindings["UNDO"] = UNDO_KEY // Ctrl+Z
@@ -277,7 +278,8 @@ object KeyBindings {
     const val ROTATE_WALL = KeyEvent.VK_R
     const val WALL_SHORTCUT = KeyEvent.VK_1
     const val FLOOR_SHORTCUT = KeyEvent.VK_2
-    const val PLAYER_SPAWN_SHORTCUT = KeyEvent.VK_3
+    const val PILLAR_SHORTCUT = KeyEvent.VK_3
+    const val PLAYER_SPAWN_SHORTCUT = KeyEvent.VK_4
 
     // Undo/Redo keys (fixed)
     const val UNDO = KeyBindingManager.UNDO_KEY

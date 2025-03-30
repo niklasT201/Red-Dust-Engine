@@ -43,6 +43,7 @@ class GridEditor : JPanel() {
     var currentFloorHeight = 0.0
     private var currentFloor = 0
     private val discoveredFloors = mutableSetOf<Int>()
+    var currentPillarWidth: Double = 1.0
 
     var labelVisibility = mutableMapOf(
         "mode" to true,
@@ -261,6 +262,10 @@ class GridEditor : JPanel() {
 
     fun generateFloors(): List<Floor> {
         return converter.generateFloors()
+    }
+
+    fun generatePillars(): List<Wall> {
+        return converter.generatePillars()
     }
 
     fun updateLabelVisibility(labelType: String, isVisible: Boolean) {

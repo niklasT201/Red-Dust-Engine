@@ -6,6 +6,7 @@ import java.awt.*
 import java.awt.event.ComponentEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import java.awt.event.MouseMotionAdapter
 import java.util.*
 import javax.swing.*
 import javax.swing.border.EmptyBorder
@@ -23,8 +24,8 @@ class MouseControlSettingsPanel(private val camera: Camera, private val renderer
     private val rotationSpeedSpinner: JSpinner
     private val fovSpinner: JSpinner
     private val invertYAxisCheckbox: JCheckBox
-    private val fovSlider: JSlider
-    private val sensitivitySlider: JSlider
+    private val fovTrack: CustomTrack
+    private val sensitivityTrack: CustomTrack
 
     // Flag to prevent recursive updates during initialization
     private var isInitializing = true
@@ -42,6 +43,101 @@ class MouseControlSettingsPanel(private val camera: Camera, private val renderer
     // Map to store the full label texts (for resizing with ellipsis)
     private val labelTextMap = mutableMapOf<JLabel, String>()
 
+    // Custom slider track implementation
+    private inner class CustomTrack(
+        private val min: Int,
+        private val max: Int,
+        initialValue: Int
+    ) : JPanel() {
+        var value: Int = initialValue
+            set(newValue) {
+                val clampedValue = newValue.coerceIn(min, max)
+                if (field != clampedValue) {
+                    field = clampedValue
+                    repaint()
+                    changeListeners.forEach { it(field) }
+                }
+            }
+
+        private val trackHeight = 20  // Taller track to accommodate the text
+        private val markerWidth = 3    // Slim vertical marker instead of knob
+        private val changeListeners = mutableListOf<(Int) -> Unit>()
+
+        init {
+            preferredSize = Dimension(150, trackHeight)
+            background = Color(50, 52, 55)
+
+            addMouseListener(object : MouseAdapter() {
+                override fun mousePressed(e: MouseEvent) {
+                    updateValueFromMouse(e.x)
+                }
+            })
+
+            addMouseMotionListener(object : MouseMotionAdapter() {
+                override fun mouseDragged(e: MouseEvent) {
+                    updateValueFromMouse(e.x)
+                }
+            })
+        }
+
+        private fun updateValueFromMouse(x: Int) {
+            val trackWidth = width
+            val relativeX = x.coerceIn(0, trackWidth)
+            val newValue = min + ((max - min) * relativeX.toDouble() / trackWidth).toInt()
+            value = newValue
+        }
+
+        fun addChangeListener(listener: (Int) -> Unit) {
+            changeListeners.add(listener)
+        }
+
+        override fun paintComponent(g: Graphics) {
+            super.paintComponent(g)
+            val g2 = g as Graphics2D
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+
+            // Draw track background
+            g2.color = Color(30, 32, 34)
+            g2.fillRoundRect(0, 0, width, trackHeight, 8, 8)
+
+            // Draw filled portion of track - using ACCENT_COLOR instead of blue
+            val fillWidth = ((value - min).toDouble() / (max - min) * width).toInt()
+            g2.color = ACCENT_COLOR
+            g2.fillRoundRect(0, 0, fillWidth, trackHeight, 8, 8)
+
+            // Draw tick marks
+            g2.color = Color(200, 200, 200, 120)
+            val step = (max - min) / 10  // Adjust number of ticks based on range
+            for (i in min..max step step) {
+                val tickX = ((i - min).toDouble() / (max - min) * width).toInt()
+                g2.drawLine(tickX, 2, tickX, trackHeight - 2)
+            }
+
+            // Draw marker at current position (slim vertical line)
+            val markerX = ((value - min).toDouble() / (max - min) * width).toInt() - markerWidth / 2
+            g2.color = Color.WHITE
+            g2.fillRect(markerX, 0, markerWidth, trackHeight)
+
+            // Draw value text centered in the track
+            g2.font = Font("SansSerif", Font.BOLD, 12)
+            val valueText = value.toString()
+            val textWidth = g2.fontMetrics.stringWidth(valueText)
+            val textHeight = g2.fontMetrics.height
+
+            // Center text in the track
+            val textX = (width - textWidth) / 2
+            val textY = (trackHeight + textHeight) / 2 - 2
+
+            // Draw text shadow for better readability
+            g2.color = Color(0, 0, 0, 150)
+            g2.drawString(valueText, textX + 1, textY + 1)
+
+            // Draw text in white
+            g2.color = Color.WHITE
+            g2.drawString(valueText, textX, textY)
+        }
+    }
+
     init {
         // Create styled spinners
         rotationSpeedSpinner = createStyledSpinner(
@@ -54,38 +150,38 @@ class MouseControlSettingsPanel(private val camera: Camera, private val renderer
 
         // Create checkbox
         invertYAxisCheckbox = createStyledCheckBox("Invert Y-Axis", camera.accessInvertY())
-        invertYAxisCheckbox.addActionListener { // Use ActionListener or ItemListener
+        invertYAxisCheckbox.addActionListener {
             if (!isInitializing) { // Prevent action during initial setup/reset
                 camera.changeInvertY(invertYAxisCheckbox.isSelected)
             }
         }
 
-        fovSlider = createStyledSlider(
-            (renderer.getFov() * 180 / PI).toInt(), 30, 90
+        // Create custom slider for FOV (30-90 degrees)
+        fovTrack = CustomTrack(
+            30, 90, (renderer.getFov() * 180 / PI).toInt()
         ).apply {
-            // Listener referencing fovSpinner is okay here, as fovSpinner exists
-            addChangeListener {
+            addChangeListener { newValue ->
                 if (!isInitializing) {
-                    val fovValue = value * PI / 180
+                    val fovValue = newValue * PI / 180
                     renderer.setFov(fovValue)
                     isInitializing = true
-                    fovSpinner.value = fovValue // fovSpinner is initialized
+                    fovSpinner.value = fovValue
                     isInitializing = false
                     renderer.repaint()
                 }
             }
         }
 
-        sensitivitySlider = createStyledSlider(
-            (camera.accessRotationSpeed() * 10000).toInt(), 1, 100
+        // Create custom slider for sensitivity (1-100)
+        sensitivityTrack = CustomTrack(
+            1, 100, (camera.accessRotationSpeed() * 10000).toInt()
         ).apply {
-            // Listener referencing rotationSpeedSpinner is okay here
-            addChangeListener {
+            addChangeListener { newValue ->
                 if (!isInitializing) {
-                    val speedValue = value / 10000.0
+                    val speedValue = newValue / 10000.0
                     camera.changeRotationSpeed(speedValue)
                     isInitializing = true
-                    rotationSpeedSpinner.value = speedValue // rotationSpeedSpinner is initialized
+                    rotationSpeedSpinner.value = speedValue
                     isInitializing = false
                 }
             }
@@ -93,17 +189,17 @@ class MouseControlSettingsPanel(private val camera: Camera, private val renderer
 
         rotationSpeedSpinner.addChangeListener(createNumericChangeListener { value ->
             camera.changeRotationSpeed(value)
-            // Update the slider to match - NOW SAFE TO ACCESS sensitivitySlider
+            // Update the custom track to match
             isInitializing = true
-            sensitivitySlider.value = (value * 10000).toInt()
+            sensitivityTrack.value = (value * 10000).toInt()
             isInitializing = false
         })
 
         fovSpinner.addChangeListener(createNumericChangeListener { value ->
             renderer.setFov(value)
-            // Update the slider to match - NOW SAFE TO ACCESS fovSlider
+            // Update the custom track to match
             isInitializing = true
-            fovSlider.value = (value * 180 / PI).toInt()
+            fovTrack.value = (value * 180 / PI).toInt()
             isInitializing = false
             renderer.repaint()
         })
@@ -149,35 +245,6 @@ class MouseControlSettingsPanel(private val camera: Camera, private val renderer
                     foreground = TEXT_COLOR
                 }
             })
-        }
-    }
-
-    // Create styled JSlider
-    private fun createStyledSlider(value: Int, min: Int, max: Int): JSlider {
-        return JSlider(JSlider.HORIZONTAL, min, max, value).apply {
-            background = DARKER_BG_COLOR
-            foreground = TEXT_COLOR
-            paintTicks = true
-            paintLabels = true
-            majorTickSpacing = (max - min) / 4
-            minorTickSpacing = (max - min) / 20
-
-            // Style the labels and ticks
-            setUI(javax.swing.plaf.basic.BasicSliderUI(this))
-
-            // Create labeled hashmarks
-            val labelTable = Hashtable<Int, JLabel>()
-            for (i in min..max step majorTickSpacing) {
-                labelTable[i] = JLabel(i.toString()).apply {
-                    font = Font("Arial", Font.PLAIN, 10)
-                    foreground = SECONDARY_TEXT_COLOR
-                }
-            }
-            labelTable[max] = JLabel(max.toString()).apply {
-                font = Font("Arial", Font.PLAIN, 10)
-                foreground = SECONDARY_TEXT_COLOR
-            }
-            setLabelTable(labelTable)
         }
     }
 
@@ -270,8 +337,8 @@ class MouseControlSettingsPanel(private val camera: Camera, private val renderer
         }
     }
 
-    // Helper function to create a styled setting row with a slider
-    private fun createSliderRow(labelText: String, slider: JSlider): JPanel {
+    // Helper function to create a styled setting row with a custom track
+    private fun createTrackRow(labelText: String, track: CustomTrack): JPanel {
         return JPanel().apply {
             layout = GridBagLayout()
             background = DARKER_BG_COLOR
@@ -289,8 +356,8 @@ class MouseControlSettingsPanel(private val camera: Camera, private val renderer
                 insets = Insets(0, 0, 0, 0)
             }
 
-            // GridBag constraints for the slider - full width on new row
-            val sliderConstraints = GridBagConstraints().apply {
+            // GridBag constraints for the custom track - full width on new row
+            val trackConstraints = GridBagConstraints().apply {
                 gridx = 0
                 gridy = 1
                 weightx = 1.0
@@ -300,7 +367,7 @@ class MouseControlSettingsPanel(private val camera: Camera, private val renderer
             }
 
             add(label, labelConstraints)
-            add(slider, sliderConstraints)
+            add(track, trackConstraints)
 
             // Add subtle highlight effect on hover
             addMouseListener(object : MouseAdapter() {
@@ -461,7 +528,7 @@ class MouseControlSettingsPanel(private val camera: Camera, private val renderer
             add(createSettingRow("Mouse Speed:", rotationSpeedSpinner), rowGbc)
 
             rowGbc.gridy = 2
-            add(createSliderRow("Sensitivity:", sensitivitySlider), rowGbc)
+            add(createTrackRow("Sensitivity:", sensitivityTrack), rowGbc)
 
             rowGbc.gridy = 3
             add(JPanel().apply {
@@ -507,7 +574,7 @@ class MouseControlSettingsPanel(private val camera: Camera, private val renderer
             add(createSettingRow("FOV (radians):", fovSpinner), rowGbc)
 
             rowGbc.gridy = 2
-            add(createSliderRow("FOV (degrees):", fovSlider), rowGbc)
+            add(createTrackRow("FOV (degrees):", fovTrack), rowGbc)
 
             // Add FOV preview visualization
             rowGbc.gridy = 3
@@ -629,8 +696,8 @@ class MouseControlSettingsPanel(private val camera: Camera, private val renderer
 
         rotationSpeedSpinner.value = camera.accessRotationSpeed()
         fovSpinner.value = renderer.getFov()
-        sensitivitySlider.value = (camera.accessRotationSpeed() * 10000).toInt()
-        fovSlider.value = (renderer.getFov() * 180 / PI).toInt()
+        sensitivityTrack.value = (camera.accessRotationSpeed() * 10000).toInt()
+        fovTrack.value = (renderer.getFov() * 180 / PI).toInt()
         invertYAxisCheckbox.isSelected = camera.accessInvertY()
 
         isInitializing = false

@@ -45,11 +45,10 @@ fun main() {
 // fixing image sliding
 // optional border adding for single objects and not only all ones
 // add shader support
-// mouse control panel more responsive
 // add way to build the game
 
 // Object List:
-// Pillar, breakable walls and floors, PropObject, Doors, Triggers, Elevator, Light Sources, Items, 3D Object Support
+// breakable walls and floors, PropObject, Doors, Triggers, Elevator, Light Sources, Items, 3D Object Support
 
 // weapon system
 // render screen with sniper like view

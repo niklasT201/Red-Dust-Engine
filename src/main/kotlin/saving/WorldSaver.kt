@@ -5,6 +5,7 @@ import FloorObject
 import GridCell
 import ImageEntry
 import ObjectType
+import PillarObject
 import PlayerSpawnObject
 import WallObject
 import java.io.*
@@ -78,6 +79,9 @@ class WorldSaver {
                             }
                             is PlayerSpawnObject -> {
                                 // No additional properties for player spawn
+                            }
+                            is PillarObject -> {
+
                             }
                         }
                     }

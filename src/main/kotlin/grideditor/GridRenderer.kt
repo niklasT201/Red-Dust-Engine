@@ -1,6 +1,7 @@
 package grideditor
 
 import FloorObject
+import PillarObject
 import PlayerSpawnObject
 import WallObject
 import java.awt.*
@@ -43,6 +44,7 @@ class GridRenderer(private val editor: GridEditor) {
                 val wallObject = floorObjects?.firstOrNull { it.type == ObjectType.WALL } as? WallObject
                 val floorObject = floorObjects?.firstOrNull { it.type == ObjectType.FLOOR } as? FloorObject
                 val playerSpawnObject = floorObjects?.firstOrNull { it.type == ObjectType.PLAYER_SPAWN } as? PlayerSpawnObject
+                val pillarObject = floorObjects?.firstOrNull { it.type == ObjectType.PILLAR } as? PillarObject
 
                 // Draw floor or background
                 if (floorObject != null) {
@@ -182,6 +184,38 @@ class GridRenderer(private val editor: GridEditor) {
                     }
                 }
 
+                if (pillarObject != null) {
+                    val insetRatio = 0.15 // Make it visually smaller than a full block wall cell
+                    val insetPixels = (editor.cellSize * insetRatio).toInt()
+                    val pillarScreenX = screenX + insetPixels
+                    val pillarScreenY = screenY + insetPixels
+                    val pillarScreenSize = (editor.cellSize - 2 * insetPixels).toInt().coerceAtLeast(1) // Ensure size > 0
+
+                    if (pillarObject.texture != null) {
+                        val texture = pillarObject.texture.image // Use original image or scaled if needed
+                        g2.drawImage(texture, pillarScreenX, pillarScreenY, pillarScreenSize, pillarScreenSize, null)
+                    } else {
+                        g2.color = pillarObject.color
+                        g2.fillRect(pillarScreenX, pillarScreenY, pillarScreenSize, pillarScreenSize)
+                    }
+
+                    g2.color = Color.DARK_GRAY // Border color
+                    g2.stroke = BasicStroke(1f)
+                    g2.drawRect(pillarScreenX, pillarScreenY, pillarScreenSize, pillarScreenSize)
+
+                    // Optional: Draw 'P' symbol
+                    g2.color = Color.WHITE
+                    val fontSize = (pillarScreenSize * 0.6).toInt().coerceAtLeast(8)
+                    g2.font = Font("Monospace", Font.BOLD, fontSize)
+                    val metrics = g2.fontMetrics
+                    val letter = "P"
+                    val letterX = pillarScreenX + (pillarScreenSize - metrics.stringWidth(letter)) / 2
+                    val letterY = pillarScreenY + (pillarScreenSize - metrics.ascent + metrics.descent) / 2 + metrics.ascent
+                    g2.drawString(letter, letterX, letterY)
+
+                    g2.stroke = BasicStroke(1f) // Reset stroke
+                }
+
                 // Draw grid lines
                 g2.color = Color(60, 63, 65)
                 g2.stroke = BasicStroke(1f) // Reset stroke to default
@@ -235,6 +269,7 @@ class GridRenderer(private val editor: GridEditor) {
             val textureName = when(editor.currentObjectType) {
                 ObjectType.WALL -> editor.currentWallTexture?.name ?: "None"
                 ObjectType.FLOOR -> editor.currentFloorTexture?.name ?: "None"
+                ObjectType.PILLAR -> editor.currentWallTexture?.name ?: "None"
                 else -> "None"
             }
             g2.drawString(
