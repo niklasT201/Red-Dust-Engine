@@ -227,7 +227,7 @@ class GridRenderer(private val editor: GridEditor) {
                         g2.color = waterObject.color
                         g2.fillRect(screenX, screenY, editor.cellSize.toInt(), editor.cellSize.toInt())
                     }
-                    // Optional: Draw a subtle wave pattern or indicator 'W'
+                    // Optional: Draw a subtle wave pattern
                     g2.color = Color.WHITE // Example: Draw 'W'
                     val fontSize = (editor.cellSize * 0.4).toInt().coerceAtLeast(8)
                     g2.font = Font("Monospace", Font.PLAIN, fontSize)

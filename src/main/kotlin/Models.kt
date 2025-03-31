@@ -40,14 +40,23 @@ data class WallCoords(
 data class GridCell(
     val objectsByFloor: MutableMap<Int, MutableList<GameObject>> = mutableMapOf()
 ) {
+    // List of surface types that should replace each other
+    private val surfaceTypes = setOf(ObjectType.FLOOR, ObjectType.WATER)
+
     fun getObjectsForFloor(floor: Int): MutableList<GameObject> {
         return objectsByFloor.getOrPut(floor) { mutableListOf() }
     }
 
     fun addObject(floor: Int, obj: GameObject) {
         val floorObjects = getObjectsForFloor(floor)
-        // Only remove existing object of same type if it's on the same floor
+
+        // Always remove existing object of same type
         floorObjects.removeIf { it.type == obj.type }
+
+        // If this is a surface type, also remove other surface types
+        if (surfaceTypes.contains(obj.type)) {
+            floorObjects.removeIf { surfaceTypes.contains(it.type) }
+        }
         floorObjects.add(obj)
     }
 
