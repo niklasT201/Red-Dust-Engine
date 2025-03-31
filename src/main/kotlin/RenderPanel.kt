@@ -1,3 +1,4 @@
+import player.GameUI
 import ui.components.CrosshairShape
 import java.awt.*
 import javax.swing.JPanel
@@ -19,6 +20,10 @@ class RenderPanel(
     private var isFpsCounterVisible = true
     private var isDirectionVisible = true
     private var isPositionVisible = true
+
+    // Add the GameUI component
+    private val gameUI = GameUI()
+    private var isGameUIVisible = true
 
     init {
         preferredSize = Dimension(800, 600)
@@ -87,6 +92,11 @@ class RenderPanel(
             if (isPositionVisible) {
                 g2.drawString("Position: (${String.format("%.1f", player.position.x)}, ${String.format("%.1f", player.position.y)}, ${String.format("%.1f", player.position.z)})", 10, currentY)
             }
+
+            // Draw game UI if it's visible
+            if (isGameUIVisible) {
+                gameUI.render(g2, width, height)
+            }
         }
     }
 
@@ -138,6 +148,13 @@ class RenderPanel(
 
     fun setFpsCounterVisible(visible: Boolean) {
         isFpsCounterVisible = visible
+        repaint()
+    }
+
+    fun isGameUIVisible(): Boolean = isGameUIVisible
+
+    fun setGameUIVisible(visible: Boolean) {
+        isGameUIVisible = visible
         repaint()
     }
 }
