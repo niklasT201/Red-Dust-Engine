@@ -102,22 +102,33 @@ class GameUI {
         drawDoomStylePanel(g2, healthPanelX, panelY, panelWidth, panelHeight)
 
         // Face panel in center with proper padding to avoid collision
-        val facePanelWidth = faceSize + 28
-        val facePanelX = width / 2 - facePanelWidth / 2
+        val facePanelWidth = 150
+        val facePanelX = width / 2 - facePanelWidth / 2 // Center the wider panel
         drawDoomStylePanel(g2, facePanelX, panelY, facePanelWidth, panelHeight)
 
-        // Right panel for AMMO
-        val ammoPanelX = width - panelWidth - 15
-        drawDoomStylePanel(g2, ammoPanelX, panelY, panelWidth, panelHeight)
+        val statsX = facePanelX + 10 // Padding from left edge of face panel
+        val statsY = panelY + 18     // Near top of panel
+        g2.font = labelFont
+        g2.color = statusBarTextColor
+        g2.drawString("K: 14/45", statsX, statsY)
+        g2.drawString("I: 3/12", statsX, statsY + 16) // Position below K
+        g2.drawString("S: 1/5", statsX, statsY + 32) // Position below I
 
         // Draw the face in its container
         if (faceFront != null) {
-            val faceX = width / 2 - faceSize / 2
-            val faceY = panelY + (panelHeight - faceSize) / 2
+            // Calculate X position relative to panel, leaving space for stats on the left
+            val faceX = facePanelX + facePanelWidth - faceSize - 10 // Align to right within panel, with padding
+            val faceY = panelY + (panelHeight - faceSize) / 2 // Vertically center face in panel
             g2.drawImage(faceFront, faceX, faceY, null)
         }
 
-        // Draw HEALTH section with bar
+        val armorY = statsY + 32 + 18 // Position below S stat, with some spacing
+        g2.drawString("ARMOR 75%", statsX, armorY)
+
+        // Right panel for AMMO
+        val ammoPanelX = width - panelWidth - 15 // Position remains the same relative to screen edge
+        drawDoomStylePanel(g2, ammoPanelX, panelY, panelWidth, panelHeight)
+
         drawStatusWithBar(g2, "HEALTH", "100", healthColor, healthPanelX + 10,
             panelY + 20, panelWidth - 20, 36)
 
@@ -127,18 +138,6 @@ class GameUI {
 
         // Draw weapon selector with number (Doom style weapon selector)
         drawWeaponSelector(g2, 2, width - 80, panelY)
-
-        // Draw armor indicator below face
-        g2.font = labelFont
-        g2.color = statusBarTextColor
-        g2.drawString("ARMOR 75%", width/2 - 35, height - 15)
-
-        // Draw additional game stats above the face - classic stats like kills, items, secrets
-        val statsY = panelY + 18
-        g2.font = labelFont
-        g2.drawString("K: 14/45", facePanelX + 6, statsY)
-        g2.drawString("I: 3/12", facePanelX + 6, statsY + 16)
-        g2.drawString("S: 1/5", facePanelX + 6, statsY + 32)
 
         // Restore original settings
         g2.stroke = originalStroke
