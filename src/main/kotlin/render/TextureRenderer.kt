@@ -160,6 +160,29 @@ object TextureRenderer {
         return triangles
     }
 
+    fun drawWaterPolygon(
+        g2: Graphics2D,
+        polygon: Polygon,
+        texture: ImageEntry,
+        textureCoords: List<Pair<Double, Double>>,
+        screenPoints: List<Pair<Int, Int>>,
+        shadowFactor: Double,
+        isPlayerColliding: Boolean
+    ) {
+        // Store original composite
+        val originalComposite = g2.composite
+
+        // Set transparency level based on whether player is colliding with water
+        val alpha = if (isPlayerColliding) 0.6f else 0.8f
+        g2.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha)
+
+        // Draw the textured polygon with water effect
+        drawTexturedPolygon(g2, polygon, texture, textureCoords, screenPoints, shadowFactor)
+
+        // Restore original composite
+        g2.composite = originalComposite
+    }
+
     // Improved perspective transform calculation
     private fun perspectiveTransform(src: Array<Point2D.Double>, dst: Array<Point2D.Double>): DoubleArray {
         // Use a more robust algorithm for perspective transform

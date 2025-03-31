@@ -3,6 +3,7 @@ package render
 import Floor
 import ImageEntry
 import Wall
+import WaterSurface
 import java.awt.Color
 
 // Combined class to store rendering info for both walls and floors
@@ -29,6 +30,17 @@ sealed class RenderableObject {
         override val texture: ImageEntry?,
         override val textureCoords: List<Pair<Double, Double>>,
         val floor: Floor,
-        val viewingFromBelow: Boolean  // Flag for tracking view direction
+        val viewingFromBelow: Boolean
+    ) : RenderableObject()
+
+    data class WaterInfo(
+        override val distance: Double,
+        override val screenPoints: List<Pair<Int, Int>>,
+        override val color: Color,
+        override val texture: ImageEntry?,
+        override val textureCoords: List<Pair<Double, Double>>,
+        val water: WaterSurface,
+        val viewingFromBelow: Boolean,
+        val isPlayerColliding: Boolean
     ) : RenderableObject()
 }

@@ -7,6 +7,7 @@ import PillarObject
 import PlayerSpawnObject
 import RemoveObjectCommand
 import WallObject
+import WaterObject
 import controls.KeyBindings
 import java.awt.Color
 import java.awt.event.*
@@ -150,6 +151,7 @@ class GridInputHandler(private val editor: GridEditor) {
         windowInputMap.put(KeyStroke.getKeyStroke(KeyBindings.WALL_SHORTCUT, 0), "select_wall")
         windowInputMap.put(KeyStroke.getKeyStroke(KeyBindings.FLOOR_SHORTCUT, 0), "select_floor")
         windowInputMap.put(KeyStroke.getKeyStroke(KeyBindings.PILLAR_SHORTCUT, 0), "select_pillar")
+        windowInputMap.put(KeyStroke.getKeyStroke(KeyBindings.WATER_SHORTCUT, 0), "select_water")
         windowInputMap.put(KeyStroke.getKeyStroke(KeyBindings.PLAYER_SPAWN_SHORTCUT, 0), "select_player_spawn")
 
         val undoKeystroke = KeyStroke.getKeyStroke(KeyBindings.UNDO, KeyEvent.CTRL_DOWN_MASK)
@@ -198,6 +200,11 @@ class GridInputHandler(private val editor: GridEditor) {
         editor.actionMap.put("select_pillar", object : AbstractAction() {
             override fun actionPerformed(e: ActionEvent) {
                 editor.setObjectType(ObjectType.PILLAR)
+            }
+        })
+        editor.actionMap.put("select_water", object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent) {
+                editor.setObjectType(ObjectType.WATER)
             }
         })
         editor.actionMap.put("select_player_spawn", object : AbstractAction() {
@@ -332,6 +339,15 @@ class GridInputHandler(private val editor: GridEditor) {
                         width = editor.currentPillarWidth,
                         floorHeight = editor.currentFloorHeight,
                         texture = editor.currentWallTexture
+                    )
+                    ObjectType.WATER -> WaterObject(
+                        color = Color(0, 105, 148, 180),
+                        floorHeight = editor.currentFloorHeight,
+                        depth = 1.0,
+                        waveHeight = 0.1,
+                        waveSpeed = 1.0,
+                        damagePerSecond = 0.0,
+                        texture = null
                     )
                     ObjectType.PROP -> null
                 }

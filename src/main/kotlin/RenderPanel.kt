@@ -7,7 +7,8 @@ class RenderPanel(
     private val renderer: Renderer,
     private val player: player.Player,
     private val walls: List<Wall>,
-    private val floors: List<Floor>
+    private val floors: List<Floor>,
+    private val waters: List<WaterSurface>
 ) : JPanel() {
 
     // Properties moved from Game3D
@@ -34,7 +35,7 @@ class RenderPanel(
         val currentSkyRenderer = game3D.getSkyRenderer()
         currentSkyRenderer.render(g2, width, height)
 
-        renderer.drawScene(g2, walls, floors, player.camera)
+        renderer.drawScene(g2, walls, floors, waters, player.camera)
 
         if (!game3D.isEditorMode) {
             // Draw crosshair only if it's visible

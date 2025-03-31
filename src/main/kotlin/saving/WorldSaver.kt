@@ -8,6 +8,7 @@ import ObjectType
 import PillarObject
 import PlayerSpawnObject
 import WallObject
+import WaterObject
 import java.io.*
 import java.awt.Color
 import grideditor.GridEditor
@@ -81,6 +82,9 @@ class WorldSaver {
                                 // No additional properties for player spawn
                             }
                             is PillarObject -> {
+
+                            }
+                            is WaterObject -> {
 
                             }
                         }

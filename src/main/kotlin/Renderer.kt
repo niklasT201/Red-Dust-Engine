@@ -1,8 +1,5 @@
 import player.Camera
-import render.FloorProcessor
-import render.RenderableObject
-import render.TextureRenderer
-import render.WallProcessor
+import render.*
 import java.awt.*
 import kotlin.math.*
 
@@ -68,7 +65,8 @@ class Renderer(
     }
 
     // Main scene drawing method
-    fun drawScene(g2: Graphics2D, walls: List<Wall>, floors: List<Floor>, camera: Camera) {
+    // Main scene drawing method
+    fun drawScene(g2: Graphics2D, walls: List<Wall>, floors: List<Floor>, waters: List<WaterSurface>, camera: Camera) {
         val renderQueue = mutableListOf<RenderableObject>()
 
         // Process floors
@@ -79,6 +77,11 @@ class Renderer(
         // Process walls
         for (wall in walls) {
             processWall(wall, camera, renderQueue)
+        }
+
+        // Process water surfaces
+        for (water in waters) {
+            processWater(water, camera, renderQueue)
         }
 
         // Filter objects based on render distance (only if enabled)
@@ -135,24 +138,60 @@ class Renderer(
                 g2.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, visibilityFactor.toFloat())
             }
 
-            // Check if we have a texture for this object
-            if (renderable.texture != null) {
-                // Draw textured polygon with shadow factor
-                TextureRenderer.drawTexturedPolygon(
-                    g2, polygon, renderable.texture!!,
-                    renderable.textureCoords, renderable.screenPoints,
-                    shadowFactor
-                )
-            } else {
-                // For solid colors, apply shadow directly to the color
-                val shadedColor = if (enableShadows) {
-                    applyShadowToColor(renderable.color, shadowFactor)
-                } else {
-                    renderable.color
-                }
+            // Handle different renderable types
+            when (renderable) {
+                is RenderableObject.WaterInfo -> {
+                    // Special handling for water surfaces
+                    if (renderable.texture != null) {
+                        // Draw textured water with special water effect
+                        TextureRenderer.drawWaterPolygon(
+                            g2, polygon, renderable.texture!!,
+                            renderable.textureCoords, renderable.screenPoints,
+                            shadowFactor, renderable.isPlayerColliding
+                        )
+                    } else {
+                        // For solid colors, apply shadow and transparency
+                        val shadedColor = if (enableShadows) {
+                            applyShadowToColor(renderable.color, shadowFactor)
+                        } else {
+                            renderable.color
+                        }
 
-                g2.color = shadedColor
-                g2.fill(polygon)
+                        // Store original composite for restoration
+                        val waterComposite = g2.composite
+
+                        // Make water semi-transparent
+                        val alpha = if (renderable.isPlayerColliding) 0.6f else 0.8f
+                        g2.composite = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha)
+
+                        g2.color = shadedColor
+                        g2.fill(polygon)
+
+                        // Restore composite
+                        g2.composite = waterComposite
+                    }
+                }
+                else -> {
+                    // Check if we have a texture for this object (wall/floor)
+                    if (renderable.texture != null) {
+                        // Draw textured polygon with shadow factor
+                        TextureRenderer.drawTexturedPolygon(
+                            g2, polygon, renderable.texture!!,
+                            renderable.textureCoords, renderable.screenPoints,
+                            shadowFactor
+                        )
+                    } else {
+                        // For solid colors, apply shadow directly to the color
+                        val shadedColor = if (enableShadows) {
+                            applyShadowToColor(renderable.color, shadowFactor)
+                        } else {
+                            renderable.color
+                        }
+
+                        g2.color = shadedColor
+                        g2.fill(polygon)
+                    }
+                }
             }
 
             // Draw the border if enabled
@@ -228,6 +267,12 @@ class Renderer(
     private fun processWall(wall: Wall, camera: Camera, renderQueue: MutableList<RenderableObject>) {
         val wallProcessor = WallProcessor(nearPlane, width, height, scale)
         wallProcessor.processWall(wall, camera, renderQueue)
+    }
+
+    // Process a water surface for rendering
+    private fun processWater(water: WaterSurface, camera: Camera, renderQueue: MutableList<RenderableObject>) {
+        val waterProcessor = WaterProcessor(nearPlane, width, height, scale)
+        waterProcessor.processWater(water, camera, renderQueue)
     }
 
     fun repaint() {

@@ -11,6 +11,7 @@ import WallObject
 import texturemanager.ResourceManager
 import texturemanager.TextureManagerPanel
 import ImageEntry
+import WaterSurface
 import java.awt.*
 import javax.swing.*
 
@@ -266,6 +267,10 @@ class GridEditor : JPanel() {
 
     fun generatePillars(): List<Wall> {
         return converter.generatePillars()
+    }
+
+    fun generateWater(): List<WaterSurface> {
+        return converter.generateWaters()
     }
 
     fun updateLabelVisibility(labelType: String, isVisible: Boolean) {

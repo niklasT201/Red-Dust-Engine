@@ -83,6 +83,7 @@ enum class ObjectType {
     FLOOR,
     WALL,
     PILLAR,
+    WATER,
     PROP, // For future use with other objects
     PLAYER_SPAWN  // New object type for player spawn
 }
@@ -131,4 +132,19 @@ data class PillarObject(
     val floorHeight: Double
 ) : GameObject() {
     override val type = ObjectType.PILLAR
+}
+
+data class WaterObject(
+    override val color: Color = Color(0, 105, 148, 200), // Semi-transparent blue by default
+    val floorHeight: Double,
+    val depth: Double = 2.0,
+    val waveHeight: Double = 0.1,
+    val waveSpeed: Double = 1.0,
+    val damagePerSecond: Double = 0.0, // Optional damage effect
+    override val texture: ImageEntry? = null
+) : GameObject() {
+    override val type = ObjectType.WATER // Add WATER to your ObjectType enum
+    override val height = 0.0
+    override val width = 2.0
+    override val direction = Direction.NORTH
 }

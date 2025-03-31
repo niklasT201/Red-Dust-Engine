@@ -4,6 +4,7 @@ import FloorObject
 import PillarObject
 import PlayerSpawnObject
 import WallObject
+import WaterObject
 import java.awt.*
 import kotlin.math.cos
 import kotlin.math.floor
@@ -45,6 +46,7 @@ class GridRenderer(private val editor: GridEditor) {
                 val floorObject = floorObjects?.firstOrNull { it.type == ObjectType.FLOOR } as? FloorObject
                 val playerSpawnObject = floorObjects?.firstOrNull { it.type == ObjectType.PLAYER_SPAWN } as? PlayerSpawnObject
                 val pillarObject = floorObjects?.firstOrNull { it.type == ObjectType.PILLAR } as? PillarObject
+                val waterObject = floorObjects?.firstOrNull { it.type == ObjectType.WATER } as? WaterObject
 
                 // Draw floor or background
                 if (floorObject != null) {
@@ -214,6 +216,28 @@ class GridRenderer(private val editor: GridEditor) {
                     g2.drawString(letter, letterX, letterY)
 
                     g2.stroke = BasicStroke(1f) // Reset stroke
+                }
+
+                if (waterObject != null) {
+                    if (waterObject.texture != null) {
+                        // Draw water texture (similar to floor)
+                        val texture = waterObject.texture.image
+                        g2.drawImage(texture, screenX, screenY, editor.cellSize.toInt(), editor.cellSize.toInt(), null)
+                    } else {
+                        g2.color = waterObject.color
+                        g2.fillRect(screenX, screenY, editor.cellSize.toInt(), editor.cellSize.toInt())
+                    }
+                    // Optional: Draw a subtle wave pattern or indicator 'W'
+                    g2.color = Color.WHITE // Example: Draw 'W'
+                    val fontSize = (editor.cellSize * 0.4).toInt().coerceAtLeast(8)
+                    g2.font = Font("Monospace", Font.PLAIN, fontSize)
+                    val metrics = g2.fontMetrics
+                    val letter = "~" // Use '~' or 'W'
+                    val letterX = screenX + (editor.cellSize - metrics.stringWidth(letter)) / 2
+                    val letterY = screenY + (editor.cellSize - metrics.ascent + metrics.descent) / 2 + metrics.ascent
+                    g2.drawString(letter, letterX.toInt(), letterY.toInt())
+
+                    g2.font = Font("Monospace", Font.BOLD, 12) // Reset font if needed elsewhere
                 }
 
                 // Draw grid lines

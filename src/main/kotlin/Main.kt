@@ -46,6 +46,7 @@ fun main() {
 // optional border adding for single objects and not only all ones
 // add shader support
 // add way to build the game
+// saving Water, Pillar and player
 
 // Object List:
 // breakable walls and floors, PropObject, Doors, Triggers, Elevator, Light Sources, Items, 3D Object Support

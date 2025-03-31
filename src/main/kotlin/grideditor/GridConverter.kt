@@ -7,6 +7,8 @@ import Vec3
 import Wall
 import WallCoords
 import WallObject
+import WaterObject
+import WaterSurface
 
 class GridConverter(private val editor: GridEditor) {
 
@@ -234,5 +236,44 @@ class GridConverter(private val editor: GridEditor) {
         }
 
         return pillarWalls
+    }
+
+    fun generateWaters(): List<WaterSurface> {
+        val waters = mutableListOf<WaterSurface>()
+
+        editor.grid.forEach { (pos, cell) ->
+            // Get all floors that have water objects in this cell
+            val floorsWithWater = cell.objectsByFloor.filterValues { objects ->
+                objects.any { it.type == ObjectType.WATER }
+            }.keys.sorted()
+
+            floorsWithWater.forEach { floorNum ->
+                cell.objectsByFloor[floorNum]?.filterIsInstance<WaterObject>()?.forEach { obj ->
+                    val (x, y) = pos
+                    val gameX = -x * editor.baseScale
+                    val gameZ = y * editor.baseScale
+
+                    // Calculate Y position based on floor number
+                    val yPosition = floorNum * editor.floorHeight
+
+                    waters.add(
+                        WaterSurface(
+                            x1 = gameX,
+                            z1 = gameZ,
+                            x2 = gameX + editor.baseScale,
+                            z2 = gameZ + editor.baseScale,
+                            y = yPosition,
+                            depth = obj.depth,
+                            waveHeight = obj.waveHeight,
+                            waveSpeed = obj.waveSpeed,
+                            damagePerSecond = obj.damagePerSecond,
+                            color = obj.color,
+                            texture = obj.texture
+                        )
+                    )
+                }
+            }
+        }
+        return waters
     }
 }
