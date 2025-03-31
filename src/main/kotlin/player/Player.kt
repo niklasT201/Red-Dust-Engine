@@ -3,6 +3,7 @@ package player
 import Vec3
 import Wall
 import Floor
+import Ramp
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -68,7 +69,7 @@ class Player(
     }
 
     // Movement and collision
-    fun move(forward: Double, right: Double, up: Double, walls: List<Wall>, floors: List<Floor>) {
+    fun move(forward: Double, right: Double, up: Double, walls: List<Wall>, floors: List<Floor>, ramps: List<Ramp>) {
         // Calculate movement based on camera direction
         val forwardX = -sin(camera.yaw)
         val forwardZ = cos(camera.yaw)
@@ -95,50 +96,63 @@ class Player(
         val canMove = checkWallCollision(newX, newZ, walls)
 
         // Apply horizontal movement with wall collision detection
-        if (canMove.first) {
-            camera.position.x = newX
-        }
-        if (canMove.second) {
-            camera.position.z = newZ
-        }
+        val finalX = if (canMove.first) newX else camera.position.x
+        val finalZ = if (canMove.second) newZ else camera.position.z
 
         // Get player's feet position (camera is at eye level)
         val currentFeetY = camera.position.y - playerHeight
         val newFeetY = newY - playerHeight
 
-        // Check if moving up through a floor
-        if (up > 0) {
-            // When moving up, check if head will hit a ceiling
-            val headCollision = checkCeilingCollision(camera.position.x, newY + headClearance, camera.position.z, floors)
-            if (headCollision.first) {
-                // Hit ceiling, stop at collision point minus head clearance
-                camera.position.y = headCollision.second - headClearance
-            } else {
-                // No ceiling collision, move freely upward
-                camera.position.y = newY
-            }
+        // Check for ramp collision at the new position
+        val rampCollision = checkRampCollision(finalX, newFeetY, finalZ, ramps)
+
+        // If on a ramp, adjust player height
+        if (rampCollision.first) {
+            // Set player's feet exactly on the ramp
+            camera.position.y = rampCollision.second + playerHeight
+            // Reset vertical velocity to allow smooth movement on ramp
+            verticalVelocity = 0.0
         }
-        // Check if moving down onto or through a floor
-        else if (up < 0 || gravityEnabled) {
-            // When moving down, check if feet will hit a floor
-            val floorCollision = checkFloorCollision(camera.position.x, newFeetY, camera.position.z, floors)
-            if (floorCollision.first) {
-                // Hit floor, place feet exactly on floor
-                camera.position.y = floorCollision.second + playerHeight
-                verticalVelocity = 0.0
-            } else {
-                // No floor collision, move freely downward
-                camera.position.y = newY
-            }
-        }
-        // Not moving vertically, still check if we're standing on a floor
+        // Not on a ramp, check for floor collisions
         else {
-            // Check if standing on floor (a tiny bit below feet to account for precision)
-            val standingCheck = checkFloorCollision(camera.position.x, currentFeetY - 0.01, camera.position.z, floors)
-            if (standingCheck.first && standingCheck.second - currentFeetY < 0.2) {
-                camera.position.y = standingCheck.second + playerHeight
+            // Check if moving up through a floor
+            if (up > 0) {
+                // When moving up, check if head will hit a ceiling
+                val headCollision = checkCeilingCollision(finalX, newY + headClearance, finalZ, floors)
+                if (headCollision.first) {
+                    // Hit ceiling, stop at collision point minus head clearance
+                    camera.position.y = headCollision.second - headClearance
+                } else {
+                    // No ceiling collision, move freely upward
+                    camera.position.y = newY
+                }
+            }
+            // Check if moving down onto or through a floor
+            else if (up < 0 || gravityEnabled) {
+                // When moving down, check if feet will hit a floor
+                val floorCollision = checkFloorCollision(finalX, newFeetY, finalZ, floors)
+                if (floorCollision.first) {
+                    // Hit floor, place feet exactly on floor
+                    camera.position.y = floorCollision.second + playerHeight
+                    verticalVelocity = 0.0
+                } else {
+                    // No floor collision, move freely downward
+                    camera.position.y = newY
+                }
+            }
+            // Not moving vertically, still check if we're standing on a floor
+            else {
+                // Check if standing on floor (a tiny bit below feet to account for precision)
+                val standingCheck = checkFloorCollision(finalX, currentFeetY - 0.01, finalZ, floors)
+                if (standingCheck.first && standingCheck.second - currentFeetY < 0.2) {
+                    camera.position.y = standingCheck.second + playerHeight
+                }
             }
         }
+
+        // Finally, update x and z position
+        camera.position.x = finalX
+        camera.position.z = finalZ
     }
 
     private fun checkWallCollision(newX: Double, newZ: Double, walls: List<Wall>): Pair<Boolean, Boolean> {
@@ -232,5 +246,62 @@ class Player(
         camera.position.x = x
         camera.position.z = y
         camera.position.y = playerHeight + floorHeight // Eye level above floor
+    }
+
+    private fun checkRampCollision(x: Double, y: Double, z: Double, ramps: List<Ramp>): Pair<Boolean, Double> {
+        var isOnRamp = false
+        var rampHeightAtPosition = Double.NEGATIVE_INFINITY
+
+        for (ramp in ramps) {
+            // Check if player is within the ramp's horizontal boundaries
+            if (x >= minOf(ramp.corner1.x, ramp.corner2.x, ramp.corner3.x, ramp.corner4.x) - playerRadius &&
+                x <= maxOf(ramp.corner1.x, ramp.corner2.x, ramp.corner3.x, ramp.corner4.x) + playerRadius &&
+                z >= minOf(ramp.corner1.z, ramp.corner2.z, ramp.corner3.z, ramp.corner4.z) - playerRadius &&
+                z <= maxOf(ramp.corner1.z, ramp.corner2.z, ramp.corner3.z, ramp.corner4.z) + playerRadius) {
+
+                // Calculate where on the ramp the player is
+                val heightAtPosition = calculateHeightOnRamp(x, z, ramp)
+
+                // Check if player's feet are at or below the ramp height
+                if (y <= heightAtPosition && heightAtPosition > rampHeightAtPosition) {
+                    rampHeightAtPosition = heightAtPosition
+                    isOnRamp = true
+                }
+            }
+        }
+
+        return Pair(isOnRamp, rampHeightAtPosition)
+    }
+
+    // Helper function to calculate the height of a point on the ramp
+    private fun calculateHeightOnRamp(x: Double, z: Double, ramp: Ramp): Double {
+        // First, determine which way the ramp slopes:
+        // Find the lowest and highest corners
+        val corners = listOf(ramp.corner1, ramp.corner2, ramp.corner3, ramp.corner4)
+        val minX = corners.minOf { it.x }
+        val maxX = corners.maxOf { it.x }
+        val minZ = corners.minOf { it.z }
+        val maxZ = corners.maxOf { it.z }
+
+        // Clamp the player's position to the ramp's boundaries
+        val clampedX = x.coerceIn(minX, maxX)
+        val clampedZ = z.coerceIn(minZ, maxZ)
+
+        // Calculate normalized position on the ramp (0.0 to 1.0 in both directions)
+        val normalizedX = if (maxX > minX) (clampedX - minX) / (maxX - minX) else 0.0
+        val normalizedZ = if (maxZ > minZ) (clampedZ - minZ) / (maxZ - minZ) else 0.0
+
+        // Find heights at the four corners
+        val y00 = corners.find { it.x == minX && it.z == minZ }?.y ?: corners[0].y
+        val y10 = corners.find { it.x == maxX && it.z == minZ }?.y ?: corners[1].y
+        val y11 = corners.find { it.x == maxX && it.z == maxZ }?.y ?: corners[2].y
+        val y01 = corners.find { it.x == minX && it.z == maxZ }?.y ?: corners[3].y
+
+        // Bilinear interpolation of height
+        val top = y00 * (1 - normalizedX) + y10 * normalizedX
+        val bottom = y01 * (1 - normalizedX) + y11 * normalizedX
+        val height = top * (1 - normalizedZ) + bottom * normalizedZ
+
+        return height
     }
 }

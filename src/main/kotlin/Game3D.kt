@@ -352,7 +352,7 @@ class Game3D : JPanel() {
             }
 
             // Move player with collected input and pass floors list
-            player.move(forward, right, up, walls, floors)
+            player.move(forward, right, up, walls, floors, ramps)
 
             // Check if the renderPanel still has the blank cursor
             if (renderPanel.cursor != blankCursor) {
