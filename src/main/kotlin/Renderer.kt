@@ -65,8 +65,7 @@ class Renderer(
     }
 
     // Main scene drawing method
-    // Main scene drawing method
-    fun drawScene(g2: Graphics2D, walls: List<Wall>, floors: List<Floor>, waters: List<WaterSurface>, camera: Camera) {
+    fun drawScene(g2: Graphics2D, walls: List<Wall>, floors: List<Floor>, waters: List<WaterSurface>, ramps: List<Ramp>, camera: Camera) {
         val renderQueue = mutableListOf<RenderableObject>()
 
         // Process floors
@@ -82,6 +81,10 @@ class Renderer(
         // Process water surfaces
         for (water in waters) {
             processWater(water, camera, renderQueue)
+        }
+
+        for (ramp in ramps) {
+            processRamp(ramp, camera, renderQueue)
         }
 
         // Filter objects based on render distance (only if enabled)
@@ -273,6 +276,11 @@ class Renderer(
     private fun processWater(water: WaterSurface, camera: Camera, renderQueue: MutableList<RenderableObject>) {
         val waterProcessor = WaterProcessor(nearPlane, width, height, scale)
         waterProcessor.processWater(water, camera, renderQueue)
+    }
+
+    private fun processRamp (ramp: Ramp, camera: Camera, renderQueue: MutableList<RenderableObject>) {
+        val rampProcessor = RampProcessor(nearPlane, width, height, scale)
+        rampProcessor.processRamp(ramp,camera, renderQueue)
     }
 
     fun repaint() {

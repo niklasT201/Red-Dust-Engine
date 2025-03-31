@@ -5,6 +5,7 @@ data class Vec3(var x: Double, var y: Double, var z: Double)
 data class Wall(val start: Vec3, val end: Vec3, val height: Double, val color: Color, val texture: ImageEntry? = null,  val textureMapping: TextureMapping = TextureMapping())
 data class Floor(val x1: Double, val z1: Double, val x2: Double, val z2: Double, val y: Double, val color: Color, val texture: ImageEntry? = null,  val textureMapping: TextureMapping = TextureMapping())
 data class WaterSurface(val x1: Double, val z1: Double, val x2: Double, val z2: Double, val y: Double, val depth: Double, val waveHeight: Double, val waveSpeed: Double, val damagePerSecond: Double, val color: Color, val texture: ImageEntry? = null, val textureMapping: TextureMapping = TextureMapping())
+data class Ramp(val corner1: Vec3, val corner2: Vec3, val corner3: Vec3, val corner4: Vec3, val color: Color, val texture: ImageEntry? = null, val textureMapping: TextureMapping = TextureMapping())
 
 data class TextureMapping(
     val scale: Double = 1.0,
@@ -93,6 +94,7 @@ enum class ObjectType {
     WALL,
     PILLAR,
     WATER,
+    RAMP,
     PROP, // For future use with other objects
     PLAYER_SPAWN  // New object type for player spawn
 }
@@ -152,8 +154,21 @@ data class WaterObject(
     val damagePerSecond: Double = 0.0, // Optional damage effect
     override val texture: ImageEntry? = null
 ) : GameObject() {
-    override val type = ObjectType.WATER // Add WATER to your ObjectType enum
+    override val type = ObjectType.WATER
     override val height = 0.0
     override val width = 2.0
     override val direction = Direction.NORTH
+}
+
+data class RampObject(
+    override val color: Color,
+    val floorHeight: Double,
+    val rampHeight: Double,
+    val slopeDirection: Direction,
+    override val texture: ImageEntry? = null
+) : GameObject() {
+    override val type = ObjectType.RAMP
+    override val height = rampHeight
+    override val width = 2.0
+    override val direction = slopeDirection
 }

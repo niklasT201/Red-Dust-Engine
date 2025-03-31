@@ -283,7 +283,8 @@ object KeyBindings {
     const val FLOOR_SHORTCUT = KeyEvent.VK_2
     const val PILLAR_SHORTCUT = KeyEvent.VK_3
     const val WATER_SHORTCUT = KeyEvent.VK_4
-    const val PLAYER_SPAWN_SHORTCUT = KeyEvent.VK_5
+    const val RAMP_SHORTCUT = KeyEvent.VK_5
+    const val PLAYER_SPAWN_SHORTCUT = KeyEvent.VK_6
 
     // Undo/Redo keys (fixed)
     const val UNDO = KeyBindingManager.UNDO_KEY

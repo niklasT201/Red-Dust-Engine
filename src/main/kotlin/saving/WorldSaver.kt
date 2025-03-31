@@ -7,6 +7,7 @@ import ImageEntry
 import ObjectType
 import PillarObject
 import PlayerSpawnObject
+import RampObject
 import WallObject
 import WaterObject
 import java.io.*
@@ -85,6 +86,9 @@ class WorldSaver {
 
                             }
                             is WaterObject -> {
+
+                            }
+                            is RampObject -> {
 
                             }
                         }

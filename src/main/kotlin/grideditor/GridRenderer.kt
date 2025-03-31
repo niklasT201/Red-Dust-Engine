@@ -3,6 +3,7 @@ package grideditor
 import FloorObject
 import PillarObject
 import PlayerSpawnObject
+import RampObject
 import WallObject
 import WaterObject
 import java.awt.*
@@ -47,6 +48,7 @@ class GridRenderer(private val editor: GridEditor) {
                 val playerSpawnObject = floorObjects?.firstOrNull { it.type == ObjectType.PLAYER_SPAWN } as? PlayerSpawnObject
                 val pillarObject = floorObjects?.firstOrNull { it.type == ObjectType.PILLAR } as? PillarObject
                 val waterObject = floorObjects?.firstOrNull { it.type == ObjectType.WATER } as? WaterObject
+                val rampObject = floorObjects?.firstOrNull { it.type == ObjectType.RAMP } as? RampObject
 
                 // Draw floor or background
                 if (floorObject != null) {
@@ -238,6 +240,48 @@ class GridRenderer(private val editor: GridEditor) {
                     g2.drawString(letter, letterX.toInt(), letterY.toInt())
 
                     g2.font = Font("Monospace", Font.BOLD, 12) // Reset font if needed elsewhere
+                }
+
+                if (rampObject != null) {
+                    // 1. Draw Base (Texture or Color)
+                    if (rampObject.texture != null) {
+                        val texture = rampObject.texture.image
+                        g2.drawImage(texture, screenX, screenY, editor.cellSize.toInt(), editor.cellSize.toInt(), null)
+                    } else {
+                        g2.color = rampObject.color
+                        g2.fillRect(screenX, screenY, editor.cellSize.toInt(), editor.cellSize.toInt())
+                    }
+
+                    // 2. Draw Slope Indicator
+                    g2.color = Color.WHITE // Or a contrasting color
+                    g2.stroke = BasicStroke(2f)
+                    val centerX = screenX + editor.cellSize / 2
+                    val centerY = screenY + editor.cellSize / 2
+                    val arrowLength = editor.cellSize * 0.3
+
+                    when (rampObject.slopeDirection) {
+                        Direction.NORTH -> { // Arrow pointing UP (towards +Z)
+                            g2.drawLine(centerX.toInt(), (centerY + arrowLength).toInt(), centerX.toInt(), (centerY - arrowLength).toInt())
+                            g2.drawLine(centerX.toInt(), (centerY - arrowLength).toInt(), (centerX - arrowLength / 2).toInt(), centerY.toInt())
+                            g2.drawLine(centerX.toInt(), (centerY - arrowLength).toInt(), (centerX + arrowLength / 2).toInt(), centerY.toInt())
+                        }
+                        Direction.SOUTH -> { // Arrow pointing DOWN (towards -Z)
+                            g2.drawLine(centerX.toInt(), (centerY - arrowLength).toInt(), centerX.toInt(), (centerY + arrowLength).toInt())
+                            g2.drawLine(centerX.toInt(), (centerY + arrowLength).toInt(), (centerX - arrowLength / 2).toInt(), centerY.toInt())
+                            g2.drawLine(centerX.toInt(), (centerY + arrowLength).toInt(), (centerX + arrowLength / 2).toInt(), centerY.toInt())
+                        }
+                        Direction.EAST -> { // Arrow pointing RIGHT (towards +X)
+                            g2.drawLine((centerX - arrowLength).toInt(), centerY.toInt(), (centerX + arrowLength).toInt(), centerY.toInt())
+                            g2.drawLine((centerX + arrowLength).toInt(), centerY.toInt(), centerX.toInt(), (centerY - arrowLength / 2).toInt())
+                            g2.drawLine((centerX + arrowLength).toInt(), centerY.toInt(), centerX.toInt(), (centerY + arrowLength / 2).toInt())
+                        }
+                        Direction.WEST -> { // Arrow pointing LEFT (towards -X)
+                            g2.drawLine((centerX + arrowLength).toInt(), centerY.toInt(), (centerX - arrowLength).toInt(), centerY.toInt())
+                            g2.drawLine((centerX - arrowLength).toInt(), centerY.toInt(), centerX.toInt(), (centerY - arrowLength / 2).toInt())
+                            g2.drawLine((centerX - arrowLength).toInt(), centerY.toInt(), centerX.toInt(), (centerY + arrowLength / 2).toInt())
+                        }
+                    }
+                    g2.stroke = BasicStroke(1f) // Reset stroke
                 }
 
                 // Draw grid lines

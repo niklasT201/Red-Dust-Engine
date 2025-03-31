@@ -3,6 +3,8 @@ package grideditor
 import Floor
 import FloorObject
 import PillarObject
+import Ramp
+import RampObject
 import Vec3
 import Wall
 import WallCoords
@@ -275,5 +277,80 @@ class GridConverter(private val editor: GridEditor) {
             }
         }
         return waters
+    }
+
+    fun generateRamps(): List<Ramp> {
+        val ramps = mutableListOf<Ramp>()
+
+        editor.grid.forEach { (pos, cell) ->
+            // Iterate through floors that have ramp objects
+            val floorsWithRamps = cell.objectsByFloor.filterValues { objects ->
+                objects.any { it.type == ObjectType.RAMP }
+            }.keys.sorted()
+
+            floorsWithRamps.forEach { floorNum -> // Using floorNum for clarity, but obj.floorHeight is used for Y
+                cell.objectsByFloor[floorNum]?.filterIsInstance<RampObject>()?.forEach { obj ->
+                    val (x, y) = pos // Grid coordinates
+                    val gameX = -x * editor.baseScale
+                    val gameZ = y * editor.baseScale
+                    val cellSize = editor.baseScale
+
+                    val yLow = obj.floorHeight // Base height from the object itself
+                    val yHigh = obj.floorHeight + obj.rampHeight // Top height
+
+                    // Define corners in XZ plane (counter-clockwise from top-left in editor view)
+                    val xz1 = Pair(gameX, gameZ)                     // NW corner in XZ
+                    val xz2 = Pair(gameX + cellSize, gameZ)          // NE corner in XZ
+                    val xz3 = Pair(gameX + cellSize, gameZ + cellSize) // SE corner in XZ
+                    val xz4 = Pair(gameX, gameZ + cellSize)          // SW corner in XZ
+
+                    // Determine Y coordinates based on slope direction
+                    val c1: Vec3
+                    val c2: Vec3
+                    val c3: Vec3
+                    val c4: Vec3
+
+                    when (obj.slopeDirection) {
+                        // Slopes UP towards North (+Z)
+                        Direction.NORTH -> {
+                            c1 = Vec3(xz1.first, yLow, xz1.second) // NW Low
+                            c2 = Vec3(xz2.first, yLow, xz2.second) // NE Low
+                            c3 = Vec3(xz3.first, yHigh, xz3.second) // SE High
+                            c4 = Vec3(xz4.first, yHigh, xz4.second) // SW High
+                        }
+                        Direction.SOUTH -> {
+                            c1 = Vec3(xz1.first, yHigh, xz1.second) // NW High
+                            c2 = Vec3(xz2.first, yHigh, xz2.second) // NE High
+                            c3 = Vec3(xz3.first, yLow, xz3.second) // SE Low
+                            c4 = Vec3(xz4.first, yLow, xz4.second) // SW Low
+                        }
+                        Direction.EAST -> { // Slopes UP towards East (+X)
+                            c1 = Vec3(xz1.first, yLow, xz1.second) // NW Low
+                            c2 = Vec3(xz2.first, yHigh, xz2.second) // NE High
+                            c3 = Vec3(xz3.first, yHigh, xz3.second) // SE High
+                            c4 = Vec3(xz4.first, yLow, xz4.second) // SW Low
+                        }
+                        Direction.WEST -> { // Slopes UP towards West (-X)
+                            c1 = Vec3(xz1.first, yHigh, xz1.second) // NW High
+                            c2 = Vec3(xz2.first, yLow, xz2.second) // NE Low
+                            c3 = Vec3(xz3.first, yLow, xz3.second) // SE Low
+                            c4 = Vec3(xz4.first, yHigh, xz4.second) // SW High
+                        }
+                    }
+
+                    ramps.add(
+                        Ramp(
+                            corner1 = c1,
+                            corner2 = c2,
+                            corner3 = c3,
+                            corner4 = c4,
+                            color = obj.color,
+                            texture = obj.texture
+                        )
+                    )
+                }
+            }
+        }
+        return ramps
     }
 }

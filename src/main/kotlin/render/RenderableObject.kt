@@ -2,6 +2,7 @@ package render
 
 import Floor
 import ImageEntry
+import Ramp
 import Wall
 import WaterSurface
 import java.awt.Color
@@ -42,5 +43,14 @@ sealed class RenderableObject {
         val water: WaterSurface,
         val viewingFromBelow: Boolean,
         val isPlayerColliding: Boolean
+    ) : RenderableObject()
+
+    data class RampInfo(
+        override val distance: Double,
+        override val screenPoints: List<Pair<Int, Int>>,
+        override val color: Color,
+        override val texture: ImageEntry?,
+        override val textureCoords: List<Pair<Double, Double>>,
+        val originalRamp: Ramp // Store original ramp data if needed later
     ) : RenderableObject()
 }

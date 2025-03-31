@@ -5,6 +5,7 @@ import FloorObject
 import GridCell
 import PillarObject
 import PlayerSpawnObject
+import RampObject
 import RemoveObjectCommand
 import WallObject
 import WaterObject
@@ -152,6 +153,7 @@ class GridInputHandler(private val editor: GridEditor) {
         windowInputMap.put(KeyStroke.getKeyStroke(KeyBindings.FLOOR_SHORTCUT, 0), "select_floor")
         windowInputMap.put(KeyStroke.getKeyStroke(KeyBindings.PILLAR_SHORTCUT, 0), "select_pillar")
         windowInputMap.put(KeyStroke.getKeyStroke(KeyBindings.WATER_SHORTCUT, 0), "select_water")
+        windowInputMap.put(KeyStroke.getKeyStroke(KeyBindings.RAMP_SHORTCUT, 0), "select_ramp")
         windowInputMap.put(KeyStroke.getKeyStroke(KeyBindings.PLAYER_SPAWN_SHORTCUT, 0), "select_player_spawn")
 
         val undoKeystroke = KeyStroke.getKeyStroke(KeyBindings.UNDO, KeyEvent.CTRL_DOWN_MASK)
@@ -205,6 +207,11 @@ class GridInputHandler(private val editor: GridEditor) {
         editor.actionMap.put("select_water", object : AbstractAction() {
             override fun actionPerformed(e: ActionEvent) {
                 editor.setObjectType(ObjectType.WATER)
+            }
+        })
+        editor.actionMap.put("select_ramp", object : AbstractAction() {
+            override fun actionPerformed(e: ActionEvent) {
+                editor.setObjectType(ObjectType.RAMP)
             }
         })
         editor.actionMap.put("select_player_spawn", object : AbstractAction() {
@@ -348,6 +355,13 @@ class GridInputHandler(private val editor: GridEditor) {
                         waveSpeed = 1.0,
                         damagePerSecond = 0.0,
                         texture = null
+                    )
+                    ObjectType.RAMP -> RampObject(
+                        color = editor.currentWallColor,
+                        floorHeight = editor.currentFloorHeight,
+                        rampHeight = editor.currentRampHeight,
+                        slopeDirection = editor.currentSlopeDirection,
+                        texture = editor.currentFloorTexture
                     )
                     ObjectType.PROP -> null
                 }

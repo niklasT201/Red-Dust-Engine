@@ -11,6 +11,7 @@ import WallObject
 import texturemanager.ResourceManager
 import texturemanager.TextureManagerPanel
 import ImageEntry
+import Ramp
 import WaterSurface
 import java.awt.*
 import javax.swing.*
@@ -45,6 +46,9 @@ class GridEditor : JPanel() {
     private var currentFloor = 0
     private val discoveredFloors = mutableSetOf<Int>()
     var currentPillarWidth: Double = 1.0
+
+    var currentRampHeight: Double = 3.0
+    var currentSlopeDirection: Direction = Direction.NORTH
 
     var labelVisibility = mutableMapOf(
         "mode" to true,
@@ -271,6 +275,10 @@ class GridEditor : JPanel() {
 
     fun generateWater(): List<WaterSurface> {
         return converter.generateWaters()
+    }
+
+    fun generateRamps(): List<Ramp> {
+        return converter.generateRamps()
     }
 
     fun updateLabelVisibility(labelType: String, isVisible: Boolean) {

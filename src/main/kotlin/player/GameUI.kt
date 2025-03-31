@@ -23,7 +23,7 @@ class GameUI {
     private val ammoColor = Color(0, 96, 176) // Blue for ammo
 
     // UI size constants - increased height
-    private val statusBarHeight = 90 // Much taller status bar for better visibility
+    private val statusBarHeight = 120 // Much taller status bar for better visibility
     private val statusBarPadding = 10
     private val faceSize = 64 // Larger face
 
@@ -102,7 +102,7 @@ class GameUI {
         drawDoomStylePanel(g2, healthPanelX, panelY, panelWidth, panelHeight)
 
         // Face panel in center with proper padding to avoid collision
-        val facePanelWidth = 150
+        val facePanelWidth = 170
         val facePanelX = width / 2 - facePanelWidth / 2 // Center the wider panel
         drawDoomStylePanel(g2, facePanelX, panelY, facePanelWidth, panelHeight)
 

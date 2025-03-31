@@ -16,6 +16,7 @@ class Game3D : JPanel() {
     private val walls = mutableListOf<Wall>()
     private val floors = mutableListOf<Floor>()
     private val waters = mutableListOf<WaterSurface>()
+    private val ramps = mutableListOf<Ramp>()
     var isEditorMode = true
     private var skyColor = Color(135, 206, 235)
     private var skyRenderer: SkyRenderer = SkyRenderer(skyColor)
@@ -24,7 +25,7 @@ class Game3D : JPanel() {
     private var lastFpsUpdateTime = System.currentTimeMillis()
     var currentFps = 0
 
-    private val renderPanel = RenderPanel(this, renderer, player, walls, floors, waters)
+    private val renderPanel = RenderPanel(this, renderer, player, walls, floors, waters, ramps)
 
     private val gridEditor = GridEditor()
     private val editorPanel = EditorPanel(gridEditor,renderer, this) { toggleEditorMode() }
@@ -377,5 +378,8 @@ class Game3D : JPanel() {
 
         waters.clear()
         waters.addAll(gridEditor.generateWater())
+
+        ramps.clear()
+        ramps.addAll(gridEditor.generateRamps())
     }
 }
