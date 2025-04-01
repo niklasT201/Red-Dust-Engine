@@ -110,8 +110,25 @@ class Player(
         if (rampCollision.first) {
             // Set player's feet exactly on the ramp
             camera.position.y = rampCollision.second + playerHeight
-            // Reset vertical velocity to allow smooth movement on ramp
-            verticalVelocity = 0.0
+
+            // Apply a small offset to prevent "floating" above the ramp
+            // or sinking into it due to floating-point precision issues
+            camera.position.y += 0.01
+
+            // When on a ramp with gravity enabled, adjust vertical velocity
+            // to allow smooth movement along the ramp's slope
+            if (gravityEnabled) {
+                // Dampen vertical velocity to prevent bouncing
+                verticalVelocity *= 0.5
+
+                // If moving down a steep ramp, limit falling speed
+                if (verticalVelocity < 0) {
+                    verticalVelocity = maxOf(verticalVelocity, -0.1)
+                }
+            } else {
+                // Reset vertical velocity in non-gravity mode
+                verticalVelocity = 0.0
+            }
         }
         // Not on a ramp, check for floor collisions
         else {
