@@ -32,20 +32,94 @@ class WelcomeScreen(
             layout = BorderLayout(0, 15)
             isOpaque = false
 
-            // Title label
-            add(JLabel("BOOMER SHOOTER ENGINE", SwingConstants.CENTER).apply {
-                foreground = Color(220, 95, 60)
-                font = Font("Impact", Font.BOLD, 36)
+            // Animated title label
+            add(object : JPanel() {
+                private var animationOffset = 0.0
+                private val timer = Timer(50) {
+                    animationOffset += 0.1
+                    if (animationOffset > Math.PI * 2) {
+                        animationOffset = 0.0
+                    }
+                    repaint()
+                }
+
+                init {
+                    isOpaque = false
+                    preferredSize = Dimension(0, 50)
+                    timer.start()
+                }
+
+                override fun paintComponent(g: Graphics) {
+                    super.paintComponent(g)
+                    val g2d = g as Graphics2D
+                    g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+                    g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
+
+                    val title = "BOOMER SHOOTER ENGINE"
+                    val font = Font("Impact", Font.BOLD, 36)
+                    g2d.font = font
+
+                    val metrics = g2d.fontMetrics
+                    val width = metrics.stringWidth(title)
+                    val x = (this.width - width) / 2
+                    val y = this.height / 2 + metrics.height / 3
+
+                    // Draw shadow
+                    g2d.color = Color(100, 30, 20, 150)
+                    g2d.drawString(title, x + 2, y + 2)
+
+                    // Create a gradient that shifts with the animation
+                    val baseColor = Color(220, 95, 60)
+                    val endColor = Color(255, 160, 80)
+
+                    val gradient = LinearGradientPaint(
+                        x.toFloat(), (y - metrics.height).toFloat(),
+                        (x + width).toFloat(), y.toFloat(),
+                        floatArrayOf(0.0f, 0.5f, 1.0f),
+                        arrayOf(
+                            baseColor,
+                            Color(
+                                Math.min(255, (endColor.red * (1 + 0.2 * Math.sin(animationOffset))).toInt()),
+                                Math.min(255, (endColor.green * (1 + 0.2 * Math.sin(animationOffset))).toInt()),
+                                Math.min(255, (endColor.blue * (1 + 0.1 * Math.sin(animationOffset))).toInt())
+                            ),
+                            baseColor
+                        )
+                    )
+
+                    g2d.paint = gradient
+                    g2d.drawString(title, x, y)
+                }
+
+                override fun removeNotify() {
+                    super.removeNotify()
+                    timer.stop()
+                }
             }, BorderLayout.NORTH)
 
-            // Subtitle
+            // Subtitle with glowing effect
             add(JLabel("World Builder", SwingConstants.CENTER).apply {
                 foreground = Color.WHITE
                 font = Font("Arial", Font.BOLD, 18)
             }, BorderLayout.CENTER)
 
-            // Separator
+            // Separator with animated glow
             add(object : JPanel() {
+                private var glowPosition = 0.0
+                private val timer = Timer(30) {
+                    glowPosition += 0.02
+                    if (glowPosition > 1.0) {
+                        glowPosition = 0.0
+                    }
+                    repaint()
+                }
+
+                init {
+                    preferredSize = Dimension(1, 15)
+                    isOpaque = false
+                    timer.start()
+                }
+
                 override fun paintComponent(g: Graphics) {
                     super.paintComponent(g)
                     val g2d = g as Graphics2D
@@ -54,19 +128,38 @@ class WelcomeScreen(
                     val width = this.width
                     val y = this.height / 2
 
-                    val gradient = LinearGradientPaint(
+                    // Static gradient line
+                    val baseGradient = LinearGradientPaint(
                         0f, y.toFloat(), width.toFloat(), y.toFloat(),
                         floatArrayOf(0.0f, 0.5f, 1.0f),
                         arrayOf(Color(45, 48, 55), Color(220, 95, 60), Color(45, 48, 55))
                     )
 
                     g2d.stroke = BasicStroke(2f)
-                    g2d.paint = gradient
+                    g2d.paint = baseGradient
                     g2d.drawLine(0, y, width, y)
+
+                    // Animated glow effect
+                    val glowX = (width * glowPosition).toInt()
+                    val glowRadius = 50
+
+                    val radialGradient = RadialGradientPaint(
+                        glowX.toFloat(), y.toFloat(), glowRadius.toFloat(),
+                        floatArrayOf(0.0f, 0.5f, 1.0f),
+                        arrayOf(
+                            Color(255, 200, 100, 180),
+                            Color(220, 95, 60, 100),
+                            Color(220, 95, 60, 0)
+                        )
+                    )
+
+                    g2d.paint = radialGradient
+                    g2d.fillOval(glowX - glowRadius, y - glowRadius, glowRadius * 2, glowRadius * 2)
                 }
 
-                init {
-                    preferredSize = Dimension(1, 15)
+                override fun removeNotify() {
+                    super.removeNotify()
+                    timer.stop()
                 }
             }, BorderLayout.SOUTH)
         }
