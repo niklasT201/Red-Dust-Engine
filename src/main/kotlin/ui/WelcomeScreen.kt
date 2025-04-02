@@ -204,31 +204,77 @@ class WelcomeScreen(
                     font = Font("Arial", Font.BOLD, 16)
                 }, BorderLayout.NORTH)
 
-                add(JLabel(description).apply {
+                add(JLabel("<html><body width='250'>$description</body></html>").apply {
                     foreground = Color(200, 200, 200)
-                    font = Font("SansSerif", Font.PLAIN, 12)
+                    font = Font("SansSerif", Font.PLAIN, 14)
                 }, BorderLayout.CENTER)
+
+                // Add a small icon indicating it's clickable
+                add(JPanel().apply {
+                    layout = BorderLayout()
+                    isOpaque = false
+                    border = EmptyBorder(5, 0, 0, 0)
+
+                    add(JLabel("Click to select", SwingConstants.LEFT).apply {
+                        foreground = Color(150, 150, 150)
+                        font = Font("SansSerif", Font.ITALIC, 12)
+                    }, BorderLayout.WEST)
+                }, BorderLayout.SOUTH)
 
             }, BorderLayout.CENTER)
 
-            // Arrow icon on the right
-            add(JLabel("\u2192").apply { // Unicode right arrow
-                foreground = accentColor
-                font = Font("Arial", Font.BOLD, 24)
-                horizontalAlignment = SwingConstants.CENTER
-                preferredSize = Dimension(30, 0)
+            // Right arrow panel with glow effect
+            add(object : JPanel() {
+                override fun paintComponent(g: Graphics) {
+                    super.paintComponent(g)
+                    val g2d = g as Graphics2D
+                    g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+
+                    // Draw glowing arrow
+                    g2d.color = accentColor
+                    val arrowSize = 12
+                    val x = width / 2
+                    val y = height / 2
+
+                    val xPoints = intArrayOf(x - arrowSize, x, x - arrowSize)
+                    val yPoints = intArrayOf(y - arrowSize, y, y + arrowSize)
+
+                    // Draw arrow
+                    g2d.fillPolygon(xPoints, yPoints, 3)
+                }
+
+                init {
+                    preferredSize = Dimension(30, 0)
+                    isOpaque = false
+                }
             }, BorderLayout.EAST)
 
-            // Make the panel clickable
+            // Make the panel clickable with improved hover effect
             addMouseListener(object : java.awt.event.MouseAdapter() {
                 override fun mouseEntered(e: java.awt.event.MouseEvent) {
                     background = Color(50, 53, 60)
                     cursor = Cursor(Cursor.HAND_CURSOR)
+                    border = BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(accentColor.brighter(), 2),
+                        BorderFactory.createEmptyBorder(15, 15, 15, 15)
+                    )
                 }
 
                 override fun mouseExited(e: java.awt.event.MouseEvent) {
                     background = MenuBuilder.BACKGROUND_COLOR
                     cursor = Cursor(Cursor.DEFAULT_CURSOR)
+                    border = BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(accentColor, 2),
+                        BorderFactory.createEmptyBorder(15, 15, 15, 15)
+                    )
+                }
+
+                override fun mousePressed(e: java.awt.event.MouseEvent) {
+                    background = Color(40, 43, 50)
+                }
+
+                override fun mouseReleased(e: java.awt.event.MouseEvent) {
+                    background = Color(50, 53, 60)
                 }
 
                 override fun mouseClicked(e: java.awt.event.MouseEvent) {
