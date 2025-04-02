@@ -70,4 +70,7 @@ class MenuSystem(
     fun setCurrentFloor(level: Int) {
         floorLevelMenu.setCurrentFloor(level)
     }
+
+    // Add this method to expose the file manager
+    fun getFileManager(): FileManager = fileManager
 }

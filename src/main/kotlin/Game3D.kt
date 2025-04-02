@@ -5,9 +5,12 @@ import ui.EditorPanel
 import ui.MenuSystem
 import ui.components.CrosshairShape
 import render.SkyRenderer
+import ui.GameType
+import ui.WelcomeScreen
 import java.awt.*
 import java.awt.event.*
 import java.awt.image.BufferedImage
+import java.io.File
 import javax.swing.*
 
 class Game3D : JPanel() {
@@ -18,6 +21,7 @@ class Game3D : JPanel() {
     private val waters = mutableListOf<WaterSurface>()
     private val ramps = mutableListOf<Ramp>()
     var isEditorMode = true
+    private var isWorldLoaded = false
     private var skyColor = Color(135, 206, 235)
     private var skyRenderer: SkyRenderer = SkyRenderer(skyColor)
 
@@ -54,8 +58,32 @@ class Game3D : JPanel() {
         resizeWeight = 0.0  // Editor panel keeps its size when resizing window
     }
 
-    init {
+    private val welcomeScreen: WelcomeScreen
+
+    // Add this property to hold the main content panel (that will replace the welcome screen)
+    private val contentPanel = JPanel().apply {
         layout = BorderLayout()
+    }
+
+    // Add this property to track the game type
+    private var gameType: GameType = GameType.LEVEL_BASED
+
+
+    init {
+        layout = CardLayout()
+
+        // Create the welcome screen with callbacks
+        welcomeScreen = WelcomeScreen(
+            onCreateOpenWorld = {
+                gameType = GameType.OPEN_WORLD
+                startNewProject()
+            },
+            onCreateLevelBased = {
+                gameType = GameType.LEVEL_BASED
+                startNewProject()
+            },
+            onLoadExisting = { loadExistingWorld() }
+        )
 
         // --- Create Blank Cursor ---
         val cursorImg = BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB)
@@ -63,6 +91,12 @@ class Game3D : JPanel() {
         blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(
             cursorImg, Point(0, 0), "blank cursor"
         )
+
+        add(welcomeScreen, "welcome")
+        add(contentPanel, "content")
+
+        // Initially show the welcome screen
+        (layout as CardLayout).show(this, "welcome")
 
         // Add property change listener to GridEditor
         gridEditor.addPropertyChangeListener("gridChanged") {
@@ -158,10 +192,8 @@ class Game3D : JPanel() {
             }
         })
 
-        add(menuSystem.createMenuBar(), BorderLayout.NORTH)
-
-        // split pane to the main panel
-        add(splitPane, BorderLayout.CENTER)
+        contentPanel.add(menuSystem.createMenuBar(), BorderLayout.NORTH)
+        contentPanel.add(splitPane, BorderLayout.CENTER)
 
         // Set initial divider location
         SwingUtilities.invokeLater {
@@ -171,7 +203,8 @@ class Game3D : JPanel() {
         gridEditor.setCamera(player.camera)
 
         setupInputHandling()
-        updateMode()
+        //updateMode()
+        menuSystem.getFileManager().setGameType(gameType)
 
         //SwingUtilities.invokeLater { settingsSaver.loadPlayerSettings(player, this) }
     }
@@ -245,8 +278,10 @@ class Game3D : JPanel() {
     }
 
     private fun toggleEditorMode() {
-        isEditorMode = !isEditorMode
-        updateMode()
+        if (isWorldLoaded) {
+            isEditorMode = !isEditorMode
+            updateMode()
+        }
     }
 
     private fun updateMode() {
@@ -381,5 +416,75 @@ class Game3D : JPanel() {
 
         ramps.clear()
         ramps.addAll(gridEditor.generateRamps())
+    }
+
+    private fun startNewProject() {
+        // Set game type in file manager
+        menuSystem.getFileManager().setGameType(gameType)
+
+        // Clear the grid
+        gridEditor.clearGrid()
+
+        // Switch to editor mode
+        isEditorMode = true
+        updateMode()
+
+        // Show the main content
+        showContent()
+    }
+
+    private fun loadExistingWorld() {
+        // Create a file chooser dialog
+        val fileChooser = JFileChooser().apply {
+            dialogTitle = "Open Existing World"
+            fileSelectionMode = JFileChooser.FILES_ONLY
+
+            // Set root directory to World/saves
+            val worldDir = File("World/saves")
+            if (worldDir.exists()) {
+                currentDirectory = worldDir
+            }
+
+            fileFilter = javax.swing.filechooser.FileNameExtensionFilter(
+                "World Files (*.world)", "world"
+            )
+        }
+
+        if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            val file = fileChooser.selectedFile
+
+            // Determine game type based on file location
+            if (file.absolutePath.contains("open_world")) {
+                gameType = GameType.OPEN_WORLD
+            } else {
+                gameType = GameType.LEVEL_BASED
+            }
+
+            // Update file manager
+            menuSystem.getFileManager().setGameType(gameType)
+
+            // Load the world
+            if (menuSystem.getFileManager().loadWorld(file)) {
+                // Switch to editor mode
+                isEditorMode = true
+                updateMode()
+
+                // Show the main content
+                showContent()
+            } else {
+                // Show error
+                JOptionPane.showMessageDialog(
+                    this,
+                    "Failed to load world file.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+                )
+            }
+        }
+    }
+
+    private fun showContent() {
+        isWorldLoaded = true
+        (layout as CardLayout).show(this, "content")
     }
 }

@@ -2,6 +2,8 @@ package ui.topbar
 
 import grideditor.GridEditor
 import saving.SettingsManager
+import ui.GameType
+import ui.WelcomeScreen
 import java.awt.*
 import java.awt.event.InputEvent
 import java.awt.event.KeyEvent
@@ -72,8 +74,8 @@ class MenuBuilder(
                 KeyStroke.getKeyStroke(KeyEvent.VK_N, InputEvent.CTRL_DOWN_MASK)).apply {
                 addActionListener {
                     if (confirmUnsavedChanges(parentComponent)) {
-                        gridEditor.clearGrid()
-                        fileManager.resetCurrentFile()
+                        // Instead of just clearing the grid, show the welcome screen
+                        showWelcomeScreen(parentComponent)
                     }
                 }
             })
@@ -458,5 +460,42 @@ class MenuBuilder(
             setLocationRelativeTo(SwingUtilities.getWindowAncestor(parentComponent))
             isVisible = true
         }
+    }
+
+    private fun showWelcomeScreen(parentComponent: Component) {
+        val frame = SwingUtilities.getWindowAncestor(parentComponent) as? JFrame ?: return
+
+        // Clear the current grid and reset file
+        gridEditor.clearGrid()
+        fileManager.resetCurrentFile()
+
+        // Create and show welcome screen dialog
+        val welcomeDialog = JDialog(frame, "New Project", true)
+        welcomeDialog.defaultCloseOperation = WindowConstants.DISPOSE_ON_CLOSE
+
+        val welcomeScreen = WelcomeScreen(
+            onCreateOpenWorld = {
+                fileManager.setGameType(GameType.OPEN_WORLD)
+                welcomeDialog.dispose()
+            },
+            onCreateLevelBased = {
+                fileManager.setGameType(GameType.LEVEL_BASED)
+                welcomeDialog.dispose()
+            },
+            onLoadExisting = {
+                if (fileManager.loadWorld(parentComponent)) {
+                    showNotification(parentComponent, "World loaded successfully")
+                    welcomeDialog.dispose()
+                } else {
+                    showNotification(parentComponent, "Failed to load world.", "Load Error", JOptionPane.ERROR_MESSAGE)
+                }
+            }
+        )
+
+        welcomeDialog.contentPane = welcomeScreen
+        welcomeDialog.pack()
+        welcomeDialog.minimumSize = Dimension(700, 500)
+        welcomeDialog.setLocationRelativeTo(frame)
+        welcomeDialog.isVisible = true
     }
 }
