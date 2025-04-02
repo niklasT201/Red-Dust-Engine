@@ -96,7 +96,7 @@ class Game3D : JPanel() {
         add(contentPanel, "content")
 
         // Initially show the welcome screen
-        (layout as CardLayout).show(this, "welcome")
+        SwingUtilities.invokeLater { showWelcomeScreen() }
 
         // Add property change listener to GridEditor
         gridEditor.addPropertyChangeListener("gridChanged") {
@@ -483,8 +483,37 @@ class Game3D : JPanel() {
         }
     }
 
+    private fun showWelcomeScreen() {
+        (layout as CardLayout).show(this, "welcome")
+
+        // Get the parent window (JFrame)
+        val frame = SwingUtilities.getWindowAncestor(this) as? JFrame
+        frame?.let {
+            // Make the window non-resizable
+            it.isResizable = false
+
+            // Set a fixed size for the welcome screen
+            val welcomeWidth = 800
+            val welcomeHeight = 600
+            it.size = Dimension(welcomeWidth, welcomeHeight)
+
+            // Center on screen
+            it.setLocationRelativeTo(null)
+        }
+    }
+
     private fun showContent() {
         isWorldLoaded = true
         (layout as CardLayout).show(this, "content")
+
+        // Get the parent window (JFrame)
+        val frame = SwingUtilities.getWindowAncestor(this) as? JFrame
+        frame?.let {
+            // Make the window resizable again
+            it.isResizable = true
+
+            // You might want to set a minimum size for the editor/game view
+            it.minimumSize = Dimension(800, 600)
+        }
     }
 }
