@@ -60,7 +60,6 @@ fun main() {
 
 // UI:
 // blood options
-// open world or level based
 
 // Screen:
 // Settings Menu

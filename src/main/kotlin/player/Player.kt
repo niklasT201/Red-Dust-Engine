@@ -176,18 +176,21 @@ class Player(
         var canMoveX = true
         var canMoveZ = true
 
+        // Calculate the player's vertical collision range
+        val playerFeetY = camera.position.y - playerHeight
+        val playerHeadY = camera.position.y // Eye level is the effective top for horizontal collision checks
+
         // Check each wall for collision
         for (wall in walls) {
-            // Only consider walls if player is on or near the same floor
-            // Allow for a bit of vertical movement (jumping, stairs, etc)
-            val playerY = camera.position.y
-            val wallY = wall.start.y
+            // Wall's vertical range
+            val wallBaseY = wall.start.y
             val wallTopY = wall.start.y + wall.height
 
-            // Skip walls that aren't on the player's current floor
-            // Player can be anywhere between the floor and ceiling of a wall
-            if (playerY < wallY || playerY > wallTopY) {
-                continue  // Wall is on a different floor, skip collision check
+            // Check if player is NOT entirely above or entirely below the wall.
+            val isVerticallyRelevant = playerHeadY > wallBaseY && playerFeetY < wallTopY
+
+            if (!isVerticallyRelevant) {
+                continue // Player is entirely above or below this wall, skip horizontal check
             }
 
             // Simple box collision check
@@ -196,17 +199,22 @@ class Player(
             val wallMinZ = minOf(wall.start.z, wall.end.z) - playerRadius
             val wallMaxZ = maxOf(wall.start.z, wall.end.z) + playerRadius
 
-            // Check X collision
-            if (newX in wallMinX..wallMaxX &&
-                camera.position.z in wallMinZ..wallMaxZ) {
+            // Check potential X movement against current Z
+            if (newX >= wallMinX && newX <= wallMaxX &&
+                camera.position.z >= wallMinZ && camera.position.z <= wallMaxZ) {
+                // simple check prevents moving X if current Z is within wall bounds
                 canMoveX = false
             }
 
-            // Check Z collision
-            if (camera.position.x in wallMinX..wallMaxX &&
-                newZ in wallMinZ..wallMaxZ) {
+            // Check potential Z movement against current X
+            if (camera.position.x >= wallMinX && camera.position.x <= wallMaxX &&
+                newZ >= wallMinZ && newZ <= wallMaxZ) {
+                // simple check prevents moving Z if current X is within wall bounds
                 canMoveZ = false
             }
+
+            // Optimization: If both are blocked, no need to check further walls
+            if (!canMoveX && !canMoveZ) break
         }
 
         return Pair(canMoveX, canMoveZ)

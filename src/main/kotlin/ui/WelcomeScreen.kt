@@ -402,3 +402,7 @@ class WelcomeScreen(
         if (!quicksavesDir.exists()) quicksavesDir.mkdir()
     }
 }
+
+/*
+can you help me with my kotlin boomer shooter engine? I have this welcome screen and want to change something. as you see there i can create new projects or load ones. can you maybe change it so, that when i create a new open world project, then i have to also choose a name for the project, so that there will be saves also my settings, quicksaves and saves, and when i create a new level it lets me chooose if i want to create a new project or add a new level to an already existing project as open world means the project has only one map and level based it has multiple ones. so i basically need a way to also add name for the project, that will then use the name to create a directory where everything will be saved. do you get what i mean? here is a snippet of my settings saver class if you need it? you dont need to show me the whole files again when its bigger like the welcome screen. when you want to show me the whole file then do it only when the whole files has only like 150 lines, then its fine but not when higher.
+ */

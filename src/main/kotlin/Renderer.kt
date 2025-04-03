@@ -94,7 +94,7 @@ class Renderer(
             renderQueue
         }
 
-        // Sort all objects by distance (furthest first)
+        // Sort all objects by distance (furthest first)z
         val sortedQueue = filteredQueue.sortedByDescending { it.distance }
 
         // Store original rendering hints and stroke
@@ -287,3 +287,5 @@ class Renderer(
         // placeholder comment for now
     }
 }
+
+// can you help me with my kotlin boomer shooter engine? i noticed a bug with the walls and shadow system. when i have enabled shadows, i can clearly see the borders of walls, like exactly where one wall ends, and the next one starts, so the middle between two walls. is it possible to fix it? please also say me where i have to add things like after line xy or before line xy and so on that i exactly know where to add it. i dont want any confusion in your code
