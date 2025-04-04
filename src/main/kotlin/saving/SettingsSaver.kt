@@ -268,8 +268,8 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             val file = File("$SETTINGS_DIR/$PLAYER_SETTINGS_FILE")
             val outputStream = DataOutputStream(BufferedOutputStream(FileOutputStream(file)))
 
-            // ----> UPDATE VERSION TO 5 <----
-            outputStream.writeInt(5) // Version 5 of the settings format
+            // ----> UPDATE VERSION TO 6 <----
+            outputStream.writeInt(6) // Version 6 of the setings format
 
             // Write timestamp
             outputStream.writeLong(System.currentTimeMillis())
@@ -325,7 +325,7 @@ class SettingsSaver(private val gridEditor: GridEditor) {
                 outputStream.writeInt(0) // PLUS shape by default
             }
 
-            // --- Debug Options Section (new in version 3) ---
+            // --- Debug Options Section (from v3) ---
             outputStream.writeUTF("DEBUG_SECTION")
 
             if (game3D != null) {
@@ -337,11 +337,15 @@ class SettingsSaver(private val gridEditor: GridEditor) {
 
                 // Write position visibility
                 outputStream.writeBoolean(game3D.isPositionVisible())
+
+                // Write Game UI visibility
+                outputStream.writeBoolean(game3D.isGameUIVisible())
             } else {
                 // Default values if Game3D isn't available
                 outputStream.writeBoolean(true) // FPS counter visible by default
                 outputStream.writeBoolean(true) // Direction visible by default
                 outputStream.writeBoolean(true) // Position visible by default
+                outputStream.writeBoolean(true) // Game UI visible by default
             }
 
             outputStream.close()
@@ -653,8 +657,8 @@ class SettingsSaver(private val gridEditor: GridEditor) {
 
             // Read and verify version
             val version = inputStream.readInt()
-            if (version < 1 || version > 5) {
-                println("Unsupported settings file version: $version")
+            if (version < 1 || version > 6) {
+                println("Unsupported player settings file version: $version. Expected 1 to 6.")
                 inputStream.close()
                 return false
             }
@@ -782,6 +786,22 @@ class SettingsSaver(private val gridEditor: GridEditor) {
                         game3D.setFpsCounterVisible(isFpsVisible)
                         game3D.setDirectionVisible(isDirectionVisible)
                         game3D.setPositionVisible(isPositionVisible)
+
+                        // Game UI visibility (only if version is 6 or higher)
+                        if (version >= 6) {
+                            try {
+                                val isGameUIVisible = inputStream.readBoolean()
+                                game3D.setGameUIVisible(isGameUIVisible)
+                            } catch (e: EOFException) {
+                                println("Reached end of file unexpectedly while reading game UI visibility (v6). Using default.")
+                                game3D.setGameUIVisible(true) // Default if reading fails
+                            } catch (e: IOException) {
+                                println("Error reading game UI visibility (v6): ${e.message}. Using default.")
+                                game3D.setGameUIVisible(true) // Default if reading fails
+                            }
+                        } else {
+                            // game3D.setGameUIVisible(true) // Example: Default to true for older files
+                        }
                     }
                 } catch (e: Exception) {
                     println("Error loading debug settings: ${e.message}")

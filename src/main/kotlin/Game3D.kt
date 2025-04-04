@@ -238,6 +238,13 @@ class Game3D : JPanel() {
                     if (e.keyCode == KeyBindings.TOGGLE_EDITOR) {
                         SwingUtilities.invokeLater { toggleEditorMode() }
                     }
+
+                    // Toggle Weapon UI Key (Only when not in editor mode)
+                    if (e.keyCode == KeyBindings.TOGGLE_WEAPON_UI && !isEditorMode) {
+                        // Toggle the visibility state in RenderPanel
+                        renderPanel.setGameUIVisible(!renderPanel.isGameUIVisible())
+                    }
+
                     if (!isEditorMode) {
                         keysPressed.add(e.keyCode)
                     }
