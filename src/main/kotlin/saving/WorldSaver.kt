@@ -83,13 +83,19 @@ class WorldSaver {
                                 // No additional properties for player spawn
                             }
                             is PillarObject -> {
-
+                                outputStream.writeDouble(gameObject.floorHeight)
                             }
                             is WaterObject -> {
-
+                                outputStream.writeDouble(gameObject.floorHeight)
+                                outputStream.writeDouble(gameObject.depth)
+                                outputStream.writeDouble(gameObject.waveHeight)
+                                outputStream.writeDouble(gameObject.waveSpeed)
+                                outputStream.writeDouble(gameObject.damagePerSecond)
                             }
                             is RampObject -> {
-
+                                outputStream.writeDouble(gameObject.floorHeight)
+                                outputStream.writeDouble(gameObject.rampHeight)
+                                outputStream.writeInt(gameObject.slopeDirection.ordinal)
                             }
                         }
                     }
@@ -217,6 +223,25 @@ class WorldSaver {
                             }
                             ObjectType.PLAYER_SPAWN -> {
                                 PlayerSpawnObject(color, height, width, direction)
+                            }
+                            ObjectType.PILLAR -> {
+                                val floorHeight = inputStream.readDouble()
+                                PillarObject(color, height, width, direction, texture, floorHeight)
+                            }
+                            ObjectType.WATER -> {
+                                val floorHeight = inputStream.readDouble()
+                                val depth = inputStream.readDouble()
+                                val waveHeight = inputStream.readDouble()
+                                val waveSpeed = inputStream.readDouble()
+                                val damagePerSecond = inputStream.readDouble()
+                                WaterObject(color, floorHeight, depth, waveHeight, waveSpeed, damagePerSecond, texture)
+                            }
+                            ObjectType.RAMP -> {
+                                val floorHeight = inputStream.readDouble()
+                                val rampHeight = inputStream.readDouble()
+                                val slopeDirectionOrdinal = inputStream.readInt()
+                                val slopeDirection = Direction.entries[slopeDirectionOrdinal]
+                                RampObject(color, floorHeight, rampHeight, slopeDirection, texture)
                             }
                             else -> {
                                 // Default for unknown types

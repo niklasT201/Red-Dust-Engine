@@ -45,9 +45,9 @@ fun main() {
 // optional border adding for single objects and not only all ones
 // add shader support
 // add way to build the game
-// saving Water, Pillar and player
 // player moving a bit when in water
 // add checkExistingWorlds feature, double press to load file
+
 
 // Object List:
 // breakable walls and floors, PropObject, Doors, Triggers, Elevator, Light Sources, Items, 3D Object Support
