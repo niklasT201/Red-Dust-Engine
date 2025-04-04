@@ -336,6 +336,8 @@ class Game3D : JPanel() {
     fun setPositionVisible(visible: Boolean) = renderPanel.setPositionVisible(visible)
     fun setFpsCounterVisible(visible: Boolean) = renderPanel.setFpsCounterVisible(visible)
     fun isFpsCounterVisible(): Boolean = renderPanel.isFpsCounterVisible()
+    fun isGameUIVisible(): Boolean = renderPanel.isGameUIVisible()
+    fun setGameUIVisible(visible: Boolean) = renderPanel.setGameUIVisible(visible)
 
     fun getSkyRenderer(): SkyRenderer = skyRenderer
     fun setSkyRenderer(renderer: SkyRenderer) {

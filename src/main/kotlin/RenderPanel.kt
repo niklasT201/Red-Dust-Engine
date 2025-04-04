@@ -24,7 +24,7 @@ class RenderPanel(
 
     // Add the GameUI component
     private val gameUI = GameUI()
-    private var isGameUIVisible = true
+    private var isGameUIVisible = false
 
     init {
         preferredSize = Dimension(800, 600)

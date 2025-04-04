@@ -10,6 +10,7 @@ class DebugOptionsPanel(private val game3D: Game3D) : JPanel() {
     private val fpsVisibleCheckbox = JCheckBox("Show FPS Counter")
     private val directionVisibleCheckbox = JCheckBox("Show Direction")
     private val positionVisibleCheckbox = JCheckBox("Show Position")
+    private val gameUIVisibleCheckbox = JCheckBox("Show Game UI")
     private val showAllCheckbox = JCheckBox("Show All Debug Info")
 
     init {
@@ -25,13 +26,13 @@ class DebugOptionsPanel(private val game3D: Game3D) : JPanel() {
         )
 
         // Style the checkboxes
-        for (checkbox in listOf(fpsVisibleCheckbox, directionVisibleCheckbox, positionVisibleCheckbox, showAllCheckbox)) {
+        for (checkbox in listOf(fpsVisibleCheckbox, directionVisibleCheckbox, positionVisibleCheckbox, gameUIVisibleCheckbox, showAllCheckbox)) {
             checkbox.foreground = Color.WHITE
             checkbox.background = Color(50, 52, 55)
         }
 
         // Create containers for each checkbox with proper alignment
-        for (checkbox in listOf(fpsVisibleCheckbox, directionVisibleCheckbox, positionVisibleCheckbox)) {
+        for (checkbox in listOf(fpsVisibleCheckbox, directionVisibleCheckbox, positionVisibleCheckbox, gameUIVisibleCheckbox)) {
             val panel = JPanel(FlowLayout(FlowLayout.LEFT))
             panel.background = Color(50, 52, 55)
             panel.add(checkbox)
@@ -66,11 +67,16 @@ class DebugOptionsPanel(private val game3D: Game3D) : JPanel() {
             updateShowAllCheckbox()
         }
 
+        gameUIVisibleCheckbox.addActionListener {
+            game3D.setGameUIVisible(gameUIVisibleCheckbox.isSelected)
+        }
+
         showAllCheckbox.addActionListener {
             val showAll = showAllCheckbox.isSelected
             game3D.setFpsCounterVisible(showAll)
             game3D.setDirectionVisible(showAll)
             game3D.setPositionVisible(showAll)
+            // We don't include GameUI in "Show All" as it's not technically debug info
 
             // Update individual checkboxes without triggering their listeners
             fpsVisibleCheckbox.isSelected = showAll
@@ -78,14 +84,14 @@ class DebugOptionsPanel(private val game3D: Game3D) : JPanel() {
             positionVisibleCheckbox.isSelected = showAll
         }
 
-        // Force sync the state at initialization - add this to fix the issue
+        // Force sync the state at initialization
         SwingUtilities.invokeLater {
             refreshFromGameState()
         }
     }
 
     private fun updateShowAllCheckbox() {
-        // "Show All" is checked only if all individual items are checked
+        // "Show All" is checked only if all individual debug items are checked
         val allVisible = game3D.isFpsCounterVisible() &&
                 game3D.isDirectionVisible() &&
                 game3D.isPositionVisible()
@@ -98,6 +104,7 @@ class DebugOptionsPanel(private val game3D: Game3D) : JPanel() {
         fpsVisibleCheckbox.isSelected = game3D.isFpsCounterVisible()
         directionVisibleCheckbox.isSelected = game3D.isDirectionVisible()
         positionVisibleCheckbox.isSelected = game3D.isPositionVisible()
+        gameUIVisibleCheckbox.isSelected = game3D.isGameUIVisible()
         updateShowAllCheckbox()
     }
 }
