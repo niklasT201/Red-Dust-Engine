@@ -48,6 +48,11 @@ fun main() {
 // player moving a bit when in water
 // add checkExistingWorlds feature, double press to load file
 // restructure saving in one project
+// fix broken floor teleportation collisions
+// add water panel
+// move border panel to world tab
+// fix wrong fps showing label
+// switch ramp renderer
 
 
 // Object List:

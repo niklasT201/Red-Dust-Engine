@@ -3,6 +3,7 @@ package ui.components
 import Renderer
 import grideditor.GridEditor
 import ui.CollapsibleSection
+import Direction
 import java.awt.*
 import javax.swing.*
 
@@ -20,8 +21,10 @@ class ObjectSelectorPanel(
     // Object type panels
     private val wallStylePanel = WallStylePanel(gridEditor)
     private val wallPropertiesPanel = WallPropertiesPanel()
-    private val floorPanel = JPanel() // Placeholder for floor properties
-    private val borderStylePanel = BorderStylePanel(renderer) // New border style panel
+    private val floorPropertiesPanel = FloorPropertiesPanel()
+    private val pillarPropertiesPanel = PillarPropertiesPanel()
+    private val rampPropertiesPanel = RampPropertiesPanel()
+    private val borderStylePanel = BorderStylePanel(renderer)
 
     // Keep track of object-specific panels
     private val objectPanels = mutableMapOf<String, JPanel>()
@@ -42,8 +45,11 @@ class ObjectSelectorPanel(
         // Set default selection
         objectTypeComboBox.selectedIndex = 0
 
-        // Connect wall properties panel to grid editor
+        // Connect all properties panels to grid editor
         wallPropertiesPanel.setGridEditor(gridEditor)
+        floorPropertiesPanel.setGridEditor(gridEditor)
+        pillarPropertiesPanel.setGridEditor(gridEditor)
+        rampPropertiesPanel.setGridEditor(gridEditor)
 
         // Connect wall style panel to our internal listener
         wallStylePanel.setWallStyleChangeListener { isBlockWall ->
@@ -59,7 +65,9 @@ class ObjectSelectorPanel(
         // Add object types
         objectTypeComboBox.addItem("Wall")
         objectTypeComboBox.addItem("Floor")
-        objectTypeComboBox.addItem("Border") // Add new option for border settings
+        objectTypeComboBox.addItem("Pillar")
+        objectTypeComboBox.addItem("Ramp")
+        objectTypeComboBox.addItem("Border")
         // Add future object types here
 
         // Style the combo box
@@ -128,16 +136,33 @@ class ObjectSelectorPanel(
             add(Box.createVerticalGlue())
         }
 
-        // Create Floor panel (currently just a placeholder)
+        // Create Floor panel
         val floorPanel = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             background = Color(40, 44, 52)
 
-            // Add a placeholder message for now
-            add(JLabel("Floor properties will go here").apply {
-                foreground = Color.WHITE
-                alignmentX = Component.LEFT_ALIGNMENT
-            })
+            // Add the floor properties panel
+            add(createSection("Floor Properties", floorPropertiesPanel))
+            add(Box.createVerticalGlue())
+        }
+
+        // Create Pillar panel
+        val pillarPanel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            background = Color(40, 44, 52)
+
+            // Add the pillar properties panel
+            add(createSection("Pillar Properties", pillarPropertiesPanel))
+            add(Box.createVerticalGlue())
+        }
+
+        // Create Ramp panel
+        val rampPanel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            background = Color(40, 44, 52)
+
+            // Add the ramp properties panel
+            add(createSection("Ramp Properties", rampPropertiesPanel))
             add(Box.createVerticalGlue())
         }
 
@@ -154,12 +179,16 @@ class ObjectSelectorPanel(
         // Add panels to the card layout
         contentPanel.add(wallPanel, "Wall")
         contentPanel.add(floorPanel, "Floor")
-        contentPanel.add(borderPanel, "Border") // Add border panel to card layout
+        contentPanel.add(pillarPanel, "Pillar")
+        contentPanel.add(rampPanel, "Ramp")
+        contentPanel.add(borderPanel, "Border")
 
         // Store references to panels for later access
         objectPanels["Wall"] = wallPanel
         objectPanels["Floor"] = floorPanel
-        objectPanels["Border"] = borderPanel // Store border panel reference
+        objectPanels["Pillar"] = pillarPanel
+        objectPanels["Ramp"] = rampPanel
+        objectPanels["Border"] = borderPanel
 
         // Add the content panel to the main panel
         add(contentPanel, BorderLayout.CENTER)
@@ -177,6 +206,18 @@ class ObjectSelectorPanel(
         wallPropertiesPanel.setWallPropertyChangeListener(listener)
     }
 
+    fun setFloorPropertyChangeListener(listener: FloorPropertiesPanel.FloorPropertyChangeListener) {
+        floorPropertiesPanel.setFloorPropertyChangeListener(listener)
+    }
+
+    fun setPillarPropertyChangeListener(listener: PillarPropertiesPanel.PillarPropertyChangeListener) {
+        pillarPropertiesPanel.setPillarPropertyChangeListener(listener)
+    }
+
+    fun setRampPropertyChangeListener(listener: RampPropertiesPanel.RampPropertyChangeListener) {
+        rampPropertiesPanel.setRampPropertyChangeListener(listener)
+    }
+
     fun setWallStyleChangeListener(listener: (Boolean) -> Unit) {
         // Store the external listener
         this.wallStyleChangeListener = listener
@@ -184,5 +225,17 @@ class ObjectSelectorPanel(
 
     fun updateWallProperties(color: Color, height: Double, width: Double) {
         wallPropertiesPanel.updateProperties(color, height, width)
+    }
+
+    fun updateFloorProperties(color: Color, height: Double) {
+        floorPropertiesPanel.updateProperties(color, height)
+    }
+
+    fun updatePillarProperties(color: Color, height: Double, width: Double) {
+        pillarPropertiesPanel.updateProperties(color, height, width)
+    }
+
+    fun updateRampProperties(color: Color, height: Double, width: Double, direction: Direction) {
+        rampPropertiesPanel.updateProperties(color, height, width, direction)
     }
 }
