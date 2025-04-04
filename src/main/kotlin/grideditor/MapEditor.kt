@@ -42,13 +42,19 @@ class GridEditor : JPanel() {
     var currentWallWidth = 2.0
     var currentWallColor = Color(150, 0, 0)
     var currentDirection = Direction.NORTH
+
     var currentFloorHeight = 0.0
     private var currentFloor = 0
     private val discoveredFloors = mutableSetOf<Int>()
-    var currentPillarWidth: Double = 1.0
 
-    var currentRampHeight: Double = 3.0
+    var currentPillarHeight = 4.0
+    var currentPillarWidth = 1.0
+    var currentPillarColor = Color(180, 170, 150)
+
     var currentSlopeDirection: Direction = Direction.NORTH
+    var currentRampHeight = 3.0
+    var currentRampWidth = 2.0
+    var currentRampColor = Color(150, 150, 150)
 
     var labelVisibility = mutableMapOf(
         "mode" to true,
@@ -65,6 +71,8 @@ class GridEditor : JPanel() {
     private var textureManagerPanel: TextureManagerPanel? = null
     var currentWallTexture: ImageEntry? = null
     var currentFloorTexture: ImageEntry? = null
+    var currentPillarTexture: ImageEntry? = null
+    var currentRampTexture: ImageEntry? = null
 
     // View properties
     var currentMode = EditMode.DRAW
@@ -153,6 +161,47 @@ class GridEditor : JPanel() {
 
     fun setFloorTexture(texture: ImageEntry?) {
         currentFloorTexture = texture
+        repaint()
+    }
+
+    fun setPillarColor(color: Color) {
+        currentPillarColor = color
+        repaint()
+    }
+
+    fun setPillarHeight(height: Double) {
+        currentPillarHeight = height
+        repaint()
+    }
+
+    fun setPillarWidth(width: Double) {
+        currentPillarWidth = width
+        repaint()
+    }
+
+    // New methods for ramps
+    fun setRampColor(color: Color) {
+        currentRampColor = color
+        repaint()
+    }
+
+    fun setRampHeight(height: Double) {
+        currentRampHeight = height
+        repaint()
+    }
+
+    fun setRampWidth(width: Double) {
+        currentRampWidth = width
+        repaint()
+    }
+
+    fun setPillarTexture(texture: ImageEntry?) {
+        currentPillarTexture = texture
+        repaint()
+    }
+
+    fun setRampTexture(texture: ImageEntry?) {
+        currentRampTexture = texture
         repaint()
     }
 

@@ -47,6 +47,7 @@ fun main() {
 // add way to build the game
 // player moving a bit when in water
 // add checkExistingWorlds feature, double press to load file
+// restructure saving in one project
 
 
 // Object List:

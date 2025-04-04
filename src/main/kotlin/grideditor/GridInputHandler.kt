@@ -341,11 +341,11 @@ class GridInputHandler(private val editor: GridEditor) {
                         PlayerSpawnObject(offsetX = offsetX, offsetY = offsetY)
                     }
                     ObjectType.PILLAR -> PillarObject(
-                        color = editor.currentWallColor,
-                        height = editor.currentWallHeight,
+                        color = editor.currentPillarColor,
+                        height = editor.currentPillarHeight,
                         width = editor.currentPillarWidth,
                         floorHeight = editor.currentFloorHeight,
-                        texture = editor.currentWallTexture
+                        texture = editor.currentPillarTexture ?: editor.currentWallTexture
                     )
                     ObjectType.WATER -> WaterObject(
                         color = Color(0, 105, 148, 180),
@@ -357,11 +357,11 @@ class GridInputHandler(private val editor: GridEditor) {
                         texture = null
                     )
                     ObjectType.RAMP -> RampObject(
-                        color = editor.currentWallColor,
+                        color = editor.currentRampColor,
                         floorHeight = editor.currentFloorHeight,
                         rampHeight = editor.currentRampHeight,
                         slopeDirection = editor.currentSlopeDirection,
-                        texture = editor.currentFloorTexture
+                        texture = editor.currentRampTexture ?: editor.currentFloorTexture
                     )
                     ObjectType.PROP -> null
                 }
