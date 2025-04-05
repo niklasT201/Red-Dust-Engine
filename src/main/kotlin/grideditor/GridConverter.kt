@@ -315,25 +315,25 @@ class GridConverter(private val editor: GridEditor) {
 
                     when (obj.slopeDirection) {
                         // Slopes UP towards North (+Z)
-                        Direction.NORTH -> {
+                        Direction.SOUTH -> {
                             c1 = Vec3(xz1.first, yLow, xz1.second) // NW Low
                             c2 = Vec3(xz2.first, yLow, xz2.second) // NE Low
                             c3 = Vec3(xz3.first, yHigh, xz3.second) // SE High
                             c4 = Vec3(xz4.first, yHigh, xz4.second) // SW High
                         }
-                        Direction.SOUTH -> {
+                        Direction.NORTH -> {
                             c1 = Vec3(xz1.first, yHigh, xz1.second) // NW High
                             c2 = Vec3(xz2.first, yHigh, xz2.second) // NE High
                             c3 = Vec3(xz3.first, yLow, xz3.second) // SE Low
                             c4 = Vec3(xz4.first, yLow, xz4.second) // SW Low
                         }
-                        Direction.EAST -> { // Slopes UP towards East (+X)
+                        Direction.WEST -> { // Slopes UP towards East (+X)
                             c1 = Vec3(xz1.first, yLow, xz1.second) // NW Low
                             c2 = Vec3(xz2.first, yHigh, xz2.second) // NE High
                             c3 = Vec3(xz3.first, yHigh, xz3.second) // SE High
                             c4 = Vec3(xz4.first, yLow, xz4.second) // SW Low
                         }
-                        Direction.WEST -> { // Slopes UP towards West (-X)
+                        Direction.EAST -> { // Slopes UP towards West (-X)
                             c1 = Vec3(xz1.first, yHigh, xz1.second) // NW High
                             c2 = Vec3(xz2.first, yLow, xz2.second) // NE Low
                             c3 = Vec3(xz3.first, yLow, xz3.second) // SE Low

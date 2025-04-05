@@ -51,7 +51,6 @@ fun main() {
 // fix broken floor teleportation collisions
 // add water panel
 // move border panel to world tab
-// switch ramp renderer
 
 
 // Object List:

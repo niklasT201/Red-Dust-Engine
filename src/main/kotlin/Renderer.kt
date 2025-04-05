@@ -94,8 +94,13 @@ class Renderer(
             renderQueue
         }
 
-        // Sort all objects by distance (furthest first)z
-        val sortedQueue = filteredQueue.sortedByDescending { it.distance }
+        // Sort all objects by distance (furthest first)
+        val sortedQueue = filteredQueue.sortedWith(compareByDescending<RenderableObject> {
+            when (it) {
+                is RenderableObject.WallInfo -> it.distance - 0.1 // Apply slight bias to walls
+                else -> it.distance
+            }
+        })
 
         // Store original rendering hints and stroke
         val originalAntialiasingHint = g2.getRenderingHint(RenderingHints.KEY_ANTIALIASING)
