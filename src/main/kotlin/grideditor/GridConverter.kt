@@ -118,8 +118,11 @@ class GridConverter(private val editor: GridEditor) {
                     val gameX = -x * editor.baseScale
                     val gameZ = y * editor.baseScale
 
-                    // Calculate Y position based on floor number using consistent floor height
-                    val yPosition = floorNum * editor.floorHeight
+                    // Calculate base Y position based on floor number
+                    val baseYPosition = floorNum * editor.floorHeight
+
+                    // Apply the floor's height offset
+                    val finalYPosition = baseYPosition + obj.floorHeight
 
                     floors.add(
                         Floor(
@@ -127,7 +130,7 @@ class GridConverter(private val editor: GridEditor) {
                             z1 = gameZ,
                             x2 = gameX + editor.baseScale,
                             z2 = gameZ + editor.baseScale,
-                            y = yPosition,
+                            y = finalYPosition,  // Use the adjusted Y position
                             color = obj.color,
                             texture = obj.texture
                         )

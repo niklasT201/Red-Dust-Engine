@@ -85,7 +85,7 @@ class FloorPropertiesPanel : JPanel() {
     }
 
     private fun createHeightButton(): JButton {
-        return JButton("Floor Height: $currentFloorHeight").apply {
+        return JButton("Floor Y-Offset: $currentFloorHeight").apply {
             background = Color(60, 63, 65)
             foreground = Color.WHITE
             isFocusPainted = false
@@ -93,21 +93,21 @@ class FloorPropertiesPanel : JPanel() {
             addActionListener {
                 val input = JOptionPane.showInputDialog(
                     this,
-                    "Enter floor height (-5.0 - 10.0):",
+                    "Enter floor Y-offset (-5.0 to 5.0):",
                     currentFloorHeight
                 )
                 try {
                     val newHeight = input?.toDoubleOrNull()
-                    if (newHeight != null && newHeight in -5.0..10.0) {
+                    if (newHeight != null && newHeight in -5.0..5.0) {
                         currentFloorHeight = newHeight
-                        text = "Floor Height: $currentFloorHeight"
+                        text = "Floor Y-Offset: $currentFloorHeight"
                         propertyChangeListener?.onFloorHeightChanged(newHeight)
                         gridEditor?.updateCurrentFloorHeight(currentFloorHeight)
                     }
                 } catch (e: NumberFormatException) {
                     JOptionPane.showMessageDialog(
                         this,
-                        "Please enter a valid number between -5.0 and 10.0",
+                        "Please enter a valid number between -5.0 and 5.0",
                         "Invalid Input",
                         JOptionPane.ERROR_MESSAGE
                     )
