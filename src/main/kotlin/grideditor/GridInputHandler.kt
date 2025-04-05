@@ -127,12 +127,12 @@ class GridInputHandler(private val editor: GridEditor) {
         if (editor.grid.containsKey(clickedCell)) {
             editor.grid[clickedCell]?.let { cell ->
                 // Get objects for current floor and find wall
-                cell.getObjectsForFloor(editor.getCurrentFloor()).filterIsInstance<WallObject>().firstOrNull()?.let { wallObject ->
+                cell.getObjectsForFloor(editor.useCurrentFloor()).filterIsInstance<WallObject>().firstOrNull()?.let { wallObject ->
                     // Create new wall object with rotated direction
                     val newWall = wallObject.copy(direction = wallObject.direction.rotate())
                     // Remove old wall and add new one on current floor only
-                    cell.removeObject(editor.getCurrentFloor(), ObjectType.WALL)
-                    cell.addObject(editor.getCurrentFloor(), newWall)
+                    cell.removeObject(editor.useCurrentFloor(), ObjectType.WALL)
+                    cell.addObject(editor.useCurrentFloor(), newWall)
                     editor.repaint()
                     editor.notifyGridChanged()
                 }
@@ -286,11 +286,11 @@ class GridInputHandler(private val editor: GridEditor) {
                 // Create a remove command
                 editor.grid[currentCell]?.let { cell ->
                     val objectType = editor.currentObjectType
-                    if (cell.getObjectsForFloor(editor.getCurrentFloor()).any { it.type == objectType }) {
+                    if (cell.getObjectsForFloor(editor.useCurrentFloor()).any { it.type == objectType }) {
                         val command = RemoveObjectCommand(
                             editor.grid,
                             currentCell,
-                            editor.getCurrentFloor(),
+                            editor.useCurrentFloor(),
                             objectType
                         )
                         editor.commandManager.executeCommand(command)
@@ -313,7 +313,7 @@ class GridInputHandler(private val editor: GridEditor) {
                         texture = editor.currentWallTexture
                     )
                     ObjectType.FLOOR -> FloorObject(
-                        color = Color(100, 100, 100),
+                        color = editor.currentFloorColor,
                         floorHeight = editor.currentFloorHeight,
                         texture = editor.currentFloorTexture,
                     )
@@ -370,7 +370,7 @@ class GridInputHandler(private val editor: GridEditor) {
                     val command = AddObjectCommand(
                         editor.grid,
                         currentCell,
-                        editor.getCurrentFloor(),
+                        editor.useCurrentFloor(),
                         it
                     )
                     editor.commandManager.executeCommand(command)

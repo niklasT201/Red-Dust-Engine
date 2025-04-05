@@ -151,7 +151,7 @@ class FileManager(
             }
 
             // Set the current floor in the menu
-            menu.setCurrentFloor(gridEditor.getCurrentFloor())
+            menu.setCurrentFloor(gridEditor.useCurrentFloor())
         }
     }
 

@@ -8,7 +8,7 @@ import javax.swing.*
 class FloorPropertiesPanel : JPanel() {
     // Properties
     private var currentFloorColor = Color(100, 100, 100)  // Default floor color
-    private var currentFloorHeight = 0.0  // Default floor height
+    private var currentFloorHeight = 0.0
 
     // UI Components
     private val colorButton: JButton
@@ -77,8 +77,8 @@ class FloorPropertiesPanel : JPanel() {
                     background = newColor
                     currentFloorColor = newColor
                     propertyChangeListener?.onFloorColorChanged(newColor)
-                    // Update selected cell if there is one
-                    gridEditor?.updateSelectedCell(color = newColor)
+                    // Update grid editor
+                    gridEditor?.setFloorColor(newColor)
                 }
             }
         }
@@ -93,12 +93,12 @@ class FloorPropertiesPanel : JPanel() {
             addActionListener {
                 val input = JOptionPane.showInputDialog(
                     this,
-                    "Enter floor height (-10.0 - 10.0):",
+                    "Enter floor height (-5.0 - 10.0):",
                     currentFloorHeight
                 )
                 try {
                     val newHeight = input?.toDoubleOrNull()
-                    if (newHeight != null && newHeight in -10.0..10.0) {
+                    if (newHeight != null && newHeight in -5.0..10.0) {
                         currentFloorHeight = newHeight
                         text = "Floor Height: $currentFloorHeight"
                         propertyChangeListener?.onFloorHeightChanged(newHeight)
@@ -107,7 +107,7 @@ class FloorPropertiesPanel : JPanel() {
                 } catch (e: NumberFormatException) {
                     JOptionPane.showMessageDialog(
                         this,
-                        "Please enter a valid number between -10.0 and 10.0",
+                        "Please enter a valid number between -5.0 and 10.0",
                         "Invalid Input",
                         JOptionPane.ERROR_MESSAGE
                     )

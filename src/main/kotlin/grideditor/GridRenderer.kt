@@ -42,7 +42,7 @@ class GridRenderer(private val editor: GridEditor) {
 
                 // Get objects only for current floor
                 val cell = editor.grid[Pair(x, y)]
-                val floorObjects = cell?.getObjectsForFloor(editor.getCurrentFloor())
+                val floorObjects = cell?.getObjectsForFloor(editor.useCurrentFloor())
                 val wallObject = floorObjects?.firstOrNull { it.type == ObjectType.WALL } as? WallObject
                 val floorObject = floorObjects?.firstOrNull { it.type == ObjectType.FLOOR } as? FloorObject
                 val playerSpawnObject = floorObjects?.firstOrNull { it.type == ObjectType.PLAYER_SPAWN } as? PlayerSpawnObject
@@ -379,7 +379,7 @@ class GridRenderer(private val editor: GridEditor) {
 
         // Draw direction letters on wall tiles
         editor.grid.forEach { (pos, cell) ->
-            cell.getObjectsForFloor(editor.getCurrentFloor()).filterIsInstance<WallObject>().firstOrNull()?.let { wallObject ->
+            cell.getObjectsForFloor(editor.useCurrentFloor()).filterIsInstance<WallObject>().firstOrNull()?.let { wallObject ->
                 if (!wallObject.isBlockWall) {
                     val (x, y) = pos
                     val (screenX, screenY) = gridToScreen(x, y)

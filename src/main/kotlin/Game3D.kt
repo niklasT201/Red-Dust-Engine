@@ -25,8 +25,9 @@ class Game3D : JPanel() {
     private var skyColor = Color(135, 206, 235)
     private var skyRenderer: SkyRenderer = SkyRenderer(skyColor)
 
-    private var frameCount = 0
-    private var lastFpsUpdateTime = System.currentTimeMillis()
+    private var lastFrameTime = System.nanoTime() // Track time of each frame
+    private var frameTimeSum = 0L // Sum of frame times
+    private var frameTimeCount = 0
     var currentFps = 0
 
     private val renderPanel = RenderPanel(this, renderer, player, walls, floors, waters, ramps)
@@ -131,7 +132,7 @@ class Game3D : JPanel() {
         menuSystem = MenuSystem(
             onFloorSelected = { level ->
                 // Update grid editor with new floor level
-                gridEditor.setCurrentFloor(level)
+                gridEditor.changeCurrentFloor(level)
 
                 // Update the floor height based on the level
                 gridEditor.updateCurrentFloorHeight(level * gridEditor.floorHeight)
@@ -145,7 +146,7 @@ class Game3D : JPanel() {
             onFloorAdded = { isAbove ->
                 // Get existing floors
                 val currentFloors = getExistingFloors()
-                val currentFloor = gridEditor.getCurrentFloor()
+                val currentFloor = gridEditor.useCurrentFloor()
 
                 // Initial calculation of new level based on current floor
                 var newLevel = if (isAbove) {
@@ -169,7 +170,7 @@ class Game3D : JPanel() {
                 menuSystem.addFloor(newLevel)
 
                 // Set the current floor to the new level
-                gridEditor.setCurrentFloor(newLevel)
+                gridEditor.changeCurrentFloor(newLevel)
 
                 // Update floor height in the grid editor
                 gridEditor.updateCurrentFloorHeight(newLevel * gridEditor.floorHeight)
@@ -305,7 +306,7 @@ class Game3D : JPanel() {
         } else {
             // Find the player spawn point and set the camera position
             gridEditor.grid.forEach { (pos, cell) ->
-                cell.getObjectsForFloor(gridEditor.getCurrentFloor()).filterIsInstance<PlayerSpawnObject>().firstOrNull()?.let { playerSpawn ->
+                cell.getObjectsForFloor(gridEditor.useCurrentFloor()).filterIsInstance<PlayerSpawnObject>().firstOrNull()?.let { playerSpawn ->
                     val (x, y) = pos
 
                     // Use the stored offsets to calculate the precise position
@@ -317,7 +318,7 @@ class Game3D : JPanel() {
                     player.camera.position.z = worldZ
 
                     // Calculate correct Y position based on current floor
-                    val floorHeight = gridEditor.getCurrentFloor() * gridEditor.floorHeight
+                    val floorHeight = gridEditor.useCurrentFloor() * gridEditor.floorHeight
                     player.camera.position.y = 1.7 + floorHeight  // Player eye height + floor height
                 }
             }
@@ -360,15 +361,25 @@ class Game3D : JPanel() {
     }
 
     private fun calculateFps() {
-        frameCount++
-        val currentTime = System.currentTimeMillis()
-        val elapsedTime = currentTime - lastFpsUpdateTime
+        val currentTime = System.nanoTime()
+        val frameTime = currentTime - lastFrameTime // Time taken for this frame in nanoseconds
+        lastFrameTime = currentTime
 
-        // Update FPS calculation every 500ms
-        if (elapsedTime >= 500) {
-            currentFps = (frameCount / (elapsedTime / 1000.0)).toInt()
-            frameCount = 0
-            lastFpsUpdateTime = currentTime
+        // Skip extreme values (e.g., when game was paused or minimized)
+        if (frameTime in 1..999999999) { // Less than 1 second
+            frameTimeSum += frameTime
+            frameTimeCount++
+
+            // Update FPS calculation every 500ms
+            if (frameTimeSum > 500_000_000) { // 500ms in nanoseconds
+                // Convert average frame time to FPS
+                val avgFrameTime = frameTimeSum.toDouble() / frameTimeCount
+                currentFps = (1_000_000_000.0 / avgFrameTime).toInt()
+
+                // Reset accumulators
+                frameTimeSum = 0
+                frameTimeCount = 0
+            }
         }
     }
 

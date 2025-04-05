@@ -1,8 +1,12 @@
 package ui
 
+import Direction
+import FloorObject
 import Renderer
 import Game3D
 import ObjectType
+import PillarObject
+import RampObject
 import WallObject
 import grideditor.GridEditor
 import texturemanager.ResourceManager
@@ -197,6 +201,51 @@ class EditorPanel(var gridEditor: GridEditor, val renderer: Renderer, private va
 
             override fun onWallWidthChanged(width: Double) {
                 gridEditor.setWallWidth(width)
+            }
+        })
+
+        // Connect floor property changes
+        objectSelectorPanel.setFloorPropertyChangeListener(object : FloorPropertiesPanel.FloorPropertyChangeListener {
+            override fun onFloorColorChanged(color: Color) {
+                gridEditor.setFloorColor(color)  // Assuming this method exists
+            }
+
+            override fun onFloorHeightChanged(height: Double) {
+                gridEditor.updateCurrentFloorHeight(height)
+            }
+        })
+
+        // Connect pillar property changes
+        objectSelectorPanel.setPillarPropertyChangeListener(object : PillarPropertiesPanel.PillarPropertyChangeListener {
+            override fun onPillarColorChanged(color: Color) {
+                gridEditor.setPillarColor(color)
+            }
+
+            override fun onPillarHeightChanged(height: Double) {
+                gridEditor.setPillarHeight(height)
+            }
+
+            override fun onPillarWidthChanged(width: Double) {
+                gridEditor.setPillarWidth(width)
+            }
+        })
+
+        // Connect ramp property changes
+        objectSelectorPanel.setRampPropertyChangeListener(object : RampPropertiesPanel.RampPropertyChangeListener {
+            override fun onRampColorChanged(color: Color) {
+                gridEditor.setRampColor(color)
+            }
+
+            override fun onRampHeightChanged(height: Double) {
+                gridEditor.setRampHeight(height)
+            }
+
+            override fun onRampWidthChanged(width: Double) {
+                gridEditor.setRampWidth(width)
+            }
+
+            override fun onRampDirectionChanged(direction: Direction) {
+                gridEditor.setRampDirection(direction)  // Assuming this method exists
             }
         })
 
@@ -453,11 +502,12 @@ class EditorPanel(var gridEditor: GridEditor, val renderer: Renderer, private va
 
     private fun setupSelectionHandling() {
         gridEditor.setOnCellSelectedListener { cellData ->
-            // Update the property buttons with selected cell's values
+            // Update the property panels with selected cell's values
             cellData?.let { cell ->
                 // Use the getter instead of directly accessing the property
-                val currentFloorObjects = cell.getObjectsForFloor(gridEditor.getCurrentFloor())
+                val currentFloorObjects = cell.getObjectsForFloor(gridEditor.useCurrentFloor())
 
+                // Handle WallObject
                 val wallObject = currentFloorObjects.filterIsInstance<WallObject>().firstOrNull()
 
                 wallObject?.let {
@@ -466,6 +516,36 @@ class EditorPanel(var gridEditor: GridEditor, val renderer: Renderer, private va
                         color = it.color,
                         height = it.height,
                         width = it.width
+                    )
+                }
+
+                // Handle FloorObject
+                val floorObject = currentFloorObjects.filterIsInstance<FloorObject>().firstOrNull()
+                floorObject?.let {
+                    objectSelectorPanel.updateFloorProperties(
+                        color = it.color,
+                        height = it.height
+                    )
+                }
+
+                // Handle PillarObject
+                val pillarObject = currentFloorObjects.filterIsInstance<PillarObject>().firstOrNull()
+                pillarObject?.let {
+                    objectSelectorPanel.updatePillarProperties(
+                        color = it.color,
+                        height = it.height,
+                        width = it.width
+                    )
+                }
+
+                // Handle RampObject
+                val rampObject = currentFloorObjects.filterIsInstance<RampObject>().firstOrNull()
+                rampObject?.let {
+                    objectSelectorPanel.updateRampProperties(
+                        color = it.color,
+                        height = it.height,
+                        width = it.width,
+                        direction = it.direction
                     )
                 }
             }

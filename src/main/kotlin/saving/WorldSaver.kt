@@ -103,7 +103,7 @@ class WorldSaver {
             }
 
             // Write editor settings
-            outputStream.writeInt(gridEditor.getCurrentFloor())
+            outputStream.writeInt(gridEditor.useCurrentFloor())
             outputStream.writeDouble(gridEditor.currentFloorHeight)
             outputStream.writeBoolean(gridEditor.useBlockWalls)
 
@@ -264,7 +264,7 @@ class WorldSaver {
             val useBlockWalls = inputStream.readBoolean()
 
             // Apply editor settings
-            gridEditor.setCurrentFloor(currentFloor)
+            gridEditor.changeCurrentFloor(currentFloor)
             gridEditor.updateCurrentFloorHeight(currentFloorHeight)
             gridEditor.useBlockWalls = useBlockWalls
 

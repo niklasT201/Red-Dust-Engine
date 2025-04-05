@@ -12,6 +12,7 @@ import texturemanager.ResourceManager
 import texturemanager.TextureManagerPanel
 import ImageEntry
 import Ramp
+import RampObject
 import WaterSurface
 import java.awt.*
 import javax.swing.*
@@ -44,7 +45,8 @@ class GridEditor : JPanel() {
     var currentDirection = Direction.NORTH
 
     var currentFloorHeight = 0.0
-    private var currentFloor = 0
+    var currentFloor = 0
+    var currentFloorColor = Color(100, 100, 100)
     private val discoveredFloors = mutableSetOf<Int>()
 
     var currentPillarHeight = 4.0
@@ -129,11 +131,11 @@ class GridEditor : JPanel() {
         repaint()
     }
 
-    fun getCurrentFloor(): Int {
+    fun useCurrentFloor(): Int {
         return currentFloor
     }
 
-    fun setCurrentFloor(floor: Int) {
+    fun changeCurrentFloor(floor: Int) {
         currentFloor = floor
         repaint()
     }
@@ -161,6 +163,11 @@ class GridEditor : JPanel() {
 
     fun setFloorTexture(texture: ImageEntry?) {
         currentFloorTexture = texture
+        repaint()
+    }
+
+    fun setFloorColor(color: Color) {
+        currentFloorColor = color
         repaint()
     }
 
@@ -216,6 +223,26 @@ class GridEditor : JPanel() {
                     // Replace old wall with new one on current floor
                     cell.removeObject(currentFloor, ObjectType.WALL)
                     cell.addObject(currentFloor, newWall)
+                    repaint()
+                    firePropertyChange("gridChanged", null, grid)
+                }
+            }
+        }
+    }
+
+    fun setRampDirection(direction: Direction) {
+        currentSlopeDirection = direction
+        repaint()
+
+        // If in select mode and a cell is selected, update the direction of the selected ramp
+        if (currentMode == EditMode.SELECT && selectedCell != null) {
+            grid[selectedCell]?.let { cell ->
+                cell.getObjectsForFloor(currentFloor).filterIsInstance<RampObject>().firstOrNull()?.let { rampObject ->
+                    // Create new ramp object with updated direction
+                    val newRamp = rampObject.copy(slopeDirection = direction)
+                    // Replace old ramp with new one on current floor
+                    cell.removeObject(currentFloor, ObjectType.RAMP)
+                    cell.addObject(currentFloor, newRamp)
                     repaint()
                     firePropertyChange("gridChanged", null, grid)
                 }

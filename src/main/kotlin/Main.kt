@@ -53,6 +53,7 @@ fun main() {
 // move border panel to world tab
 // fix wrong fps showing label
 // switch ramp renderer
+// redo floor panel
 
 
 // Object List:
