@@ -135,7 +135,7 @@ class Game3D : JPanel() {
                 gridEditor.changeCurrentFloor(level)
 
                 // Update the floor height based on the level
-                gridEditor.updateCurrentFloorHeight(level * gridEditor.floorHeight)
+                //gridEditor.updateCurrentFloorHeight(level * gridEditor.floorHeight)
 
                 // Update UI to show we're on the new floor
                 menuSystem.setCurrentFloor(level)
@@ -171,9 +171,6 @@ class Game3D : JPanel() {
 
                 // Set the current floor to the new level
                 gridEditor.changeCurrentFloor(newLevel)
-
-                // Update floor height in the grid editor
-                gridEditor.updateCurrentFloorHeight(newLevel * gridEditor.floorHeight)
 
                 // Update UI immediately
                 menuSystem.setCurrentFloor(newLevel)

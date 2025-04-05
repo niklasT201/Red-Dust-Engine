@@ -149,9 +149,15 @@ class Player(
                 // When moving down, check if feet will hit a floor
                 val floorCollision = checkFloorCollision(finalX, newFeetY, finalZ, floors)
                 if (floorCollision.first) {
-                    // Hit floor, place feet exactly on floor
-                    camera.position.y = floorCollision.second + playerHeight
-                    verticalVelocity = 0.0
+                    // Check if the player is specifically trying to FLY DOWN (up < 0)
+                    if (up < 0 && floorCollision.second > currentFeetY) {
+                        // Player is trying to fly down while positioned under this floor. Allow normal downward movement.
+                        camera.position.y = newY
+                    } else {
+                        // Hit floor, place feet exactly on floor
+                        camera.position.y = floorCollision.second + playerHeight
+                        verticalVelocity = 0.0
+                    }
                 } else {
                     // No floor collision, move freely downward
                     camera.position.y = newY
