@@ -1,6 +1,6 @@
 # Kotlin Boomer Shooter Engine
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) <!-- Choose your license! -->
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A work-in-progress 3D game engine inspired by classic "boomer shooters" like Doom and Quake, built entirely in Kotlin using Java Swing for the UI and editor. This engine features an integrated grid-based level editor allowing users to build their own maps directly within the application.
 
@@ -55,28 +55,6 @@ A work-in-progress 3D game engine inspired by classic "boomer shooters" like Doo
     ```
 2.  **Open the project** in your preferred IDE (e.g., IntelliJ IDEA).
 3.  **Locate the main entry point** of the application (the file containing the `main` function that creates and runs the `Game3D` instance).
-    *   *Example:* You might have a `Main.kt` file like this:
-        ```kotlin
-        import javax.swing.JFrame
-
-        fun main() {
-            val frame = JFrame("Kotlin Boomer Shooter Engine")
-            val game = Game3D()
-            frame.add(game)
-            frame.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
-            frame.pack() // Pack before setting minimum size if needed
-            frame.minimumSize = frame.size // Set minimum size after packing
-            frame.setLocationRelativeTo(null) // Center the window
-            frame.isVisible = true
-
-            // Start the game loop (assuming you have one)
-            val timer = javax.swing.Timer(16) { // ~60 FPS
-                game.update()
-            }
-            timer.start()
-        }
-        ```
-    *   **[TODO: Specify the exact main class/file to run here.]**
 4.  **Run** the `main` function.
 
 ## How to Use
@@ -106,9 +84,10 @@ A work-in-progress 3D game engine inspired by classic "boomer shooters" like Doo
 
 ### Editor Mode
 
-*   **Mouse:** Interact with the grid editor (place walls, select objects, etc. - **[TODO: Specify editor controls]**).
+*   **Mouse:** Interact with the grid editor (place walls, select objects, etc.
 *   **Menu Bar:** Access various editor functions.
 *   **`E` Key:** Toggle between Editor and Game Mode.
+*   **Number Keys for faster Object Selection, 1, 2, 3, 4, 5, 6
 
 ### Game Mode
 
@@ -118,11 +97,11 @@ A work-in-progress 3D game engine inspired by classic "boomer shooters" like Doo
 *   **`A` Key:** Strafe Left
 *   **`D` Key:** Strafe Right
 *   **`Fly Up` Key:** Fly Up (if gravity is disabled)
-*   **`Shift` Key / `Ctrl` Key (Example):** Fly Up / Fly Down (if gravity is disabled) (**[TODO: Specify Fly Keys]**)
+*   **`Shift` Key:** Fly Down(if gravity is disabled)
 *   **`E` Key:** Toggle between Game and Editor Mode.
-*   **`H` Key (Example):** Toggle Weapon/Game UI Visibility (**[TODO: Specify UI Toggle Key - `KeyBindings.TOGGLE_WEAPON_UI`]**)
+*   **`U` Key (Example):** Toggle Weapon/Game UI Visibility
 
-**(Note: Check the `controls.KeyBindings.kt` file for the definitive key codes.)**
+**(Note: Check the `KeyBindings.kt` file for the definitive key codes.)**
 
 ## Core Concepts
 
@@ -225,4 +204,4 @@ Please try to follow the existing coding style.
 
 ## License
 
-This project is licensed under the **[TODO: Choose a License - e.g., MIT License]**. See the `LICENSE` file for details.
+This project is licensed under the MIT License.
