@@ -75,107 +75,110 @@ class Player(
         val forwardZ = cos(camera.yaw)
         val rightX = cos(camera.yaw)
         val rightZ = sin(camera.yaw)
+        val potentialNewX = camera.position.x + (forward * forwardX + right * rightX) * moveSpeed
+        val potentialNewZ = camera.position.z + (forward * forwardZ + right * rightZ) * moveSpeed
 
         // Calculate new position using forward and right vectors
-        val newX = camera.position.x + (forward * forwardX + right * rightX) * moveSpeed
-        val newZ = camera.position.z + (forward * forwardZ + right * rightZ) * moveSpeed
-
-        // Modify vertical movement for gravity
-        var newY = camera.position.y
+        val currentY = camera.position.y
+        var potentialNewY = currentY
         if (gravityEnabled) {
             // Apply gravity
             verticalVelocity -= gravity
             verticalVelocity = maxOf(verticalVelocity, terminalVelocity)
-            newY += verticalVelocity
+            potentialNewY += verticalVelocity
         } else {
-            newY += up * moveSpeed
+            potentialNewY += up * moveSpeed
             verticalVelocity = 0.0
         }
 
         // Collision detection for walls
-        val canMove = checkWallCollision(newX, newZ, walls)
+        val canMove = checkWallCollision(potentialNewX, potentialNewZ, walls)
+        val finalX = if (canMove.first) potentialNewX else camera.position.x
+        val finalZ = if (canMove.second) potentialNewZ else camera.position.z
 
         // Apply horizontal movement with wall collision detection
-        val finalX = if (canMove.first) newX else camera.position.x
-        val finalZ = if (canMove.second) newZ else camera.position.z
-
-        // Get player's feet position (camera is at eye level)
-        val currentFeetY = camera.position.y - playerHeight
-        val newFeetY = newY - playerHeight
+        val currentFeetY = currentY - playerHeight
+        val newFeetY = potentialNewY - playerHeight
+        var finalY = potentialNewY
 
         // Check for ramp collision at the new position
         val rampCollision = checkRampCollision(finalX, newFeetY, finalZ, ramps)
 
         // If on a ramp, adjust player height
         if (rampCollision.first) {
-            // Set player's feet exactly on the ramp
-            camera.position.y = rampCollision.second + playerHeight
-
-            // Apply a small offset to prevent "floating" above the ramp
-            // or sinking into it due to floating-point precision issues
-            camera.position.y += 0.01
-
-            // When on a ramp with gravity enabled, adjust vertical velocity
-            // to allow smooth movement along the ramp's slope
-            if (gravityEnabled) {
-                // Dampen vertical velocity to prevent bouncing
-                verticalVelocity *= 0.5
-
-                // If moving down a steep ramp, limit falling speed
+            // Handle landing/moving on ramp
+            val rampSurfaceY = rampCollision.second
+            if (newFeetY <= rampSurfaceY + 0.05) { // Check if moving onto or along ramp
+                finalY = rampSurfaceY + playerHeight
                 if (verticalVelocity < 0) {
-                    verticalVelocity = maxOf(verticalVelocity, -0.1)
-                }
-            } else {
-                // Reset vertical velocity in non-gravity mode
-                verticalVelocity = 0.0
-            }
-        }
-        // Not on a ramp, check for floor collisions
-        else {
-            // Check if moving up through a floor
-            if (up > 0) {
-                // When moving up, check if head will hit a ceiling
-                val headCollision = checkCeilingCollision(finalX, newY + headClearance, finalZ, floors)
-                if (headCollision.first) {
-                    // Hit ceiling, stop at collision point minus head clearance
-                    camera.position.y = headCollision.second - headClearance
+                    verticalVelocity *= 0.5
                 } else {
-                    // No ceiling collision, move freely upward
-                    camera.position.y = newY
+                    verticalVelocity = 0.0
                 }
             }
-            // Check if moving down onto or through a floor
-            else if (up < 0 || gravityEnabled) {
-                // When moving down, check if feet will hit a floor
-                val floorCollision = checkFloorCollision(finalX, newFeetY, finalZ, floors)
+        } else {
+            // 2. Not on a ramp, check Ceilings (when moving up)
+            val potentialHeadY = potentialNewY + headClearance
+            val ceilingCheckResult = checkCeilingCollision(finalX, potentialHeadY, finalZ, floors)
+
+            if (ceilingCheckResult.first) {
+                // Check if moving upwards INTO the ceiling
+                if (potentialNewY > currentY && potentialHeadY >= ceilingCheckResult.second) {
+                    finalY = ceilingCheckResult.second - headClearance // Stop below ceiling
+                    verticalVelocity = 0.0
+                } else if (potentialNewY > currentY) {
+                    // Prevent upward movement if head is already intersecting slightly
+                    verticalVelocity = 0.0
+                }
+            }
+
+            // 3. Check Floors (if not hitting a ceiling OR if moving down)
+            if (!ceilingCheckResult.first || potentialNewY <= currentY) {
+
+                val floorCollision = checkFloorCollision(finalX, currentFeetY, newFeetY, finalZ, floors)
+
                 if (floorCollision.first) {
-                    // Check if the player is specifically trying to FLY DOWN (up < 0)
-                    if (up < 0 && floorCollision.second > currentFeetY) {
-                        // Player is trying to fly down while positioned under this floor. Allow normal downward movement.
-                        camera.position.y = newY
-                    } else {
-                        // Hit floor, place feet exactly on floor
-                        camera.position.y = floorCollision.second + playerHeight
+                    // Floor detected within the movement step
+                    val collidingFloorY = floorCollision.second
+
+                    // Head-bump + fly down fix: Allow moving down if trying to fly away from a floor above current pos
+                    if (up < 0 && collidingFloorY > currentFeetY) {
+                        finalY = potentialNewY // Allow flying down
+                    }
+                    // Standard landing: If target feet are at/below the detected floor
+                    else if (newFeetY <= collidingFloorY) {
+                        finalY = collidingFloorY + playerHeight // Land on floor
                         verticalVelocity = 0.0
                     }
+                    // Else: Collision detected but somehow newFeetY > collidingFloorY? Use potentialNewY.
+                    else {
+                        finalY = potentialNewY
+                    }
                 } else {
-                    // No floor collision, move freely downward
-                    camera.position.y = newY
-                }
-            }
-            // Not moving vertically, still check if we're standing on a floor
-            else {
-                // Check if standing on floor (a tiny bit below feet to account for precision)
-                val standingCheck = checkFloorCollision(finalX, currentFeetY - 0.01, finalZ, floors)
-                if (standingCheck.first && standingCheck.second - currentFeetY < 0.2) {
-                    camera.position.y = standingCheck.second + playerHeight
+                    // No floor collision during this step, allow movement to potentialNewY
+                    finalY = potentialNewY
                 }
             }
         }
 
         // Finally, update x and z position
         camera.position.x = finalX
+        camera.position.y = finalY
         camera.position.z = finalZ
+
+        // --- Standing Adjustment (Post-Movement Ground Snap) ---
+        if (gravityEnabled && kotlin.math.abs(verticalVelocity) < 0.01 && !rampCollision.first) {
+            val currentFeetNow = camera.position.y - playerHeight
+            val slightlyBelowFeet = currentFeetNow - 0.05
+
+            // Use modified check for the small downward step
+            val standingCheck = checkFloorCollision(camera.position.x, currentFeetNow, slightlyBelowFeet, camera.position.z, floors)
+            if (standingCheck.first) {
+                camera.position.y = standingCheck.second + playerHeight // Snap to ground
+                // Optionally ensure verticalVelocity is zero again here if needed
+                // verticalVelocity = 0.0
+            }
+        }
     }
 
     private fun checkWallCollision(newX: Double, newZ: Double, walls: List<Wall>): Pair<Boolean, Boolean> {
@@ -226,18 +229,18 @@ class Player(
         return Pair(canMoveX, canMoveZ)
     }
 
-    private fun checkFloorCollision(x: Double, feetY: Double, z: Double, floors: List<Floor>): Pair<Boolean, Double> {
-        // Find the highest floor at or below the player's potential feet position
-        var highestCollidingFloorY = Double.NEGATIVE_INFINITY // Use a more descriptive name
+    private fun checkFloorCollision(x: Double, currentFeetY: Double, newFeetY: Double, z: Double, floors: List<Floor>): Pair<Boolean, Double> {
+        var highestCollidingFloorY = Double.NEGATIVE_INFINITY
         var hasCollision = false
+        val epsilon = 0.001 // Tolerance for floating point comparisons
 
         for (floor in floors) {
-            // Check if player is within the floor's horizontal boundaries
+            // Check horizontal bounds first
             if (x >= floor.x1 - playerRadius && x <= floor.x2 + playerRadius &&
                 z >= floor.z1 - playerRadius && z <= floor.z2 + playerRadius) {
 
-                // Check if the potential feet position is at or below this floor's level.
-                if (feetY <= floor.y) {
+                // Check if the floor's Y-level is BETWEEN the starting feet pos and the ending feet pos.
+                if (floor.y <= currentFeetY + epsilon && floor.y >= newFeetY) {
                     // This floor is a potential candidate for collision.
                     if (floor.y > highestCollidingFloorY) {
                         highestCollidingFloorY = floor.y
