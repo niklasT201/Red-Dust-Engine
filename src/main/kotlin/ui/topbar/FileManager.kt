@@ -227,7 +227,7 @@ class FileManager(
         // Make sure we have a project name
         if (currentProjectName == null) {
             val projectName = promptForProjectName(parentComponent)
-            if (projectName == null || projectName.isBlank()) {
+            if (projectName.isNullOrBlank()) {
                 return null // User cancelled or entered invalid name
             }
             setCurrentProjectName(projectName)

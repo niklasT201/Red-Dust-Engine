@@ -99,12 +99,7 @@ class MenuBuilder(
                     if (fileManager.saveWorld(parentComponent, false)) {
                         showNotification(parentComponent, "World saved successfully")
                     } else {
-                        JOptionPane.showMessageDialog(
-                            parentComponent,
-                            "Failed to save world.",
-                            "Save Error",
-                            JOptionPane.ERROR_MESSAGE
-                        )
+                        showNotification(parentComponent, "Failed to save world.", "Save Error", JOptionPane.ERROR_MESSAGE)
                     }
                 }
             })
