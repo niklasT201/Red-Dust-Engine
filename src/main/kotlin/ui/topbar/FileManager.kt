@@ -10,6 +10,8 @@ import javax.swing.JOptionPane
 import javax.swing.filechooser.FileNameExtensionFilter
 import ui.MenuSystem
 import ui.GameType
+import javax.swing.JFrame
+import javax.swing.SwingUtilities
 
 class FileManager(
     private val gridEditor: GridEditor,
@@ -81,12 +83,18 @@ class FileManager(
     }
 
     private fun promptForProjectName(parentComponent: Component): String? {
-        return JOptionPane.showInputDialog(
-            parentComponent,
+        val frame = SwingUtilities.getWindowAncestor(parentComponent) as? JFrame
+        val pane = JOptionPane(
             "Enter a name for your project:",
-            "Project Name",
-            JOptionPane.QUESTION_MESSAGE
+            JOptionPane.QUESTION_MESSAGE,
+            JOptionPane.OK_CANCEL_OPTION
         )
+        pane.wantsInput = true
+        val dialog = pane.createDialog(frame, "Project Name")
+        dialog.setLocationRelativeTo(frame) // Center the dialog
+        dialog.isVisible = true
+
+        return if (pane.value == JOptionPane.OK_OPTION) pane.inputValue as? String else null
     }
 
     private fun saveOpenWorld(): Boolean {

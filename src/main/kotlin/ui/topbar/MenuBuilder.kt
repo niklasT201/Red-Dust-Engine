@@ -252,7 +252,7 @@ class MenuBuilder(
     }
 
     // Helper to show a notification
-    fun showNotification(parentComponent: Component, message: String, title: String = "Notification", messageType: Int = JOptionPane.INFORMATION_MESSAGE) {
+    private fun showNotification(parentComponent: Component, message: String, title: String = "Notification", messageType: Int = JOptionPane.INFORMATION_MESSAGE) {
         val frame = SwingUtilities.getWindowAncestor(parentComponent) as? JFrame
         val optionPane = JOptionPane(message, messageType)
         val dialog = optionPane.createDialog(frame, title)
@@ -311,7 +311,7 @@ class MenuBuilder(
         }
     }
 
-    fun showAboutDialog(parentComponent: Component) {
+    private fun showAboutDialog(parentComponent: Component) {
         JDialog(SwingUtilities.getWindowAncestor(parentComponent) as? JFrame, "About", true).apply {
             layout = BorderLayout()
             background = MenuBuilder.BACKGROUND_COLOR
