@@ -456,7 +456,7 @@ class MenuBuilder(
             }, BorderLayout.CENTER)
 
             pack()
-            minimumSize = Dimension(350, 300)
+            minimumSize = Dimension(400, 350)
             setLocationRelativeTo(SwingUtilities.getWindowAncestor(parentComponent))
             isVisible = true
         }

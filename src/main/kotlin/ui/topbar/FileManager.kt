@@ -6,6 +6,7 @@ import java.awt.Component
 import java.io.File
 import java.util.*
 import javax.swing.JFileChooser
+import javax.swing.JOptionPane
 import javax.swing.filechooser.FileNameExtensionFilter
 import ui.MenuSystem
 import ui.GameType
@@ -18,9 +19,10 @@ class FileManager(
     private var currentSaveFile: File? = null
     private var gameType: GameType = GameType.LEVEL_BASED // Default game type
     private var currentLevelNumber: Int = 1 // For level-based games
+    private var currentProjectName: String? = null // Store the current project name
 
     companion object {
-        private const val WORLD_DIR = "World"
+        private const val PROJECTS_DIR = "Projects" // New top-level directory
         private const val SAVES_DIR = "saves"
         private const val OPEN_WORLD_DIR = "open_world"
         private const val LEVELS_DIR = "levels"
@@ -31,8 +33,8 @@ class FileManager(
     }
 
     init {
-        // Create directory structure if it doesn't exist
-        createDirectoryStructure()
+        // Create base directory structure if it doesn't exist
+        createBaseDirectoryStructure()
     }
 
     fun setGameType(type: GameType) {
@@ -41,7 +43,24 @@ class FileManager(
 
     fun getGameType(): GameType = gameType
 
+    fun getCurrentProjectName(): String? = currentProjectName
+
+    fun setCurrentProjectName(name: String) {
+        currentProjectName = name
+        // Create project directory structure when setting the project name
+        createProjectDirectoryStructure(name)
+    }
+
     fun saveWorld(parentComponent: Component, saveAs: Boolean): Boolean {
+        // If no project name is set yet, prompt for it
+        if (currentProjectName == null) {
+            val projectName = promptForProjectName(parentComponent)
+            if (projectName.isNullOrBlank()) {
+                return false // User cancelled or entered invalid name
+            }
+            setCurrentProjectName(projectName)
+        }
+
         when (gameType) {
             GameType.OPEN_WORLD -> {
                 return saveOpenWorld()
@@ -61,27 +80,45 @@ class FileManager(
         }
     }
 
+    private fun promptForProjectName(parentComponent: Component): String? {
+        return JOptionPane.showInputDialog(
+            parentComponent,
+            "Enter a name for your project:",
+            "Project Name",
+            JOptionPane.QUESTION_MESSAGE
+        )
+    }
+
     private fun saveOpenWorld(): Boolean {
-        val openWorldFile = File(getLevelBaseDirectory(), DEFAULT_OPEN_WORLD_FILE)
+        // Make sure we have a project name
+        if (currentProjectName == null) return false
+
+        val openWorldFile = File(getOpenWorldDirectory(), DEFAULT_OPEN_WORLD_FILE)
         currentSaveFile = openWorldFile
         return performSave()
     }
 
     private fun saveFirstLevel(): Boolean {
+        // Make sure we have a project name
+        if (currentProjectName == null) return false
+
         // Create level_1.world automatically
-        val levelFile = File(getLevelBaseDirectory(), "${DEFAULT_LEVEL_PREFIX}${currentLevelNumber}.${WORLD_EXTENSION}")
+        val levelFile = File(getLevelsDirectory(), "${DEFAULT_LEVEL_PREFIX}${currentLevelNumber}.${WORLD_EXTENSION}")
         currentSaveFile = levelFile
         return performSave()
     }
 
     private fun saveLevelWithDialog(parentComponent: Component): Boolean {
+        // Make sure we have a project name
+        if (currentProjectName == null) return false
+
         // Show save dialog in the levels directory
         val fileChooser = JFileChooser().apply {
             dialogTitle = "Save Level"
             fileSelectionMode = JFileChooser.FILES_ONLY
             isAcceptAllFileFilterUsed = false
             fileFilter = FileNameExtensionFilter("World Files (*.${WORLD_EXTENSION})", WORLD_EXTENSION)
-            currentDirectory = getLevelBaseDirectory()
+            currentDirectory = getLevelsDirectory()
         }
 
         if (fileChooser.showSaveDialog(parentComponent) == JFileChooser.APPROVE_OPTION) {
@@ -98,34 +135,65 @@ class FileManager(
     }
 
     fun loadWorld(parentComponent: Component): Boolean {
-        when (gameType) {
-            GameType.OPEN_WORLD -> {
-                // For Open World, just load the single file
-                val openWorldFile = File(getLevelBaseDirectory(), DEFAULT_OPEN_WORLD_FILE)
-                if (openWorldFile.exists()) {
-                    return loadWorld(openWorldFile)
-                } else {
-                    // No open world file exists yet
-                    return false
-                }
-            }
-            GameType.LEVEL_BASED -> {
-                // For level-based, show file chooser
-                val fileChooser = JFileChooser().apply {
-                    dialogTitle = "Load Level"
-                    fileSelectionMode = JFileChooser.FILES_ONLY
-                    isAcceptAllFileFilterUsed = false
-                    fileFilter = FileNameExtensionFilter("World Files (*.${WORLD_EXTENSION})", WORLD_EXTENSION)
-                    currentDirectory = getLevelBaseDirectory()
-                }
+        // First let the user select a project
+        val projectDir = selectProjectDirectory(parentComponent)
+        if (projectDir == null || !projectDir.exists() || !projectDir.isDirectory) {
+            return false
+        }
 
-                if (fileChooser.showOpenDialog(parentComponent) == JFileChooser.APPROVE_OPTION) {
-                    val selectedFile = fileChooser.selectedFile
-                    return loadWorld(selectedFile)
-                }
+        // Set the current project name based on the selected directory
+        currentProjectName = projectDir.name
+
+        // Now let them choose a file within that project
+        val fileChooser = JFileChooser().apply {
+            dialogTitle = "Load World"
+            fileSelectionMode = JFileChooser.FILES_ONLY
+            isAcceptAllFileFilterUsed = false
+            fileFilter = FileNameExtensionFilter("World Files (*.${WORLD_EXTENSION})", WORLD_EXTENSION)
+
+            // Look in the right directory based on what's available
+            val openWorldDir = File(projectDir, "$SAVES_DIR/$OPEN_WORLD_DIR")
+            val levelsDir = File(projectDir, "$SAVES_DIR/$LEVELS_DIR")
+
+            currentDirectory = if (openWorldDir.exists() && openWorldDir.list()?.isNotEmpty() == true) {
+                gameType = GameType.OPEN_WORLD
+                openWorldDir
+            } else if (levelsDir.exists() && levelsDir.list()?.isNotEmpty() == true) {
+                gameType = GameType.LEVEL_BASED
+                levelsDir
+            } else {
+                File(projectDir, SAVES_DIR)
             }
         }
+
+        if (fileChooser.showOpenDialog(parentComponent) == JFileChooser.APPROVE_OPTION) {
+            val selectedFile = fileChooser.selectedFile
+
+            // Determine game type based on file location
+            if (selectedFile.absolutePath.contains("/$OPEN_WORLD_DIR/")) {
+                gameType = GameType.OPEN_WORLD
+            } else if (selectedFile.absolutePath.contains("/$LEVELS_DIR/")) {
+                gameType = GameType.LEVEL_BASED
+            }
+
+            return loadWorld(selectedFile)
+        }
+
         return false
+    }
+
+    private fun selectProjectDirectory(parentComponent: Component): File? {
+        val fileChooser = JFileChooser().apply {
+            dialogTitle = "Select Project"
+            fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+            currentDirectory = File(PROJECTS_DIR)
+        }
+
+        return if (fileChooser.showOpenDialog(parentComponent) == JFileChooser.APPROVE_OPTION) {
+            fileChooser.selectedFile
+        } else {
+            null
+        }
     }
 
     fun loadWorld(file: File): Boolean {
@@ -156,10 +224,21 @@ class FileManager(
     }
 
     fun quickSave(parentComponent: Component): File? {
+        // Make sure we have a project name
+        if (currentProjectName == null) {
+            val projectName = promptForProjectName(parentComponent)
+            if (projectName == null || projectName.isBlank()) {
+                return null // User cancelled or entered invalid name
+            }
+            setCurrentProjectName(projectName)
+        }
+
         // Create quick save directory if it doesn't exist
-        val saveDir = getQuicksaveDirectory()
-        if (!saveDir.exists()) {
-            saveDir.mkdir()
+        val saveDir = getQuicksavesDirectory()
+        if (saveDir != null) {
+            if (!saveDir.exists()) {
+                saveDir.mkdirs()
+            }
         }
 
         // Use timestamp for unique filename
@@ -174,14 +253,25 @@ class FileManager(
     }
 
     fun quickLoad(parentComponent: Component): Boolean {
-        val saveDir = getQuicksaveDirectory()
-        if (!saveDir.exists() || saveDir.listFiles()?.isEmpty() != false) {
-            return false
+        // Make sure we have a project selected
+        if (currentProjectName == null) {
+            val projectDir = selectProjectDirectory(parentComponent)
+            if (projectDir == null || !projectDir.exists() || !projectDir.isDirectory) {
+                return false
+            }
+            currentProjectName = projectDir.name
+        }
+
+        val saveDir = getQuicksavesDirectory()
+        if (saveDir != null) {
+            if (!saveDir.exists() || saveDir.listFiles()?.isEmpty() != false) {
+                return false
+            }
         }
 
         // Get the most recent quicksave for the current game type
         val prefix = if (gameType == GameType.OPEN_WORLD) "openworld" else "level"
-        val files = saveDir.listFiles { file ->
+        val files = saveDir?.listFiles { file ->
             file.name.startsWith(prefix) && file.name.endsWith(".${WORLD_EXTENSION}")
         }
 
@@ -206,66 +296,110 @@ class FileManager(
         currentSaveFile = null
     }
 
-    private fun getWorldDirectory(): File {
-        val dir = File(WORLD_DIR)
+    private fun getProjectsDirectory(): File {
+        val dir = File(PROJECTS_DIR)
         if (!dir.exists()) dir.mkdir()
         return dir
     }
 
-    private fun getSavesDirectory(): File {
-        val dir = File(getWorldDirectory(), SAVES_DIR)
-        if (!dir.exists()) dir.mkdir()
-        return dir
-    }
-
-    private fun getLevelBaseDirectory(): File {
-        val baseDir = when (gameType) {
-            GameType.OPEN_WORLD -> File(getSavesDirectory(), OPEN_WORLD_DIR)
-            GameType.LEVEL_BASED -> File(getSavesDirectory(), LEVELS_DIR)
+    private fun getProjectDirectory(): File? {
+        currentProjectName?.let { name ->
+            val dir = File(getProjectsDirectory(), name)
+            if (!dir.exists()) dir.mkdir()
+            return dir
         }
-
-        if (!baseDir.exists()) baseDir.mkdir()
-        return baseDir
+        return null
     }
 
-    private fun getQuicksaveDirectory(): File {
-        val dir = File(getWorldDirectory(), QUICKSAVES_DIR)
-        if (!dir.exists()) dir.mkdir()
-        return dir
+    private fun getSavesDirectory(): File? {
+        return getProjectDirectory()?.let { projectDir ->
+            val dir = File(projectDir, SAVES_DIR)
+            if (!dir.exists()) dir.mkdir()
+            return dir
+        }
+    }
+
+    private fun getOpenWorldDirectory(): File? {
+        return getSavesDirectory()?.let { savesDir ->
+            val dir = File(savesDir, OPEN_WORLD_DIR)
+            if (!dir.exists()) dir.mkdir()
+            return dir
+        }
+    }
+
+    private fun getLevelsDirectory(): File? {
+        return getSavesDirectory()?.let { savesDir ->
+            val dir = File(savesDir, LEVELS_DIR)
+            if (!dir.exists()) dir.mkdir()
+            return dir
+        }
+    }
+
+    private fun getQuicksavesDirectory(): File? {
+        return getProjectDirectory()?.let { projectDir ->
+            val dir = File(projectDir, QUICKSAVES_DIR)
+            if (!dir.exists()) dir.mkdir()
+            return dir
+        }
     }
 
     private fun doesAnyLevelExist(): Boolean {
-        val levelsDir = File(getSavesDirectory(), LEVELS_DIR)
+        val levelsDir = getLevelsDirectory() ?: return false
         return levelsDir.exists() && levelsDir.listFiles { file ->
             file.isFile && file.name.endsWith(".${WORLD_EXTENSION}")
         }?.isNotEmpty() ?: false
     }
 
-    private fun createDirectoryStructure() {
-        getWorldDirectory()
-        getSavesDirectory()
-        File(getSavesDirectory(), OPEN_WORLD_DIR).mkdir()
-        File(getSavesDirectory(), LEVELS_DIR).mkdir()
-        getQuicksaveDirectory()
+    private fun createBaseDirectoryStructure() {
+        // Just create the Projects directory
+        getProjectsDirectory()
     }
 
-    // Get a list of existing worlds (both open world and levels)
+    private fun createProjectDirectoryStructure(projectName: String) {
+        // Set current project name
+        currentProjectName = projectName
+
+        // Create the project directory and subdirectories
+        getProjectDirectory()
+        getSavesDirectory()
+
+        // Create game-type specific directories based on the selected game type
+        if (gameType == GameType.OPEN_WORLD) {
+            getOpenWorldDirectory()
+        } else {
+            getLevelsDirectory()
+        }
+
+        // Create quicksaves directory
+        getQuicksavesDirectory()
+    }
+
+    // Get a list of existing projects
+    fun getExistingProjects(): List<String> {
+        val projectsDir = getProjectsDirectory()
+        return projectsDir.listFiles { file -> file.isDirectory }?.map { it.name } ?: emptyList()
+    }
+
+    // Get a list of existing worlds (both open world and levels) for the current project
     fun getExistingWorlds(): List<Pair<String, File>> {
         val result = mutableListOf<Pair<String, File>>()
 
         // Check open world
-        val openWorldFile = File(File(getSavesDirectory(), OPEN_WORLD_DIR), DEFAULT_OPEN_WORLD_FILE)
-        if (openWorldFile.exists()) {
-            result.add("Open World" to openWorldFile)
+        getOpenWorldDirectory()?.let { openWorldDir ->
+            val openWorldFile = File(openWorldDir, DEFAULT_OPEN_WORLD_FILE)
+            if (openWorldFile.exists()) {
+                result.add("Open World" to openWorldFile)
+            }
         }
 
         // Check levels
-        val levelsDir = File(getSavesDirectory(), LEVELS_DIR)
-        if (levelsDir.exists()) {
-            levelsDir.listFiles { file ->
-                file.isFile && file.name.endsWith(".${WORLD_EXTENSION}")
-            }?.forEach { file ->
-                result.add("Level: ${file.nameWithoutExtension}" to file)
+        getLevelsDirectory()?.let { levelsDir ->
+            if (levelsDir.exists()) {
+                levelsDir.listFiles { file ->
+                    file.isFile && file.name.endsWith(".${WORLD_EXTENSION}")
+                }?.forEach { file ->
+                    result.add("Level: ${file.nameWithoutExtension}" to file)
+                }
             }
         }
 
