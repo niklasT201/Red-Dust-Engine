@@ -19,21 +19,27 @@ class SettingsManager(
     private val settingsSaver = SettingsSaver(gridEditor)
     private val keyBindingManager = KeyBindings.getManager()
 
-    fun saveSettings(displayOptionsPanel: DisplayOptionsPanel?): Triple<Boolean, Boolean, Boolean> {
+    fun saveSettings(projectPath: String?, displayOptionsPanel: DisplayOptionsPanel?): Triple<Boolean, Boolean, Boolean> {
+        if (projectPath == null) {
+            println("Error: Cannot save settings. No project selected.")
+            // Maybe show a user dialog here?
+            return Triple(false, false, false)
+        }
+
         var displaySuccess = false
         var worldSuccess = false
         var playerSuccess = false
 
         // Save display settings if panel is available
         if (displayOptionsPanel != null) {
-            displaySuccess = settingsSaver.saveDisplayOptions(displayOptionsPanel)
+            displaySuccess = settingsSaver.saveDisplayOptions(projectPath, displayOptionsPanel)
         }
 
         // Save world settings (includes both renderer and Game3D settings)
-        worldSuccess = settingsSaver.saveWorldSettings(renderer, game3D)
+        worldSuccess = settingsSaver.saveWorldSettings(projectPath, renderer, game3D)
 
         // Save player settings (now also passing game3D for crosshair settings)
-        playerSuccess = settingsSaver.savePlayerSettings(player, game3D)
+        playerSuccess = settingsSaver.savePlayerSettings(projectPath, player, game3D)
 
         // Save key bindings
         keyBindingManager.saveKeyBindings()
@@ -41,21 +47,27 @@ class SettingsManager(
         return Triple(displaySuccess, worldSuccess, playerSuccess)
     }
 
-    fun loadSettings(displayOptionsPanel: DisplayOptionsPanel?): Triple<Boolean, Boolean, Boolean> {
+    fun loadSettings(projectPath: String?, displayOptionsPanel: DisplayOptionsPanel?): Triple<Boolean, Boolean, Boolean> {
+        if (projectPath == null) {
+            println("Error: Cannot load settings. No project selected.")
+            // Maybe show a user dialog here?
+            return Triple(false, false, false)
+        }
+
         var displaySuccess = false
         var worldSuccess = false
         var playerSuccess = false
 
         // Load display settings if panel is available
         if (displayOptionsPanel != null) {
-            displaySuccess = settingsSaver.loadDisplayOptions(displayOptionsPanel)
+            displaySuccess = settingsSaver.loadDisplayOptions(projectPath, displayOptionsPanel)
         }
 
         // Load world settings (includes both renderer and Game3D settings)
-        worldSuccess = settingsSaver.loadWorldSettings(renderer, game3D)
+        worldSuccess = settingsSaver.loadWorldSettings(projectPath, renderer, game3D)
 
         // Load player settings (now also passing game3D for crosshair settings)
-        playerSuccess = settingsSaver.loadPlayerSettings(player, game3D)
+        playerSuccess = settingsSaver.loadPlayerSettings(projectPath, player, game3D)
 
         // Load key bindings
         keyBindingManager.loadKeyBindings()

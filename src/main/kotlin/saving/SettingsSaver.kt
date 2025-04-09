@@ -18,24 +18,25 @@ import javax.imageio.ImageIO
 class SettingsSaver(private val gridEditor: GridEditor) {
     companion object {
         // Define the directory where settings will be stored
-        private const val SETTINGS_DIR = "settings"
         private const val DISPLAY_SETTINGS_FILE = "display_options.settings"
         private const val WORLD_SETTINGS_FILE = "world_options.settings"
         private const val PLAYER_SETTINGS_FILE = "player_options.settings"
+        private const val SETTINGS_SUBDIR = "settings" // Subdirectory within the project
+        private const val SKY_IMAGES_SUBDIR = "assets/textures/sky_images"
 
         private const val SKY_IMAGES_DIR = "assets/textures/sky_images"
 
         // Make sure the settings directory exists
-        private fun ensureSettingsDir() {
-            val dir = File(SETTINGS_DIR)
+        private fun ensureSettingsDir(projectPath: String) {
+            val dir = File(projectPath, SETTINGS_SUBDIR) // Use projectPath and SETTINGS_SUBDIR
             if (!dir.exists()) {
-                dir.mkdir()
+                dir.mkdirs() // Use mkdirs to create parent if needed (e.g., project dir itself)
             }
         }
 
         // Make sure the sky images directory exists
-        private fun ensureSkyImagesDir() {
-            val dir = File(SKY_IMAGES_DIR)
+        private fun ensureSkyImagesDir(projectPath: String) {
+            val dir = File(projectPath, SKY_IMAGES_SUBDIR) // Use projectPath and SKY_IMAGES_SUBDIR
             if (!dir.exists()) {
                 dir.mkdirs() // Using mkdirs() to create parent directories if needed
             }
@@ -60,10 +61,11 @@ class SettingsSaver(private val gridEditor: GridEditor) {
 
     private var currentSkyImageFilename: String? = null
 
-    fun saveDisplayOptions(displayOptionsPanel: DisplayOptionsPanel): Boolean {
+    fun saveDisplayOptions(projectPath: String, displayOptionsPanel: DisplayOptionsPanel): Boolean {
         try {
-            ensureSettingsDir()
-            val file = File("$SETTINGS_DIR/$DISPLAY_SETTINGS_FILE")
+            ensureSettingsDir(projectPath)
+            val settingsDirPath = File(projectPath, SETTINGS_SUBDIR).path
+            val file = File(settingsDirPath, DISPLAY_SETTINGS_FILE)
             val outputStream = DataOutputStream(BufferedOutputStream(FileOutputStream(file)))
 
             // Write version for future compatibility
@@ -97,12 +99,14 @@ class SettingsSaver(private val gridEditor: GridEditor) {
         }
     }
 
-    fun saveWorldSettings(renderer: Renderer, game3D: Game3D): Boolean {
+    fun saveWorldSettings(projectPath: String, renderer: Renderer, game3D: Game3D): Boolean {
         try {
-            ensureSettingsDir()
-            ensureSkyImagesDir() // Ensure sky images directory exists
+            ensureSettingsDir(projectPath)
+            ensureSkyImagesDir(projectPath) // Ensure sky images directory exists
 
-            val file = File("$SETTINGS_DIR/$WORLD_SETTINGS_FILE")
+            val settingsDirPath = File(projectPath, SETTINGS_SUBDIR).path
+            val file = File(settingsDirPath, WORLD_SETTINGS_FILE)
+            val skyImagesDirPath = File(projectPath, SKY_IMAGES_SUBDIR).path
             val outputStream = DataOutputStream(BufferedOutputStream(FileOutputStream(file)))
 
             // Write version for future compatibility
@@ -222,11 +226,11 @@ class SettingsSaver(private val gridEditor: GridEditor) {
 
                 // Check if we already have this image
                 val imgFilename = "sky_image_$imageHash.png"
-                val imgFile = File("$SKY_IMAGES_DIR/$imgFilename")
+                val imgFile = File(skyImagesDirPath, imgFilename)
 
                 // Delete previous sky image if it's different from the current one
                 if (currentSkyImageFilename != null && currentSkyImageFilename != imgFilename) {
-                    val oldFile = File("$SKY_IMAGES_DIR/$currentSkyImageFilename")
+                    val oldFile = File(skyImagesDirPath, currentSkyImageFilename!!)
                     if (oldFile.exists()) {
                         oldFile.delete()
                     }
@@ -262,10 +266,11 @@ class SettingsSaver(private val gridEditor: GridEditor) {
         }
     }
 
-    fun savePlayerSettings(player: Player, game3D: Game3D? = null): Boolean {
+    fun savePlayerSettings(projectPath: String, player: Player, game3D: Game3D? = null): Boolean {
         try {
-            ensureSettingsDir()
-            val file = File("$SETTINGS_DIR/$PLAYER_SETTINGS_FILE")
+            ensureSettingsDir(projectPath)
+            val settingsDirPath = File(projectPath, SETTINGS_SUBDIR).path
+            val file = File(settingsDirPath, PLAYER_SETTINGS_FILE)
             val outputStream = DataOutputStream(BufferedOutputStream(FileOutputStream(file)))
 
             // ----> UPDATE VERSION TO 6 <----
@@ -357,11 +362,12 @@ class SettingsSaver(private val gridEditor: GridEditor) {
         }
     }
 
-    fun loadDisplayOptions(displayOptionsPanel: DisplayOptionsPanel): Boolean {
+    fun loadDisplayOptions(projectPath: String, displayOptionsPanel: DisplayOptionsPanel): Boolean {
         try {
-            val file = File("$SETTINGS_DIR/$DISPLAY_SETTINGS_FILE")
+            val settingsDirPath = File(projectPath, SETTINGS_SUBDIR).path
+            val file = File(settingsDirPath, DISPLAY_SETTINGS_FILE)
             if (!file.exists()) {
-                println("Display settings file does not exist. Using defaults.")
+                println("Display settings file does not exist in project '$projectPath'. Using defaults.")
                 return false
             }
 
@@ -410,13 +416,16 @@ class SettingsSaver(private val gridEditor: GridEditor) {
         }
     }
 
-    fun loadWorldSettings(renderer: Renderer, game3D: Game3D): Boolean {
+    fun loadWorldSettings(projectPath: String, renderer: Renderer, game3D: Game3D): Boolean {
         try {
-            val file = File("$SETTINGS_DIR/$WORLD_SETTINGS_FILE")
+            val settingsDirPath = File(projectPath, SETTINGS_SUBDIR).path
+            val file = File(settingsDirPath, WORLD_SETTINGS_FILE)
             if (!file.exists()) {
-                println("World settings file does not exist")
+                println("World settings file does not exist in project '$projectPath'.")
                 return false
             }
+
+            val skyImagesDirPath = File(projectPath, SKY_IMAGES_SUBDIR).path
 
             val inputStream = DataInputStream(BufferedInputStream(FileInputStream(file)))
 
@@ -592,32 +601,40 @@ class SettingsSaver(private val gridEditor: GridEditor) {
                             // Load image if needed
                             if (hasImage) {
                                 val imgFilename = inputStream.readUTF()
-                                val imgFile = File("$SKY_IMAGES_DIR/$imgFilename")
+                                // --- START REPLACEMENT ---
+                                val projectSkyImagesDir = File(projectPath, SKY_IMAGES_SUBDIR)
+                                val projectImgFile = File(projectSkyImagesDir, imgFilename)
+                                val globalSkyImagesDir = File(SKY_IMAGES_SUBDIR) // Global path relative to execution dir
+                                val globalImgFile = File(globalSkyImagesDir, imgFilename)
 
-                                // Update current sky image filename
+                                // Update currentSkyImageFilename regardless of where we load it from
                                 currentSkyImageFilename = imgFilename
 
-                                if (imgFile.exists()) {
+                                if (projectImgFile.exists()) {
+                                    // Image found in project's sky image directory
                                     try {
-                                        skyImage = ImageIO.read(imgFile)
+                                        skyImage = ImageIO.read(projectImgFile)
                                     } catch (e: Exception) {
-                                        println("Error loading sky image: ${e.message}")
+                                        println("Error loading sky image from project path '$projectImgFile': ${e.message}")
                                         // Continue with no image if loading fails
                                     }
-                                } else {
-                                    // Try the old path as fallback for backward compatibility
-                                    val oldImgFile = File("$SETTINGS_DIR/$imgFilename")
-                                    if (oldImgFile.exists()) {
-                                        try {
-                                            skyImage = ImageIO.read(oldImgFile)
-                                            // Migrate the image to the new location
-                                            ensureSkyImagesDir()
-                                            oldImgFile.copyTo(imgFile, overwrite = true)
-                                            oldImgFile.delete() // Clean up old file
-                                        } catch (e: Exception) {
-                                            println("Error loading sky image from old path: ${e.message}")
-                                        }
+                                } else if (globalImgFile.exists()) {
+                                    // Image found in the global assets/textures/sky_images directory (fallback)
+                                    println("Sky image '$imgFilename' found in global fallback path. Migrating to project.")
+                                    try {
+                                        skyImage = ImageIO.read(globalImgFile)
+                                        // Migrate the image to the new project location
+                                        ensureSkyImagesDir(projectPath) // Make sure project dir exists
+                                        globalImgFile.copyTo(projectImgFile, overwrite = true)
+                                        globalImgFile.delete()
+                                    } catch (e: Exception) {
+                                        println("Error loading/migrating sky image from global path '$globalImgFile': ${e.message}")
+                                        // Continue with no image if loading/migration fails
+                                        skyImage = null
                                     }
+                                } else {
+                                    // Image not found in project or global path
+                                    println("Sky image '$imgFilename' not found in project '$projectPath' or global assets.")
                                 }
                             }
 
@@ -645,11 +662,12 @@ class SettingsSaver(private val gridEditor: GridEditor) {
         }
     }
 
-    fun loadPlayerSettings(player: Player, game3D: Game3D? = null): Boolean {
+    fun loadPlayerSettings(projectPath: String, player: Player, game3D: Game3D? = null): Boolean {
         try {
-            val file = File("$SETTINGS_DIR/$PLAYER_SETTINGS_FILE")
+            val settingsDirPath = File(projectPath, SETTINGS_SUBDIR).path
+            val file = File(settingsDirPath, PLAYER_SETTINGS_FILE)
             if (!file.exists()) {
-                println("Player settings file does not exist")
+                println("Player settings file does not exist in project '$projectPath'.")
                 return false
             }
 
@@ -818,11 +836,11 @@ class SettingsSaver(private val gridEditor: GridEditor) {
         }
     }
 
-    fun backupSettings(): Boolean {
+    fun backupSettings(projectPath: String): Boolean {
         try {
-            ensureSettingsDir()
-            val settingsDir = File(SETTINGS_DIR)
-            val backupDir = File("$SETTINGS_DIR/backup")
+            ensureSettingsDir(projectPath)
+            val settingsDir = File(projectPath, SETTINGS_SUBDIR)
+            val backupDir = File(settingsDir, "backup")
 
             if (!backupDir.exists()) {
                 backupDir.mkdir()

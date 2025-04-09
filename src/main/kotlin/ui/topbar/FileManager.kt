@@ -310,7 +310,7 @@ class FileManager(
         return dir
     }
 
-    private fun getProjectDirectory(): File? {
+    fun getProjectDirectory(): File? {
         currentProjectName?.let { name ->
             val dir = File(getProjectsDirectory(), name)
             if (!dir.exists()) dir.mkdir()

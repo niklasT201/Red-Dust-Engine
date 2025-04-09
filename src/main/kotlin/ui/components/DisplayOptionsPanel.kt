@@ -90,6 +90,7 @@ class DisplayOptionsPanel(private val gridEditor: GridEditor) : JPanel() {
         // Create consistently sized buttons
         val buttonDimension = Dimension(140, 30)
 
+        /*
         // Save button
         val saveButton = createStyledButton("Save Settings", buttonDimension).apply {
             alignmentX = Component.LEFT_ALIGNMENT
@@ -113,6 +114,7 @@ class DisplayOptionsPanel(private val gridEditor: GridEditor) : JPanel() {
                 }
             }
         }
+         */
 
         // Reset button - now same size as other buttons
         val resetButton = createStyledButton("Reset", buttonDimension).apply {
@@ -124,21 +126,24 @@ class DisplayOptionsPanel(private val gridEditor: GridEditor) : JPanel() {
         }
 
         // Add buttons to panel with vertical spacing
-        buttonsPanel.add(saveButton)
+        /*buttonsPanel.add(saveButton)
         buttonsPanel.add(Box.createVerticalStrut(8))
         buttonsPanel.add(loadButton)
         buttonsPanel.add(Box.createVerticalStrut(8))
+         */
         buttonsPanel.add(resetButton)
 
         // Add buttons panel to the main panel
         add(buttonsPanel, BorderLayout.SOUTH)
 
         // Try to load saved settings on initialization, but don't fail if it doesn't work
+        /*
         try {
             settingsSaver.loadDisplayOptions(this)
         } catch (e: Exception) {
             println("Could not load display settings, using defaults: ${e.message}")
         }
+         */
     }
 
     /**
@@ -330,17 +335,13 @@ class DisplayOptionsPanel(private val gridEditor: GridEditor) : JPanel() {
         }
     }
 
-    /**
-     * Save the current display options to file
-     */
+   /*
     fun saveSettings(): Boolean {
         return settingsSaver.saveDisplayOptions(this)
     }
 
-    /**
-     * Load display options from file
-     */
     fun loadSettings(): Boolean {
         return settingsSaver.loadDisplayOptions(this)
     }
+    */
 }

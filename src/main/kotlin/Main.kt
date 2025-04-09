@@ -49,7 +49,6 @@ fun main() {
 // add checkExistingWorlds feature, double press to load file
 // add water panel
 // move border panel to world tab
-// comment out the save as button for now
 
 
 // Object List:

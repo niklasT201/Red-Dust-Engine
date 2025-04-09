@@ -104,6 +104,7 @@ class MenuBuilder(
                 }
             })
 
+            /*
             add(createMenuItem("Save As...",
                 KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK or InputEvent.SHIFT_DOWN_MASK)).apply {
                 addActionListener {
@@ -119,6 +120,7 @@ class MenuBuilder(
                     }
                 }
             })
+             */
 
             addSeparator()
 
@@ -160,15 +162,33 @@ class MenuBuilder(
             // Settings section
             add(createMenuItem("Save Settings").apply {
                 addActionListener {
+                    // Get the current project path from FileManager
+                    val currentProjectPath = fileManager.getProjectDirectory()?.absolutePath
+
+                    // Find the DisplayOptionsPanel (if needed and available)
                     val displayOptionsPanel = settingsManager.findDisplayOptionsPanel(
                         SwingUtilities.getWindowAncestor(parentComponent)
                     )
-                    val (displaySuccess, worldSuccess, playerSuccess) = settingsManager.saveSettings(displayOptionsPanel)
+                    val (displaySuccess, worldSuccess, playerSuccess) = settingsManager.saveSettings(currentProjectPath, displayOptionsPanel)
 
+                    // Handle the results
                     when {
+                        // Case 1: Everything saved successfully
                         displaySuccess && worldSuccess && playerSuccess -> {
                             showNotification(parentComponent, "All settings saved successfully")
                         }
+
+                        // Case 2: Saving failed *and* there was no project path (likely the cause)
+                        currentProjectPath == null && !displaySuccess && !worldSuccess && !playerSuccess -> {
+                            JOptionPane.showMessageDialog(
+                                parentComponent,
+                                "Cannot save settings. No project is currently loaded or selected.",
+                                "Save Error",
+                                JOptionPane.ERROR_MESSAGE
+                            )
+                        }
+
+                        // Case 3: Partial success or general failure with a project path
                         else -> {
                             // Build a message based on what was saved successfully
                             val successList = mutableListOf<String>()
@@ -177,9 +197,11 @@ class MenuBuilder(
                             if (playerSuccess) successList.add("Player")
 
                             if (successList.isNotEmpty()) {
+                                // If at least one part saved, report that
                                 val successMessage = successList.joinToString(", ")
                                 showNotification(parentComponent, "$successMessage settings saved successfully")
                             } else {
+                                // If nothing saved despite having a project path, show general error
                                 JOptionPane.showMessageDialog(
                                     parentComponent,
                                     "Failed to save settings.",
@@ -194,15 +216,32 @@ class MenuBuilder(
 
             add(createMenuItem("Load Settings").apply {
                 addActionListener {
+                    // Get the current project path from FileManager
+                    val currentProjectPath = fileManager.getProjectDirectory()?.absolutePath
+
+                    // Find the DisplayOptionsPanel (if needed and available)
                     val displayOptionsPanel = settingsManager.findDisplayOptionsPanel(
                         SwingUtilities.getWindowAncestor(parentComponent)
                     )
-                    val (displaySuccess, worldSuccess, playerSuccess) = settingsManager.loadSettings(displayOptionsPanel)
+                    val (displaySuccess, worldSuccess, playerSuccess) = settingsManager.loadSettings(currentProjectPath, displayOptionsPanel)
 
                     when {
+                        // Case 1: Everything loaded successfully
                         displaySuccess && worldSuccess && playerSuccess -> {
                             showNotification(parentComponent, "All settings loaded successfully")
                         }
+
+                        // Case 2: Loading failed *and* there was no project path (likely the cause)
+                        currentProjectPath == null && !displaySuccess && !worldSuccess && !playerSuccess -> {
+                            JOptionPane.showMessageDialog(
+                                parentComponent,
+                                "Cannot load settings. No project is currently loaded or selected.",
+                                "Load Error",
+                                JOptionPane.ERROR_MESSAGE
+                            )
+                        }
+
+                        // Case 3: Partial success or general failure with a project path
                         else -> {
                             // Build a message based on what was loaded successfully
                             val successList = mutableListOf<String>()
@@ -211,9 +250,11 @@ class MenuBuilder(
                             if (playerSuccess) successList.add("Player")
 
                             if (successList.isNotEmpty()) {
+                                // If at least one part loaded, report that
                                 val successMessage = successList.joinToString(", ")
                                 showNotification(parentComponent, "$successMessage settings loaded successfully")
                             } else {
+                                // If nothing loaded despite having a project path, show general error
                                 JOptionPane.showMessageDialog(
                                     parentComponent,
                                     "Failed to load settings.",
