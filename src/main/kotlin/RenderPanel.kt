@@ -1,4 +1,4 @@
-import player.GameUI
+import player.uis.GameUI
 import ui.components.CrosshairShape
 import java.awt.*
 import javax.swing.JPanel
@@ -102,7 +102,6 @@ class RenderPanel(
     }
 
     // Getters and setters for the properties
-
     fun isCrosshairVisible(): Boolean = isCrosshairVisible
 
     fun setCrosshairVisible(visible: Boolean) {

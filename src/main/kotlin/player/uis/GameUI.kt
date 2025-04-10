@@ -1,4 +1,4 @@
-package player
+package player.uis
 
 import java.awt.Color
 import java.awt.Font
