@@ -26,6 +26,7 @@ class Game3D : JPanel() {
     private var skyRenderer: SkyRenderer = SkyRenderer(skyColor)
 
     private var lastFrameTime = System.nanoTime() // Track time of each frame
+    private var deltaTime: Double = 0.0
     private var frameTimeSum = 0L // Sum of frame times
     private var frameTimeCount = 0
     var currentFps = 0
@@ -381,6 +382,18 @@ class Game3D : JPanel() {
     }
 
     fun update() {
+        val currentTime = System.nanoTime()
+        val frameTime = currentTime - lastFrameTime // Time taken for this frame in nanoseconds
+        lastFrameTime = currentTime
+
+        // Convert frameTime from nanoseconds to seconds for deltaTime
+        // Avoid division by zero or huge values if frameTime is weird (e.g., on first frame or after pause)
+        deltaTime = if (frameTime in 1..1_000_000_000) { // Ensure frameTime is reasonable (e.g., < 1 second)
+            frameTime / 1_000_000_000.0
+        } else {
+            1.0 / 60.0 // Default to 60 FPS if frameTime is unusual
+        }
+
         if (!isEditorMode) {
             var forward = 0.0
             var right = 0.0
@@ -415,7 +428,21 @@ class Game3D : JPanel() {
         }
 
         // Calculate FPS for every frame
-        calculateFps()
+        if (frameTime in 1..999999999) { // Less than 1 second
+            frameTimeSum += frameTime
+            frameTimeCount++
+
+            // Update FPS calculation every 500ms
+            if (frameTimeSum > 500_000_000) { // 500ms in nanoseconds
+                // Convert average frame time to FPS
+                val avgFrameTime = frameTimeSum.toDouble() / frameTimeCount
+                currentFps = (1_000_000_000.0 / avgFrameTime).toInt()
+
+                // Reset accumulators
+                frameTimeSum = 0
+                frameTimeCount = 0
+            }
+        }
 
         renderPanel.repaint()
     }
