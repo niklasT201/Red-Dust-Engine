@@ -49,6 +49,8 @@ fun main() {
 // add checkExistingWorlds feature, double press to load file
 // add water panel
 // move border panel to world tab
+// keys getting saved seperate for each project
+// ui gets saved for each project separated
 
 
 // Object List:

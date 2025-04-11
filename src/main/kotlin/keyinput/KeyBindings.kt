@@ -276,6 +276,7 @@ object KeyBindings {
     const val ROTATE_EAST = KeyEvent.VK_O
     const val ROTATE_WEST = KeyEvent.VK_W
     const val TOGGLE_WEAPON_UI = KeyEvent.VK_U
+    const val TOGGLE_UI_BUILDER = KeyEvent.VK_G
 
     // Shortcuts (fixed)
     const val ROTATE_WALL = KeyEvent.VK_R

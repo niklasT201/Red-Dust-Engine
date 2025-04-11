@@ -1,3 +1,4 @@
+import player.uis.CustomizableGameUI
 import player.uis.GameUI
 import ui.components.CrosshairShape
 import java.awt.*
@@ -24,6 +25,7 @@ class RenderPanel(
 
     // Add the GameUI component
     private val gameUI = GameUI()
+    private var customUI: CustomizableGameUI? = null
     private var isGameUIVisible = false
 
     init {
@@ -96,7 +98,7 @@ class RenderPanel(
 
             // Draw game UI if it's visible
             if (isGameUIVisible) {
-                gameUI.render(g2, width, height)
+                customUI?.render(g2, width, height) ?: gameUI.render(g2, width, height)
             }
         }
     }
@@ -155,6 +157,12 @@ class RenderPanel(
 
     fun setGameUIVisible(visible: Boolean) {
         isGameUIVisible = visible
+        repaint()
+    }
+
+    fun setCustomUI(ui: CustomizableGameUI) {
+        customUI = ui
+        isGameUIVisible = true
         repaint()
     }
 }

@@ -1,12 +1,14 @@
 import controls.KeyBindings
 import grideditor.GridEditor
 import player.Player
+import player.uis.CustomizableGameUI
 import ui.EditorPanel
 import ui.MenuSystem
 import ui.components.CrosshairShape
 import render.SkyRenderer
 import ui.GameType
 import ui.WelcomeScreen
+import ui.builder.UIBuilder
 import java.awt.*
 import java.awt.event.*
 import java.awt.image.BufferedImage
@@ -37,9 +39,13 @@ class Game3D : JPanel() {
     private val editorPanel = EditorPanel(gridEditor,renderer, this) { toggleEditorMode() }
     //private val settingsSaver = saving.SettingsSaver(gridEditor)
     private lateinit var menuSystem: MenuSystem
+    private var menuBar: JMenuBar
     private val keysPressed = mutableSetOf<Int>()
 
     var isGravityEnabled: Boolean = false // Default state
+
+    private var uiBuilder: UIBuilder
+    private var isUIBuilderMode = false
 
     // --- Cursor Management ---
     private val blankCursor: Cursor
@@ -61,15 +67,10 @@ class Game3D : JPanel() {
     }
 
     private val welcomeScreen: WelcomeScreen
-
-    // Add this property to hold the main content panel (that will replace the welcome screen)
     private val contentPanel = JPanel().apply {
         layout = BorderLayout()
     }
-
-    // Add this property to track the game type
     private var gameType: GameType = GameType.LEVEL_BASED
-
 
     init {
         layout = CardLayout()
@@ -94,8 +95,11 @@ class Game3D : JPanel() {
             cursorImg, Point(0, 0), "blank cursor"
         )
 
+        uiBuilder = UIBuilder(this)
+
         add(welcomeScreen, "welcome")
         add(contentPanel, "content")
+        add(uiBuilder, "uiBuilder")
 
         // Initially show the welcome screen
         SwingUtilities.invokeLater { showWelcomeScreen() }
@@ -184,6 +188,7 @@ class Game3D : JPanel() {
             game3D = this,
             player = player
         )
+        this.menuBar = menuSystem.createMenuBar()
 
         addComponentListener(object : ComponentAdapter() {
             override fun componentResized(e: ComponentEvent) {
@@ -234,73 +239,108 @@ class Game3D : JPanel() {
         KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher { e ->
             when (e.id) {
                 KeyEvent.KEY_PRESSED -> {
-                    if (e.keyCode == KeyBindings.TOGGLE_EDITOR) {
+                    // --- UI Builder Toggle ---
+                    if (e.keyCode == KeyBindings.TOGGLE_UI_BUILDER && isWorldLoaded) { // Only allow toggle if world is loaded
+                        SwingUtilities.invokeLater { toggleUIBuilderMode() }
+                        return@addKeyEventDispatcher true // Consume the event
+                    }
+
+                    // Prevent editor toggle if UI builder is active
+                    if (e.keyCode == KeyBindings.TOGGLE_EDITOR && !isUIBuilderMode) {
                         SwingUtilities.invokeLater { toggleEditorMode() }
                     }
 
-                    // Toggle Weapon UI Key (Only when not in editor mode)
-                    if (e.keyCode == KeyBindings.TOGGLE_WEAPON_UI && !isEditorMode) {
-                        // Toggle the visibility state in RenderPanel
+                    // Prevent weapon UI toggle if UI builder is active
+                    if (e.keyCode == KeyBindings.TOGGLE_WEAPON_UI && !isEditorMode && !isUIBuilderMode) {
                         renderPanel.setGameUIVisible(!renderPanel.isGameUIVisible())
                     }
 
-                    if (!isEditorMode) {
+                    // Only add movement keys if in game mode AND not in UI builder mode
+                    if (!isEditorMode && !isUIBuilderMode) {
                         keysPressed.add(e.keyCode)
                     }
                 }
                 KeyEvent.KEY_RELEASED -> {
-                    if (!isEditorMode) {
-                        keysPressed.remove(e.keyCode)
-                    }
+                    // Only remove movement keys if in game mode AND not in UI builder mode
+                    // (Or just always remove, simpler)
+                    keysPressed.remove(e.keyCode)
+//                    if (!isEditorMode && !isUIBuilderMode) {
+//                        keysPressed.remove(e.keyCode)
+//                    }
                 }
             }
-            false // Allow the event to be processed by other listeners
+            false // Allow the event to be processed further if not consumed
         }
 
-        // Mouse handling for game mode
+        // Mouse handling for game mode (only if not in UI Builder)
         renderPanel.addMouseMotionListener(object : MouseMotionAdapter() {
             override fun mouseMoved(e: MouseEvent) {
-                if (!isEditorMode) {
+                if (!isEditorMode && !isUIBuilderMode) {
                     handleMouseMovement(e)
                 }
             }
         })
     }
 
-    private fun handleMouseMovement(e: MouseEvent) {
-        val dx = e.x - renderPanel.width/2
-        val dy = e.y - renderPanel.height/2
-        player.rotate(dx.toDouble(), dy.toDouble())
+    private fun toggleUIBuilderMode() {
+        isUIBuilderMode = !isUIBuilderMode
+        val cardLayout = this.layout as CardLayout
 
-        try {
-            val robot = Robot()
-            robot.mouseMove(
-                renderPanel.locationOnScreen.x + renderPanel.width/2,
-                renderPanel.locationOnScreen.y + renderPanel.height/2
-            )
-        } catch (e: Exception) {
-            // Handle potential security exceptions
-        }
-    }
-
-    private fun toggleEditorMode() {
-        if (isWorldLoaded) {
-            isEditorMode = !isEditorMode
+        if (isUIBuilderMode) {
+            // Entering UI Builder
+            cardLayout.show(this, "uiBuilder")
+            cursor = defaultCursor
+            renderPanel.cursor = defaultCursor
+            this.menuBar.isVisible = false // <--- HIDE the stored menu bar
+            SwingUtilities.invokeLater { uiBuilder.requestFocusInWindow() }
+        } else {
+            // Exiting UI Builder
+            cardLayout.show(this, "content")
+            this.menuBar.isVisible = true // <--- SHOW the stored menu bar
             updateMode()
         }
     }
 
+    private fun handleMouseMovement(e: MouseEvent) {
+        // Only handle if UI builder isn't active
+        if (isUIBuilderMode) return
+
+        val dx = e.x - renderPanel.width / 2
+        val dy = e.y - renderPanel.height / 2
+        player.rotate(dx.toDouble(), dy.toDouble())
+
+        try {
+            val robot = Robot()
+            val centerPoint = renderPanel.locationOnScreen
+            centerPoint.translate(renderPanel.width / 2, renderPanel.height / 2)
+            // Check if the mouse is already centered to avoid jitter
+            if (MouseInfo.getPointerInfo().location != centerPoint) {
+                robot.mouseMove(centerPoint.x, centerPoint.y)
+            }
+        } catch (ex: Exception) {
+            // Handle potential security exceptions or AWTException
+            println("Error centering mouse: ${ex.message}")
+        }
+    }
+
+    private fun toggleEditorMode() {
+        if (isUIBuilderMode || !isWorldLoaded) return
+            isEditorMode = !isEditorMode
+            updateMode()
+    }
+
     private fun updateMode() {
+        // If UI builder is active, do nothing here, let toggleUIBuilderMode handle it
+        if (isUIBuilderMode) return
+
         val cardLayout = rightPanel.layout as CardLayout
         if (isEditorMode) {
             cardLayout.show(rightPanel, "editor")
             editorPanel.setModeButtonText("Editor Mode")
-
+            // Use default cursor in editor mode
+            cursor = defaultCursor
             renderPanel.cursor = defaultCursor
-
-            SwingUtilities.invokeLater {
-                gridEditor.requestFocusInWindow()
-            }
+            SwingUtilities.invokeLater { gridEditor.requestFocusInWindow() }
         } else {
             // Find the player spawn point and set the camera position
             gridEditor.grid.forEach { (pos, cell) ->
@@ -323,8 +363,10 @@ class Game3D : JPanel() {
 
             cardLayout.show(rightPanel, "game")
             editorPanel.setModeButtonText("Game Mode")
+            // Use blank cursor in game mode
+            cursor = blankCursor
             renderPanel.cursor = blankCursor
-            renderPanel.requestFocusInWindow()
+            SwingUtilities.invokeLater { renderPanel.requestFocusInWindow() }
         }
     }
 
@@ -357,28 +399,9 @@ class Game3D : JPanel() {
         renderPanel.background = skyColor
         renderPanel.repaint()
     }
-
-    private fun calculateFps() {
-        val currentTime = System.nanoTime()
-        val frameTime = currentTime - lastFrameTime // Time taken for this frame in nanoseconds
-        lastFrameTime = currentTime
-
-        // Skip extreme values (e.g., when game was paused or minimized)
-        if (frameTime in 1..999999999) { // Less than 1 second
-            frameTimeSum += frameTime
-            frameTimeCount++
-
-            // Update FPS calculation every 500ms
-            if (frameTimeSum > 500_000_000) { // 500ms in nanoseconds
-                // Convert average frame time to FPS
-                val avgFrameTime = frameTimeSum.toDouble() / frameTimeCount
-                currentFps = (1_000_000_000.0 / avgFrameTime).toInt()
-
-                // Reset accumulators
-                frameTimeSum = 0
-                frameTimeCount = 0
-            }
-        }
+    fun setCustomUI(customUI: CustomizableGameUI) {
+        renderPanel.setCustomUI(customUI)
+        renderPanel.setGameUIVisible(true)
     }
 
     fun update() {
@@ -394,7 +417,7 @@ class Game3D : JPanel() {
             1.0 / 60.0 // Default to 60 FPS if frameTime is unusual
         }
 
-        if (!isEditorMode) {
+        if (!isEditorMode && !isUIBuilderMode) {
             var forward = 0.0
             var right = 0.0
             var up = 0.0
@@ -424,7 +447,15 @@ class Game3D : JPanel() {
                 renderPanel.cursor = blankCursor
             }
 
-            gridEditor.repaint()
+        }
+        // --- Editor Mode Specific Logic ---
+        else if (isEditorMode && !isUIBuilderMode) {
+            // Ensure default cursor is set if we are in editor mode
+            if (cursor != defaultCursor) {
+                cursor = defaultCursor
+                renderPanel.cursor = defaultCursor // Also set on renderPanel
+            }
+            // Any other specific logic for editor mode during update could go here
         }
 
         // Calculate FPS for every frame
@@ -444,7 +475,16 @@ class Game3D : JPanel() {
             }
         }
 
-        renderPanel.repaint()
+        // Repaint the correct active panel based on the current mode
+        if (isUIBuilderMode) {
+            uiBuilder.repaint() // Repaint the builder if it's active
+        } else {
+            // If not in UI builder, repaint the main content (game or editor view)
+            renderPanel.repaint()
+            if (isEditorMode) {
+                gridEditor.repaint() // Also repaint grid editor if in editor mode
+            }
+        }
     }
 
     private fun updateWalls(newWalls: List<Wall>) {
@@ -544,6 +584,8 @@ class Game3D : JPanel() {
             // Center on screen
             it.setLocationRelativeTo(null)
         }
+        isUIBuilderMode = false
+        this.menuBar.isVisible = false
     }
 
     private fun showContent() {
@@ -559,5 +601,8 @@ class Game3D : JPanel() {
             // You might want to set a minimum size for the editor/game view
             it.minimumSize = Dimension(800, 600)
         }
+        isUIBuilderMode = false
+        this.menuBar.isVisible = true // <--- SHOW the stored menu bar when content is shown
+        updateMode()
     }
 }
