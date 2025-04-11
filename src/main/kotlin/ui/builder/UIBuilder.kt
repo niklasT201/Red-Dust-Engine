@@ -15,6 +15,10 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
 
     private val componentPalette = UIComponentPalette(customizableGameUI, previewPanel)
     private val propertiesPanel = UIPropertiesPanel()
+    private val GAME_WIDTH = 800  // Set to your actual game width
+    private val GAME_HEIGHT = 600 // Set to your actual game height
+    private val PREVIEW_OFFSET_X = 0 // Will adjust if needed
+    private val PREVIEW_OFFSET_Y = 0
 
     init {
         layout = BorderLayout()
@@ -133,6 +137,11 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
         private var selectionListener: ((UIComponent?) -> Unit)? = null
         private var backgroundImage: Image? = null
 
+        private var currentWidth = 800
+        private var currentHeight = 600
+        private var previewOffsetX = 0
+        private var previewOffsetY = 0
+
         init {
             preferredSize = Dimension(800, 600)
             background = Color(35, 35, 35)
@@ -140,21 +149,25 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
             // Add mouse listeners for drag and drop
             addMouseListener(object : MouseAdapter() {
                 override fun mousePressed(e: MouseEvent) {
-                    // Find component under cursor
-                    val component = customUI.getComponentAt(e.x, e.y)
+                    // Find component under cursor using properly scaled coordinates
+                    val component = customUI.getComponentAt(e.x, e.y, currentWidth, currentHeight)
                     if (component != null) {
                         selectedComponent = component
                         dragStartX = e.x
                         dragStartY = e.y
-                        dragOffsetX = e.x - component.x
-                        dragOffsetY = e.y - component.y
 
-                        // Notify selection listener about the selection
+                        // Calculate drag offsets in design coordinates
+                        val scaleX = customUI.designWidth.toFloat() / currentWidth
+                        val scaleY = customUI.designHeight.toFloat() / currentHeight
+
+                        dragOffsetX = (e.x * scaleX).toInt() - component.x
+                        dragOffsetY = (e.y * scaleY).toInt() - component.y
+
+                        // Notify selection listener
                         selectionListener?.invoke(component)
-
                         repaint()
                     } else {
-                        // If clicked on empty space, clear selection
+                        // Clear selection if clicked on empty space
                         selectedComponent = null
                         selectionListener?.invoke(null)
                         repaint()
@@ -172,13 +185,17 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
                 override fun mouseDragged(e: MouseEvent) {
                     val component = selectedComponent ?: return
 
-                    // Move component
-                    component.x = e.x - dragOffsetX
-                    component.y = e.y - dragOffsetY
+                    // Calculate scale factors
+                    val scaleX = customUI.designWidth.toFloat() / currentWidth
+                    val scaleY = customUI.designHeight.toFloat() / currentHeight
 
-                    // Ensure component stays within bounds
-                    component.x = component.x.coerceIn(0, width - component.width)
-                    component.y = component.y.coerceIn(0, height - component.height)
+                    // Convert screen coordinates to design coordinates
+                    component.x = ((e.x * scaleX).toInt() - dragOffsetX)
+                    component.y = ((e.y * scaleY).toInt() - dragOffsetY)
+
+                    // Keep within design bounds
+                    component.x = component.x.coerceIn(0, customUI.designWidth - component.width)
+                    component.y = component.y.coerceIn(0, customUI.designHeight - component.height)
 
                     repaint()
                 }
@@ -186,6 +203,15 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
 
             // Take screenshot of game to use as background
             updateBackgroundImage()
+
+            addComponentListener(object : ComponentAdapter() {
+                override fun componentResized(e: ComponentEvent) {
+                    currentWidth = width
+                    currentHeight = height
+                    updateBackgroundImage()
+                    repaint()
+                }
+            })
         }
 
         // Add a method to set the selection listener
@@ -210,13 +236,20 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
         override fun paintComponent(g: Graphics) {
             super.paintComponent(g)
             val g2 = g as Graphics2D
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
 
-            // Draw background image
-            backgroundImage?.let { g2.drawImage(it, 0, 0, width, height, null) }
+            // Calculate scale factors for drawing
+            val scaleX = currentWidth.toFloat() / customUI.designWidth
+            val scaleY = currentHeight.toFloat() / customUI.designHeight
 
-            // Draw all UI components
-            customUI.render(g2, width, height)
+            // Draw background
+            backgroundImage?.let { g2.drawImage(it, 0, 0, currentWidth, currentHeight, null) }
+
+            // Apply scaling transformation
+            val originalTransform = g2.transform
+            g2.scale(scaleX.toDouble(), scaleY.toDouble())
+
+            // Draw UI components in design coordinates
+            customUI.render(g2, customUI.designWidth, customUI.designHeight)
 
             // Highlight selected component
             selectedComponent?.let {
@@ -228,26 +261,14 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
 
                 // Draw handle points
                 val handleSize = 8
-                g2.fillRect(it.x - handleSize / 2, it.y - handleSize / 2, handleSize, handleSize) // Top-left
-                g2.fillRect(
-                    it.x + it.width - handleSize / 2,
-                    it.y - handleSize / 2,
-                    handleSize,
-                    handleSize
-                ) // Top-right
-                g2.fillRect(
-                    it.x - handleSize / 2,
-                    it.y + it.height - handleSize / 2,
-                    handleSize,
-                    handleSize
-                ) // Bottom-left
-                g2.fillRect(
-                    it.x + it.width - handleSize / 2,
-                    it.y + it.height - handleSize / 2,
-                    handleSize,
-                    handleSize
-                ) // Bottom-right
+                g2.fillRect(it.x - handleSize/2, it.y - handleSize/2, handleSize, handleSize) // Top-left
+                g2.fillRect(it.x + it.width - handleSize/2, it.y - handleSize/2, handleSize, handleSize) // Top-right
+                g2.fillRect(it.x - handleSize/2, it.y + it.height - handleSize/2, handleSize, handleSize) // Bottom-left
+                g2.fillRect(it.x + it.width - handleSize/2, it.y + it.height - handleSize/2, handleSize, handleSize) // Bottom-right
             }
+
+            // Restore original transformation
+            g2.transform = originalTransform
         }
     }
 

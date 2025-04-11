@@ -7,6 +7,10 @@ class CustomizableGameUI {
     // List of all UI components
     private val components = mutableListOf<UIComponent>()
 
+    // Reference screen dimensions used when designing the UI
+    var designWidth = 800
+    var designHeight = 600
+
     // Add a component
     fun addComponent(component: UIComponent) {
         components.add(component)
@@ -22,18 +26,46 @@ class CustomizableGameUI {
         return components
     }
 
-    // Render all components
-    fun render(g2: Graphics2D, width: Int, height: Int) {
-        for (component in components) {
-            component.render(g2, width, height)
-        }
+    // Update design dimensions
+    fun setDesignDimensions(width: Int, height: Int) {
+        designWidth = width
+        designHeight = height
     }
 
-    // Find component at position
-    fun getComponentAt(x: Int, y: Int): UIComponent? {
+    // Render all components with proper scaling
+    fun render(g2: Graphics2D, width: Int, height: Int) {
+        // Calculate scale factors
+        val scaleX = width.toFloat() / designWidth
+        val scaleY = height.toFloat() / designHeight
+
+        // Save original transformation
+        val originalTransform = g2.transform
+
+        // Apply scaling
+        g2.scale(scaleX.toDouble(), scaleY.toDouble())
+
+        // Draw each component (they'll be drawn in design coordinates)
+        for (component in components) {
+            component.render(g2, designWidth, designHeight)
+        }
+
+        // Restore original transformation
+        g2.transform = originalTransform
+    }
+
+    // Find component at position (accounting for scaling)
+    fun getComponentAt(x: Int, y: Int, currentWidth: Int, currentHeight: Int): UIComponent? {
+        // Calculate scale factors
+        val scaleX = designWidth.toFloat() / currentWidth
+        val scaleY = designHeight.toFloat() / currentHeight
+
+        // Convert screen coordinates to design coordinates
+        val designX = (x * scaleX).toInt()
+        val designY = (y * scaleY).toInt()
+
         // Check in reverse order to get the topmost component
         for (i in components.size - 1 downTo 0) {
-            if (components[i].contains(x, y)) {
+            if (components[i].contains(designX, designY)) {
                 return components[i]
             }
         }
@@ -44,6 +76,10 @@ class CustomizableGameUI {
     fun saveToFile(file: File) {
         try {
             ObjectOutputStream(FileOutputStream(file)).use { out ->
+                // Save design dimensions as well
+                out.writeInt(designWidth)
+                out.writeInt(designHeight)
+                // Save components
                 out.writeObject(components)
             }
         } catch (e: Exception) {
@@ -56,6 +92,10 @@ class CustomizableGameUI {
     fun loadFromFile(file: File) {
         try {
             ObjectInputStream(FileInputStream(file)).use { input ->
+                // Load design dimensions
+                designWidth = input.readInt()
+                designHeight = input.readInt()
+                // Load components
                 components.clear()
                 components.addAll(input.readObject() as List<UIComponent>)
             }
@@ -64,9 +104,13 @@ class CustomizableGameUI {
         }
     }
 
-    // Create default UI layout (similar to existing GameUI)
+    // Create default UI layout
     fun createDefaultLayout(screenWidth: Int, screenHeight: Int) {
         components.clear()
+
+        // Set design dimensions to current screen dimensions
+        designWidth = screenWidth
+        designHeight = screenHeight
 
         // Calculate positions
         val statusBarHeight = 120
