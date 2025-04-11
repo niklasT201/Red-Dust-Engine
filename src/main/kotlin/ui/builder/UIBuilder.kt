@@ -41,8 +41,13 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
         // Create default UI layout
         customizableGameUI.createDefaultLayout(800, 600)
 
-        // Set preview panel as the component selection listener
+        // Set preview panel as the component selection listener for palette additions
         componentPalette.setSelectionListener { component ->
+            propertiesPanel.setComponent(component)
+        }
+
+        // Add this: Connect preview panel's selection to properties panel
+        previewPanel.setSelectionListener { component ->
             propertiesPanel.setComponent(component)
         }
 
@@ -125,6 +130,7 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
         private var dragOffsetX = 0
         private var dragOffsetY = 0
 
+        private var selectionListener: ((UIComponent?) -> Unit)? = null
         private var backgroundImage: Image? = null
 
         init {
@@ -142,12 +148,22 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
                         dragStartY = e.y
                         dragOffsetX = e.x - component.x
                         dragOffsetY = e.y - component.y
+
+                        // Notify selection listener about the selection
+                        selectionListener?.invoke(component)
+
+                        repaint()
+                    } else {
+                        // If clicked on empty space, clear selection
+                        selectedComponent = null
+                        selectionListener?.invoke(null)
                         repaint()
                     }
                 }
 
                 override fun mouseReleased(e: MouseEvent) {
-                    selectedComponent = null
+                    // Don't clear the selection, just stop dragging
+                    // selectedComponent remains set so the component stays highlighted
                     repaint()
                 }
             })
@@ -170,6 +186,11 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
 
             // Take screenshot of game to use as background
             updateBackgroundImage()
+        }
+
+        // Add a method to set the selection listener
+        fun setSelectionListener(listener: (UIComponent?) -> Unit) {
+            this.selectionListener = listener
         }
 
         fun updateBackgroundImage() {
