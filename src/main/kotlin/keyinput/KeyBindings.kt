@@ -11,6 +11,7 @@ class KeyBindingManager {
     companion object {
         private const val SETTINGS_DIR = "settings"
         private const val KEY_BINDINGS_FILE = "key_bindings.settings"
+        private const val PROJECTS_DIR = "Projects"
 
         // Fixed keys for undo/redo operations
         const val UNDO_KEY = KeyEvent.VK_Z
@@ -18,13 +19,30 @@ class KeyBindingManager {
         const val KEY_UNBOUND = -1
 
         // Make sure the settings directory exists
-        private fun ensureSettingsDir() {
-            val dir = File(SETTINGS_DIR)
-            if (!dir.exists()) {
-                dir.mkdir()
+        private fun ensureSettingsDir(projectName: String?) {
+            // If project is specified, use project-specific settings
+            if (projectName != null) {
+                val projectDir = File("$PROJECTS_DIR/$projectName")
+                if (!projectDir.exists()) {
+                    projectDir.mkdirs()
+                }
+
+                val settingsDir = File("$PROJECTS_DIR/$projectName/$SETTINGS_DIR")
+                if (!settingsDir.exists()) {
+                    settingsDir.mkdirs()
+                }
+            } else {
+                // Global settings directory (used when no project is active)
+                val dir = File(SETTINGS_DIR)
+                if (!dir.exists()) {
+                    dir.mkdir()
+                }
             }
         }
     }
+
+    // Current project name
+    private var currentProjectName: String? = null
 
     // Maps key names to their current key codes
     private val keyBindings = mutableMapOf<String, Int>()
@@ -50,9 +68,26 @@ class KeyBindingManager {
         // Copy defaults to current bindings
         keyBindings.putAll(defaultBindings)
 
-        // Try to load saved bindings
+        // Try to load saved bindings (global settings initially)
         loadKeyBindings()
     }
+
+    fun setCurrentProject(projectName: String?) {
+        // If project changed, save current bindings first (if we have a project)
+        if (currentProjectName != null && currentProjectName != projectName) {
+            saveKeyBindings()
+        }
+
+        // Update current project
+        currentProjectName = projectName
+
+        // Then load project-specific bindings
+        if (projectName != null) {
+            loadKeyBindings()
+        }
+    }
+
+    fun getCurrentProject(): String? = currentProjectName
 
     private fun initializeDefaultBindings() {
         // Movement Keys (configurable)
@@ -143,6 +178,7 @@ class KeyBindingManager {
                 keyBindings[key] = defaultValue
             }
         }
+        disabledActions.clear()
     }
 
     fun getConfigurableBindings(): Map<String, Int> {
@@ -179,10 +215,20 @@ class KeyBindingManager {
         }
     }
 
+    private fun getSettingsFilePath(): String {
+        return if (currentProjectName != null) {
+            "$PROJECTS_DIR/$currentProjectName/$SETTINGS_DIR/$KEY_BINDINGS_FILE"
+        } else {
+            "$SETTINGS_DIR/$KEY_BINDINGS_FILE"
+        }
+    }
+
     fun saveKeyBindings(): Boolean {
         try {
-            ensureSettingsDir()
-            val file = File("$SETTINGS_DIR/$KEY_BINDINGS_FILE")
+            // Ensure the settings directory exists for the current project
+            ensureSettingsDir(currentProjectName)
+
+            val file = File(getSettingsFilePath())
             val outputStream = DataOutputStream(BufferedOutputStream(FileOutputStream(file)))
 
             // Write version for future compatibility
@@ -201,6 +247,12 @@ class KeyBindingManager {
                 outputStream.writeInt(keyBindings[key] ?: defaultBindings[key] ?: KeyEvent.VK_UNDEFINED)
             }
 
+            // Write disabled actions
+            outputStream.writeInt(disabledActions.size)
+            disabledActions.forEach { action ->
+                outputStream.writeUTF(action)
+            }
+
             outputStream.close()
             return true
         } catch (e: Exception) {
@@ -212,7 +264,7 @@ class KeyBindingManager {
 
     fun loadKeyBindings(): Boolean {
         try {
-            val file = File("$SETTINGS_DIR/$KEY_BINDINGS_FILE")
+            val file = File(getSettingsFilePath())
             if (!file.exists()) {
                 println("Key bindings file does not exist, using defaults")
                 return false
@@ -245,6 +297,19 @@ class KeyBindingManager {
                 }
             }
 
+            // If there are disabled actions in the file (version check may be needed here)
+            if (inputStream.available() > 0) {
+                val disabledCount = inputStream.readInt()
+                disabledActions.clear()
+
+                for (i in 0 until disabledCount) {
+                    val action = inputStream.readUTF()
+                    if (action in configurableKeys) {
+                        disabledActions.add(action)
+                    }
+                }
+            }
+
             inputStream.close()
             return true
         } catch (e: Exception) {
@@ -257,6 +322,11 @@ class KeyBindingManager {
 
 object KeyBindings {
     private val keyBindingManager = KeyBindingManager()
+
+    // Add method to set the current project
+    fun setCurrentProject(projectName: String?) {
+        keyBindingManager.setCurrentProject(projectName)
+    }
 
     // Movement Keys
     val MOVE_FORWARD get() = keyBindingManager.getKeyBinding("MOVE_FORWARD")

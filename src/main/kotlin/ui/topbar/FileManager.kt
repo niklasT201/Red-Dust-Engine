@@ -1,5 +1,6 @@
 package ui.topbar
 
+import controls.KeyBindings
 import saving.WorldSaver
 import grideditor.GridEditor
 import java.awt.Component
@@ -51,6 +52,9 @@ class FileManager(
         currentProjectName = name
         // Create project directory structure when setting the project name
         createProjectDirectoryStructure(name)
+
+        // Update key bindings to use the new project
+        KeyBindings.setCurrentProject(name)
     }
 
     fun saveWorld(parentComponent: Component, saveAs: Boolean): Boolean {
@@ -207,6 +211,9 @@ class FileManager(
     fun loadWorld(file: File): Boolean {
         if (worldSaver.loadWorld(gridEditor, file.absolutePath)) {
             currentSaveFile = file
+
+            // Make sure key bindings are updated to the current project
+            KeyBindings.setCurrentProject(currentProjectName)
 
             // Update the menu system with discovered floors
             updateMenuFloorsAfterLoad()

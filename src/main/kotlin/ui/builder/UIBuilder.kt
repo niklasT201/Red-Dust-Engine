@@ -15,10 +15,6 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
 
     private val componentPalette = UIComponentPalette(customizableGameUI, previewPanel)
     private val propertiesPanel = UIPropertiesPanel()
-    private val GAME_WIDTH = 800  // Set to your actual game width
-    private val GAME_HEIGHT = 600 // Set to your actual game height
-    private val PREVIEW_OFFSET_X = 0 // Will adjust if needed
-    private val PREVIEW_OFFSET_Y = 0
 
     init {
         layout = BorderLayout()
@@ -139,8 +135,6 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
 
         private var currentWidth = 800
         private var currentHeight = 600
-        private var previewOffsetX = 0
-        private var previewOffsetY = 0
 
         init {
             preferredSize = Dimension(800, 600)

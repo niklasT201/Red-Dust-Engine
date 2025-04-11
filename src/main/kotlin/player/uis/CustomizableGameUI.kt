@@ -26,12 +26,6 @@ class CustomizableGameUI {
         return components
     }
 
-    // Update design dimensions
-    fun setDesignDimensions(width: Int, height: Int) {
-        designWidth = width
-        designHeight = height
-    }
-
     // Render all components with proper scaling
     fun render(g2: Graphics2D, width: Int, height: Int) {
         // Calculate scale factors
