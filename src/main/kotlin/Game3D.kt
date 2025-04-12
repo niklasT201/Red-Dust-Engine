@@ -37,7 +37,7 @@ class Game3D : JPanel() {
 
     private val gridEditor = GridEditor()
     private val editorPanel = EditorPanel(gridEditor,renderer, this) { toggleEditorMode() }
-    //private val settingsSaver = saving.SettingsSaver(gridEditor)
+    private val settingsSaver = saving.SettingsSaver(gridEditor)
     private lateinit var menuSystem: MenuSystem
     private var menuBar: JMenuBar
     private val keysPressed = mutableSetOf<Int>()
@@ -518,49 +518,111 @@ class Game3D : JPanel() {
     }
 
     private fun loadExistingWorld() {
-        // Create a file chooser dialog
+        // 1. Select Project Directory
         val fileChooser = JFileChooser().apply {
-            dialogTitle = "Open Existing World"
-            fileSelectionMode = JFileChooser.FILES_ONLY
-
-            // Set root directory to World/saves
-            val worldDir = File("World/saves")
-            if (worldDir.exists()) {
-                currentDirectory = worldDir
+            dialogTitle = "Select Project Directory"
+            fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+            val projectsDir = File("Projects") // Use constant if preferred: File(FileManager.PROJECTS_DIR)
+            if (projectsDir.exists()) {
+                currentDirectory = projectsDir
+            } else {
+                println("Projects directory ('Projects') not found.")
             }
-
-            fileFilter = javax.swing.filechooser.FileNameExtensionFilter(
-                "World Files (*.world)", "world"
-            )
+            isAcceptAllFileFilterUsed = false
         }
 
         if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-            val file = fileChooser.selectedFile
-
-            // Determine game type based on file location
-            if (file.absolutePath.contains("open_world")) {
-                gameType = GameType.OPEN_WORLD
-            } else {
-                gameType = GameType.LEVEL_BASED
+            val projectDir = fileChooser.selectedFile
+            if (projectDir == null || !projectDir.isDirectory) {
+                JOptionPane.showMessageDialog(this, "Invalid project directory selected.", "Error", JOptionPane.ERROR_MESSAGE)
+                return
             }
 
-            // Update file manager
-            menuSystem.getFileManager().setGameType(gameType)
+            val projectName = projectDir.name
+            val projectPath = projectDir.absolutePath
 
-            // Load the world
-            if (menuSystem.getFileManager().loadWorld(file)) {
-                // Switch to editor mode
-                isEditorMode = true
-                updateMode()
+            // 2. Set Project Context in FileManager
+            // Ensure menuSystem is initialized before welcome screen interaction if needed,
+            // or pass fileManager directly to WelcomeScreen. Assuming menuSystem is ready.
+            val fileManager = menuSystem.getFileManager()
+            fileManager.setCurrentProjectName(projectName) // This also updates KeyBindings
 
-                // Show the main content
-                showContent()
+            // 3. Find the World File to Load
+            var worldFileToLoad: File? = null
+            var loadedGameType: GameType? = null
+
+            val savesDir = File(projectDir, "saves") // Use constants: File(projectDir, FileManager.SAVES_DIR)
+            val openWorldDir = File(savesDir, "open_world") // Use constants
+            val openWorldFile = File(openWorldDir, "open_world.world") // Use constants
+
+            if (openWorldFile.exists()) {
+                worldFileToLoad = openWorldFile
+                loadedGameType = GameType.OPEN_WORLD
             } else {
-                // Show error
+                val levelsDir = File(savesDir, "levels") // Use constants
+                if (levelsDir.exists() && levelsDir.isDirectory) {
+                    val levelFiles = levelsDir.listFiles { file ->
+                        file.isFile && file.name.lowercase().endsWith(".world") // Use constant
+                    }?.sortedBy { it.name }
+
+                    if (levelFiles != null && levelFiles.isNotEmpty()) {
+                        worldFileToLoad = levelFiles[0]
+                        loadedGameType = GameType.LEVEL_BASED
+                    }
+                }
+            }
+
+            // 4. Load World and Settings if a world file was found
+            if (worldFileToLoad != null && loadedGameType != null) {
+                // Set the game type before loading
+                fileManager.setGameType(loadedGameType)
+                this.gameType = loadedGameType // Update Game3D's gameType
+
+                // Load the world grid data
+                if (fileManager.loadWorld(worldFileToLoad)) {
+                    println("Successfully loaded world: ${worldFileToLoad.absolutePath}")
+
+                    // ---> 5. Load Settings using SettingsManager <---
+                    val settingsManager = menuSystem.getSettingsManager()
+                    val displayOptionsPanel = editorPanel.getDisplayOptionsPanel() // Get panel instance
+
+                    val (displaySuccess, worldSuccess, playerSuccess) = settingsManager.loadSettings(projectPath, displayOptionsPanel)
+
+                    if (displaySuccess && worldSuccess && playerSuccess) {
+                        println("Successfully loaded all project settings.")
+                    } else {
+                        println("Warning: Some project settings might not have loaded correctly.")
+                        // Optionally show a less severe warning message
+                        JOptionPane.showMessageDialog(
+                            this,
+                            "World loaded. Some project settings might not have loaded correctly.\n" +
+                                    "Display: $displaySuccess, World: $worldSuccess, Player: $playerSuccess",
+                            "Settings Load Warning",
+                            JOptionPane.WARNING_MESSAGE
+                        )
+                    }
+
+                    // 6. Switch UI
+                    isEditorMode = true // Start in editor mode after loading
+                    updateMode()
+                    showContent() // Show the main editor/game view
+                    println("Project '$projectName' loaded.")
+
+                } else {
+                    // World loading failed
+                    JOptionPane.showMessageDialog(
+                        this,
+                        "Failed to load world file: ${worldFileToLoad.name}",
+                        "World Load Error",
+                        JOptionPane.ERROR_MESSAGE
+                    )
+                }
+            } else {
+                // No world file found in the project directory
                 JOptionPane.showMessageDialog(
                     this,
-                    "Failed to load world file.",
-                    "Error",
+                    "Could not find a valid world file (open_world.world or level_*.world) in the selected project directory's 'saves' subfolder.",
+                    "Load Error",
                     JOptionPane.ERROR_MESSAGE
                 )
             }

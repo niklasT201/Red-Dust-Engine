@@ -51,6 +51,8 @@ fun main() {
 // move border panel to world tab
 // ui gets saved for each project separated
 // improve ui builder ui
+// add new ui elements
+// allow own assets
 
 
 // Object List:

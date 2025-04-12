@@ -25,14 +25,14 @@ class FileManager(
     private var currentProjectName: String? = null // Store the current project name
 
     companion object {
-        private const val PROJECTS_DIR = "Projects" // New top-level directory
-        private const val SAVES_DIR = "saves"
-        private const val OPEN_WORLD_DIR = "open_world"
-        private const val LEVELS_DIR = "levels"
+        const val PROJECTS_DIR = "Projects" // New top-level directory
+        const val SAVES_DIR = "saves"
+        const val OPEN_WORLD_DIR = "open_world"
+        const val LEVELS_DIR = "levels"
         private const val QUICKSAVES_DIR = "quicksaves"
-        private const val DEFAULT_OPEN_WORLD_FILE = "open_world.world"
+        const val DEFAULT_OPEN_WORLD_FILE = "open_world.world"
         private const val DEFAULT_LEVEL_PREFIX = "level_"
-        private const val WORLD_EXTENSION = "world"
+        const val WORLD_EXTENSION = "world"
     }
 
     init {

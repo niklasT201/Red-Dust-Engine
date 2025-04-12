@@ -28,6 +28,7 @@ class EditorPanel(var gridEditor: GridEditor, val renderer: Renderer, private va
     private val wallStylePanel = WallStylePanel(gridEditor)
     private val toolsPanel: ToolsPanel
     private val quickActionsPanel: QuickActionsPanel
+    private lateinit var displayOptionsPanel: DisplayOptionsPanel
 
     // Tab buttons
     private val objectsTabButton = JButton("Objects")
@@ -392,7 +393,7 @@ class EditorPanel(var gridEditor: GridEditor, val renderer: Renderer, private va
         }
 
         // Create grid labels panel with error handling
-        val gridLabelsPanel = try {
+        this.displayOptionsPanel = try {
             DisplayOptionsPanel(gridEditor)
         } catch (e: Exception) {
             println("Error creating DisplayOptionsPanel: ${e.message}")
@@ -404,7 +405,7 @@ class EditorPanel(var gridEditor: GridEditor, val renderer: Renderer, private va
                 add(JLabel("Display options unavailable", SwingConstants.CENTER).apply {
                     foreground = Color.WHITE
                 }, BorderLayout.CENTER)
-            }
+            } as DisplayOptionsPanel
         }
 
         // Player tab sections
@@ -457,7 +458,7 @@ class EditorPanel(var gridEditor: GridEditor, val renderer: Renderer, private va
         }
 
         val gridLabelsSection = CollapsibleSection("Grid Labels").apply {
-            addComponent(gridLabelsPanel)
+            addComponent(this@EditorPanel.displayOptionsPanel)
         }
 
         toolsSectionsPanel.add(toolsSection)
@@ -465,6 +466,11 @@ class EditorPanel(var gridEditor: GridEditor, val renderer: Renderer, private va
         // Vertical glue AFTER adding all sections
         toolsSectionsPanel.add(gridLabelsSection)
         toolsSectionsPanel.add(Box.createVerticalGlue())
+    }
+
+    fun getDisplayOptionsPanel(): DisplayOptionsPanel {
+        // Consider adding a check if it's initialized if you switch from lateinit
+        return displayOptionsPanel
     }
 
     private fun setupWallPropertiesPanel() {

@@ -73,4 +73,6 @@ class MenuSystem(
 
     // Add this method to expose the file manager
     fun getFileManager(): FileManager = fileManager
+    fun getSettingsManager(): SettingsManager = settingsManager
+
 }
