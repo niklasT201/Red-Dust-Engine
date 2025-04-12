@@ -2,6 +2,7 @@ package ui.builder
 
 import Game3D
 import player.uis.*
+import player.uis.TextComponent
 import java.awt.*
 import java.awt.event.*
 import javax.swing.*
@@ -277,9 +278,14 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             border = EmptyBorder(10, 10, 10, 10)
 
-            add(createHeader("Add Components"))
+            add(createHeader("Basic Elements"))
+            add(createComponentButton("Background Panel", BackgroundComponent(20, 20, 200, 100)))
+            add(createComponentButton("Text Label", TextComponent(20, 20, 100, 20)))
+            add(createComponentButton("Face Image", ImageComponent(20, 20, 64, 64)))
+            add(createComponentButton("Progress Bar", ProgressBarComponent(20, 20, 180, 16)))
+            add(createComponentButton("Stat Display", StatComponent(20, 20, 100, 20)))
 
-            // Add component buttons
+            add(createHeader("Game UI Elements"))
             add(createComponentButton("Health Bar", HealthBarComponent(20, 20, 210, 100)))
             add(createComponentButton("Ammo Bar", AmmoBarComponent(20, 20, 210, 100)))
             add(createComponentButton("Face Panel", FaceComponent(20, 20, 170, 100)))
@@ -387,6 +393,11 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
                     is AmmoBarComponent -> addAmmoBarProperties(component)
                     is FaceComponent -> addFaceProperties(component)
                     is WeaponSelectorComponent -> addWeaponSelectorProperties(component)
+                    is BackgroundComponent -> addBackgroundProperties(component)
+                    is TextComponent -> addTextProperties(component)
+                    is ImageComponent -> addImageProperties(component)
+                    is ProgressBarComponent -> addProgressBarProperties(component)
+                    is StatComponent -> addStatProperties(component)
                 }
 
                 // Delete button
@@ -511,6 +522,271 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
             add(createHeader("Weapon"))
             add(createNumberField("Current Weapon", component.currentWeapon) { value ->
                 component.currentWeapon = value.coerceIn(1, 5)
+                changeListener?.invoke()
+            })
+        }
+
+        private fun addBackgroundProperties(component: BackgroundComponent) {
+            // Color properties
+            add(createHeader("Colors"))
+            add(createColorField("Background", component.backgroundColor) { color ->
+                component.backgroundColor = color
+                changeListener?.invoke()
+            })
+            add(createColorField("Border", component.borderColor) { color ->
+                component.borderColor = color
+                changeListener?.invoke()
+            })
+
+            // Border properties
+            add(createHeader("Border"))
+            add(createNumberField("Thickness", component.borderThickness) { value ->
+                component.borderThickness = value
+                changeListener?.invoke()
+            })
+            add(createNumberField("Corner Radius", component.cornerRadius) { value ->
+                component.cornerRadius = value
+                changeListener?.invoke()
+            })
+        }
+
+        private fun addTextProperties(component: TextComponent) {
+            // Text properties
+            add(createHeader("Text"))
+            add(createTextField("Content", component.text) { value ->
+                component.text = value
+                changeListener?.invoke()
+            })
+
+            // Font properties
+            add(createHeader("Font"))
+            add(createFontSizeField("Size", component.fontSize) { value ->
+                component.fontSize = value
+                changeListener?.invoke()
+            })
+
+            // Add font style dropdown
+            val fontStylePanel = JPanel()
+            fontStylePanel.layout = BoxLayout(fontStylePanel, BoxLayout.X_AXIS)
+            fontStylePanel.alignmentX = Component.LEFT_ALIGNMENT
+
+            fontStylePanel.add(JLabel("Style: ").apply {
+                preferredSize = Dimension(80, preferredSize.height)
+            })
+
+            val fontStyles = arrayOf("Plain", "Bold", "Italic", "Bold+Italic")
+            val styleBox = JComboBox(fontStyles)
+            when (component.fontStyle) {
+                Font.PLAIN -> styleBox.selectedIndex = 0
+                Font.BOLD -> styleBox.selectedIndex = 1
+                Font.ITALIC -> styleBox.selectedIndex = 2
+                Font.BOLD + Font.ITALIC -> styleBox.selectedIndex = 3
+            }
+
+            styleBox.addActionListener {
+                component.fontStyle = when (styleBox.selectedIndex) {
+                    0 -> Font.PLAIN
+                    1 -> Font.BOLD
+                    2 -> Font.ITALIC
+                    3 -> Font.BOLD + Font.ITALIC
+                    else -> Font.PLAIN
+                }
+                changeListener?.invoke()
+            }
+
+            fontStylePanel.add(styleBox)
+            add(fontStylePanel)
+
+            // Color properties
+            add(createHeader("Color"))
+            add(createColorField("Text Color", component.textColor) { color ->
+                component.textColor = color
+                changeListener?.invoke()
+            })
+        }
+
+        private fun addImageProperties(component: ImageComponent) {
+            // Image type
+            add(createHeader("Image Type"))
+
+            val imageTypePanel = JPanel()
+            imageTypePanel.layout = BoxLayout(imageTypePanel, BoxLayout.X_AXIS)
+            imageTypePanel.alignmentX = Component.LEFT_ALIGNMENT
+
+            imageTypePanel.add(JLabel("Type: ").apply {
+                preferredSize = Dimension(80, preferredSize.height)
+            })
+
+            val imageTypes = arrayOf("face", "weapon", "key", "ammo")
+            val typeBox = JComboBox(imageTypes)
+            typeBox.selectedItem = component.imageType
+
+            typeBox.addActionListener {
+                component.imageType = typeBox.selectedItem as String
+                component.updateImage()
+                changeListener?.invoke()
+            }
+
+            imageTypePanel.add(typeBox)
+            add(imageTypePanel)
+
+            // Scale properties
+            add(createHeader("Scale"))
+            add(createSlider("Scale", (component.scale * 100).toInt(), 10, 200) { value ->
+                component.scale = value / 100.0
+                changeListener?.invoke()
+            })
+        }
+
+        private fun addProgressBarProperties(component: ProgressBarComponent) {
+            // Color properties
+            add(createHeader("Colors"))
+            add(createColorField("Bar Color", component.barColor) { color ->
+                component.barColor = color
+                changeListener?.invoke()
+            })
+            add(createColorField("Background", component.backgroundColor) { color ->
+                component.backgroundColor = color
+                changeListener?.invoke()
+            })
+            add(createColorField("Border", component.borderColor) { color ->
+                component.borderColor = color
+                changeListener?.invoke()
+            })
+
+            // Progress properties
+            add(createHeader("Progress"))
+            add(createSlider("Fill %", component.fillPercentage, 0, 100) { value ->
+                component.fillPercentage = value
+                changeListener?.invoke()
+            })
+
+            // Notch properties
+            add(createHeader("Notches"))
+            add(createCheckBox("Show Notches", component.showNotches) { value ->
+                component.showNotches = value
+                changeListener?.invoke()
+            })
+            add(createNumberField("Notch Count", component.notchCount) { value ->
+                component.notchCount = value.coerceIn(0, 20)
+                changeListener?.invoke()
+            })
+        }
+
+        private fun createTextField(label: String, initialValue: String, onValueChanged: (String) -> Unit): JPanel {
+            val panel = JPanel()
+            panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
+            panel.alignmentX = Component.LEFT_ALIGNMENT
+            panel.border = EmptyBorder(3, 0, 3, 0)
+
+            panel.add(JLabel("$label: ").apply {
+                preferredSize = Dimension(80, preferredSize.height)
+            })
+
+            val textField = JTextField(initialValue, 10)
+            textField.addActionListener {
+                onValueChanged(textField.text)
+            }
+            textField.addFocusListener(object : FocusAdapter() {
+                override fun focusLost(e: FocusEvent?) {
+                    onValueChanged(textField.text)
+                }
+            })
+
+            panel.add(textField)
+            return panel
+        }
+
+        private fun createFontSizeField(label: String, initialValue: Int, onValueChanged: (Int) -> Unit): JPanel {
+            val panel = JPanel()
+            panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
+            panel.alignmentX = Component.LEFT_ALIGNMENT
+            panel.border = EmptyBorder(3, 0, 3, 0)
+
+            panel.add(JLabel("$label: ").apply {
+                preferredSize = Dimension(80, preferredSize.height)
+            })
+
+            val spinner = JSpinner(SpinnerNumberModel(initialValue, 8, 72, 1))
+            spinner.preferredSize = Dimension(70, spinner.preferredSize.height)
+            spinner.addChangeListener {
+                onValueChanged(spinner.value as Int)
+            }
+
+            panel.add(spinner)
+            return panel
+        }
+
+        private fun createSlider(label: String, initialValue: Int, min: Int, max: Int, onValueChanged: (Int) -> Unit): JPanel {
+            val panel = JPanel()
+            panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
+            panel.alignmentX = Component.LEFT_ALIGNMENT
+            panel.border = EmptyBorder(3, 0, 3, 0)
+
+            panel.add(JLabel("$label: ").apply {
+                preferredSize = Dimension(80, preferredSize.height)
+            })
+
+            val slider = JSlider(JSlider.HORIZONTAL, min, max, initialValue)
+            slider.preferredSize = Dimension(100, slider.preferredSize.height)
+
+            val valueLabel = JLabel("$initialValue")
+            valueLabel.preferredSize = Dimension(40, valueLabel.preferredSize.height)
+
+            slider.addChangeListener {
+                val value = slider.value
+                valueLabel.text = "$value"
+                onValueChanged(value)
+            }
+
+            panel.add(slider)
+            panel.add(valueLabel)
+            return panel
+        }
+
+        private fun addStatProperties(component: StatComponent) {
+            // Stat type
+            add(createHeader("Stat Type"))
+
+            val statTypePanel = JPanel()
+            statTypePanel.layout = BoxLayout(statTypePanel, BoxLayout.X_AXIS)
+            statTypePanel.alignmentX = Component.LEFT_ALIGNMENT
+
+            statTypePanel.add(JLabel("Type: ").apply {
+                preferredSize = Dimension(80, preferredSize.height)
+            })
+
+            val statTypes = arrayOf("kills", "items", "secrets", "armor", "custom")
+            val typeBox = JComboBox(statTypes)
+            typeBox.selectedItem = component.statType
+
+            typeBox.addActionListener {
+                component.statType = typeBox.selectedItem as String
+                changeListener?.invoke()
+            }
+
+            statTypePanel.add(typeBox)
+            add(statTypePanel)
+
+            // Value properties
+            add(createHeader("Values"))
+            add(createNumberField("Current", component.currentValue) { value ->
+                component.currentValue = value
+                changeListener?.invoke()
+            })
+            add(createNumberField("Maximum", component.maxValue) { value ->
+                component.maxValue = value
+                changeListener?.invoke()
+            })
+
+            // Display options
+            add(createHeader("Display"))
+            add(createColorField("Text Color", component.textColor) { color ->
+                component.textColor = color
+                changeListener?.invoke()
+            })
+            add(createCheckBox("Show as Percentage", component.showAsPercentage) { value ->
+                component.showAsPercentage = value
                 changeListener?.invoke()
             })
         }
