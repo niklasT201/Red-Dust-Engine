@@ -13,6 +13,7 @@ import texturemanager.TextureManagerPanel
 import ImageEntry
 import Ramp
 import RampObject
+import WaterObject
 import WaterSurface
 import java.awt.*
 import javax.swing.*
@@ -53,6 +54,13 @@ class GridEditor : JPanel() {
     var currentPillarWidth = 1.0
     var currentPillarColor = Color(180, 170, 150)
 
+    // Water properties
+    var currentWaterColor = Color(0, 105, 148, 180)
+    var currentWaterDepth = 1.0
+    var currentWaterWaveHeight = 0.1
+    var currentWaterWaveSpeed = 1.0
+    var currentWaterDamagePerSecond = 0.0
+
     var currentSlopeDirection: Direction = Direction.NORTH
     var currentRampHeight = 3.0
     var currentRampWidth = 2.0
@@ -74,6 +82,7 @@ class GridEditor : JPanel() {
     var currentWallTexture: ImageEntry? = null
     var currentFloorTexture: ImageEntry? = null
     var currentPillarTexture: ImageEntry? = null
+    var currentWaterTexture: ImageEntry? = null
     var currentRampTexture: ImageEntry? = null
 
     // View properties
@@ -183,6 +192,37 @@ class GridEditor : JPanel() {
 
     fun setPillarWidth(width: Double) {
         currentPillarWidth = width
+        repaint()
+    }
+
+    // New methods for water
+    fun setWaterColor(color: Color) {
+        currentWaterColor = color
+        repaint()
+    }
+
+    fun setWaterDepth(depth: Double) {
+        currentWaterDepth = depth
+        repaint()
+    }
+
+    fun setWaterWaveHeight(height: Double) {
+        currentWaterWaveHeight = height
+        repaint()
+    }
+
+    fun setWaterWaveSpeed(speed: Double) {
+        currentWaterWaveSpeed = speed
+        repaint()
+    }
+
+    fun setWaterDamagePerSecond(damage: Double) {
+        currentWaterDamagePerSecond = damage
+        repaint()
+    }
+
+    fun setWaterTexture(texture: ImageEntry?) {
+        currentWaterTexture = texture
         repaint()
     }
 
@@ -306,6 +346,11 @@ class GridEditor : JPanel() {
         repaint()
     }
 
+    fun clearWaterTexture() {
+        currentWaterTexture = null
+        repaint()
+    }
+
     fun updateSelectedCell(color: Color? = null, height: Double? = null, width: Double? = null, texture: ImageEntry? = null) {
         selectedCell?.let { cell ->
             grid[cell]?.let { gridCell ->
@@ -319,6 +364,46 @@ class GridEditor : JPanel() {
                         width = width ?: wallObject.width,
                         texture = texture ?: wallObject.texture
                     ))
+                    repaint()
+                    firePropertyChange("gridChanged", null, grid)
+                }
+            }
+        }
+    }
+
+    fun updateSelectedWater(
+        color: Color? = null,
+        floorHeight: Double? = null,
+        depth: Double? = null,
+        waveHeight: Double? = null,
+        waveSpeed: Double? = null,
+        damagePerSecond: Double? = null,
+        texture: ImageEntry? = null // Optional texture update
+    ) {
+        selectedCell?.let { cellCoord ->
+            grid[cellCoord]?.let { gridCell ->
+                // Find the water object on the current floor
+                val waterObject = gridCell.getObjectsForFloor(currentFloor)
+                    .filterIsInstance<WaterObject>()
+                    .firstOrNull()
+
+                waterObject?.let { oldWater ->
+                    // Create a new water object by copying the old one and applying updates
+                    val newWater = oldWater.copy(
+                        color = color ?: oldWater.color,
+                        floorHeight = floorHeight ?: oldWater.floorHeight,
+                        depth = depth ?: oldWater.depth,
+                        waveHeight = waveHeight ?: oldWater.waveHeight,
+                        waveSpeed = waveSpeed ?: oldWater.waveSpeed,
+                        damagePerSecond = damagePerSecond ?: oldWater.damagePerSecond,
+                        texture = texture ?: oldWater.texture // Update texture if provided
+                    )
+
+                    // Replace the old water object with the updated one
+                    gridCell.removeObject(currentFloor, ObjectType.WATER)
+                    gridCell.addObject(currentFloor, newWater)
+
+                    // Repaint and notify listeners
                     repaint()
                     firePropertyChange("gridChanged", null, grid)
                 }

@@ -8,6 +8,7 @@ import ObjectType
 import PillarObject
 import RampObject
 import WallObject
+import WaterObject
 import grideditor.GridEditor
 import texturemanager.ResourceManager
 import texturemanager.TextureManagerPanel
@@ -116,6 +117,11 @@ class EditorPanel(var gridEditor: GridEditor, val renderer: Renderer, private va
                         // Clear the floor texture and revert to using color
                         gridEditor.clearFloorTexture()
                         println("Listener: Cleared floor texture, reverting to color")
+                    }
+                    ObjectType.WATER -> {
+                        // Clear the floor texture and revert to using color
+                        gridEditor.clearWaterTexture()
+                        println("Listener: Cleared water texture, reverting to color")
                     }
                     else -> {
                         println("Listener: Object type ${objectType.name} not handled for texture clearing")
@@ -228,6 +234,32 @@ class EditorPanel(var gridEditor: GridEditor, val renderer: Renderer, private va
 
             override fun onPillarWidthChanged(width: Double) {
                 gridEditor.setPillarWidth(width)
+            }
+        })
+
+        objectSelectorPanel.setWaterPropertyChangeListener(object : WaterPropertiesPanel.WaterPropertyChangeListener {
+            override fun onWaterColorChanged(color: Color) {
+                gridEditor.setWaterColor(color)
+            }
+
+            override fun onFloorHeightChanged(height: Double) {
+                gridEditor.updateCurrentFloorHeight(height)
+            }
+
+            override fun onDepthChanged(depth: Double) {
+                gridEditor.setWaterDepth(depth)
+            }
+
+            override fun onWaveHeightChanged(height: Double) {
+                gridEditor.setWaterWaveHeight(height)
+            }
+
+            override fun onWaveSpeedChanged(speed: Double) {
+                gridEditor.setWaterWaveSpeed(speed)
+            }
+
+            override fun onDamagePerSecondChanged(damage: Double) {
+                gridEditor.setWaterDamagePerSecond(damage)
             }
         })
 
@@ -541,6 +573,18 @@ class EditorPanel(var gridEditor: GridEditor, val renderer: Renderer, private va
                         color = it.color,
                         height = it.height,
                         width = it.width
+                    )
+                }
+
+                val waterObject = currentFloorObjects.filterIsInstance<WaterObject>().firstOrNull()
+                waterObject?.let {
+                    objectSelectorPanel.updateWaterProperties(
+                        color = it.color, // Assuming WaterObject has these properties
+                        floorHeight = it.floorHeight,
+                        depth = it.depth,
+                        waveHeight = it.waveHeight,
+                        waveSpeed = it.waveSpeed,
+                        damagePerSecond = it.damagePerSecond
                     )
                 }
 

@@ -1,5 +1,6 @@
-package player.uis
+package player.uis.components
 
+import player.uis.UIComponent
 import java.awt.Color
 import java.awt.Graphics2D
 

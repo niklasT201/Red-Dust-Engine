@@ -2,7 +2,8 @@ package ui.builder
 
 import Game3D
 import player.uis.*
-import player.uis.TextComponent
+import player.uis.components.*
+import player.uis.components.TextComponent
 import java.awt.*
 import java.awt.event.*
 import javax.swing.*

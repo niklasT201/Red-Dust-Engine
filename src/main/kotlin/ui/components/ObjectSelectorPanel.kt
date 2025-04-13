@@ -24,6 +24,7 @@ class ObjectSelectorPanel(
     private val floorPropertiesPanel = FloorPropertiesPanel()
     private val pillarPropertiesPanel = PillarPropertiesPanel()
     private val rampPropertiesPanel = RampPropertiesPanel()
+    private val waterPropertiesPanel = WaterPropertiesPanel()
     private val borderStylePanel = BorderStylePanel(renderer)
 
     // Keep track of object-specific panels
@@ -50,6 +51,7 @@ class ObjectSelectorPanel(
         floorPropertiesPanel.setGridEditor(gridEditor)
         pillarPropertiesPanel.setGridEditor(gridEditor)
         rampPropertiesPanel.setGridEditor(gridEditor)
+        waterPropertiesPanel.setGridEditor(gridEditor)
 
         // Connect wall style panel to our internal listener
         wallStylePanel.setWallStyleChangeListener { isBlockWall ->
@@ -67,6 +69,7 @@ class ObjectSelectorPanel(
         objectTypeComboBox.addItem("Floor")
         objectTypeComboBox.addItem("Pillar")
         objectTypeComboBox.addItem("Ramp")
+        objectTypeComboBox.addItem("Water")
         objectTypeComboBox.addItem("Border")
         // Add future object types here
 
@@ -166,6 +169,16 @@ class ObjectSelectorPanel(
             add(Box.createVerticalGlue())
         }
 
+        // Create Water panel
+        val waterPanel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            background = Color(40, 44, 52)
+
+            // Add the water properties panel
+            add(createSection("Water Properties", waterPropertiesPanel))
+            add(Box.createVerticalGlue())
+        }
+
         // Create Border panel
         val borderPanel = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -181,6 +194,7 @@ class ObjectSelectorPanel(
         contentPanel.add(floorPanel, "Floor")
         contentPanel.add(pillarPanel, "Pillar")
         contentPanel.add(rampPanel, "Ramp")
+        contentPanel.add(waterPanel, "Water")
         contentPanel.add(borderPanel, "Border")
 
         // Store references to panels for later access
@@ -188,6 +202,7 @@ class ObjectSelectorPanel(
         objectPanels["Floor"] = floorPanel
         objectPanels["Pillar"] = pillarPanel
         objectPanels["Ramp"] = rampPanel
+        objectPanels["Water"] = waterPanel
         objectPanels["Border"] = borderPanel
 
         // Add the content panel to the main panel
@@ -218,6 +233,10 @@ class ObjectSelectorPanel(
         rampPropertiesPanel.setRampPropertyChangeListener(listener)
     }
 
+    fun setWaterPropertyChangeListener(listener: WaterPropertiesPanel.WaterPropertyChangeListener) {
+        waterPropertiesPanel.setWaterPropertyChangeListener(listener)
+    }
+
     fun setWallStyleChangeListener(listener: (Boolean) -> Unit) {
         // Store the external listener
         this.wallStyleChangeListener = listener
@@ -237,5 +256,22 @@ class ObjectSelectorPanel(
 
     fun updateRampProperties(color: Color, height: Double, width: Double, direction: Direction) {
         rampPropertiesPanel.updateProperties(color, height, width, direction)
+    }
+
+    fun updateWaterProperties(
+        color: Color? = null,
+        floorHeight: Double? = null,
+        depth: Double? = null,
+        waveHeight: Double? = null,
+        waveSpeed: Double? = null,
+        damagePerSecond: Double? = null
+    ) {
+        waterPropertiesPanel.updateProperties(
+            color,
+            depth,
+            waveHeight,
+            waveSpeed,
+            damagePerSecond
+        )
     }
 }

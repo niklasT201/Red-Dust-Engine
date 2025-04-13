@@ -348,13 +348,13 @@ class GridInputHandler(private val editor: GridEditor) {
                         texture = editor.currentPillarTexture ?: editor.currentWallTexture
                     )
                     ObjectType.WATER -> WaterObject(
-                        color = Color(0, 105, 148, 180),
+                        color = editor.currentWaterColor,
                         floorHeight = editor.currentFloorHeight,
-                        depth = 1.0,
-                        waveHeight = 0.1,
-                        waveSpeed = 1.0,
-                        damagePerSecond = 0.0,
-                        texture = null
+                        depth = editor.currentWaterDepth,
+                        waveHeight = editor.currentWaterWaveHeight,
+                        waveSpeed = editor.currentWaterWaveSpeed,
+                        damagePerSecond = editor.currentWaterDamagePerSecond,
+                        texture = editor.currentWaterTexture
                     )
                     ObjectType.RAMP -> RampObject(
                         color = editor.currentRampColor,
