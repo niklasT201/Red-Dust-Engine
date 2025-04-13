@@ -260,7 +260,6 @@ class ObjectSelectorPanel(
 
     fun updateWaterProperties(
         color: Color? = null,
-        floorHeight: Double? = null,
         depth: Double? = null,
         waveHeight: Double? = null,
         waveSpeed: Double? = null,

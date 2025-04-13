@@ -14,7 +14,13 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
     var gridEditor: GridEditor? = null
 
     // Filter the object types to only include FLOOR and WALL
-    private val allowedObjectTypes = listOf(ObjectType.WALL, ObjectType.FLOOR)
+    private val allowedObjectTypes = listOf(
+        ObjectType.WALL,
+        ObjectType.FLOOR,
+        ObjectType.PILLAR,
+        ObjectType.WATER,
+        ObjectType.RAMP,
+    )
     private val objectTypeComboBox = JComboBox(allowedObjectTypes.toTypedArray())
 
     private val textureListModel = DefaultListModel<TextureEntry>()
@@ -412,28 +418,58 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
             // Attempt to determine object type from file name patterns
             val filename = imageEntry.name.lowercase()
             val objectType = when {
+                // WALL Keywords
                 filename.contains("wall") || filename.contains("brick") ||
-                        filename.contains("wood") || filename.contains("stone") -> ObjectType.WALL
+                        filename.contains("wood") || filename.contains("stone") ||
+                        filename.contains("siding") -> ObjectType.WALL
 
+                // FLOOR Keywords
                 filename.contains("floor") || filename.contains("ground") ||
-                        filename.contains("tile") || filename.contains("carpet") -> ObjectType.FLOOR
+                        filename.contains("tile") || filename.contains("carpet") ||
+                        filename.contains("grass") || filename.contains("dirt") -> ObjectType.FLOOR
 
+                // PILLAR Keywords
+                filename.contains("pillar") || filename.contains("column") ||
+                        filename.contains("support") -> ObjectType.PILLAR // Added
+
+                // WATER Keywords
+                filename.contains("water") || filename.contains("liquid") ||
+                        filename.contains("fluid") -> ObjectType.WATER // Added
+
+                // RAMP Keywords
+                filename.contains("ramp") || filename.contains("slope") ||
+                        filename.contains("incline") -> ObjectType.RAMP // Added
+
+                // PROP Keywords (General catch-all for items/decorations)
                 filename.contains("prop") || filename.contains("object") ||
-                        filename.contains("item") -> ObjectType.PROP
+                        filename.contains("item") || filename.contains("decor") ||
+                        filename.contains("sprite") -> ObjectType.PROP
 
+                // PLAYER_SPAWN (Usually not textured, but handle if named)
                 filename.contains("spawn") || filename.contains("start") -> ObjectType.PLAYER_SPAWN
 
                 else -> objectTypeComboBox.selectedItem as ObjectType
             }
 
-            val textureEntry = TextureEntry(objectType, imageEntry)
-            texturesByType.getOrPut(objectType) { mutableListOf() }.add(textureEntry)
+            if (allowedObjectTypes.contains(objectType)) {
+                val textureEntry = TextureEntry(objectType, imageEntry)
+                texturesByType.getOrPut(objectType) { mutableListOf() }.add(textureEntry)
+            } else if (objectType == ObjectType.PLAYER_SPAWN) {
+                // Handle player spawn if needed, or just ignore if it doesn't get textures
+                println("Note: Detected PLAYER_SPAWN texture '${imageEntry.name}', but it's not managed in the panel.")
+            } else {
+                // This case might happen if the fallback type (PROP) isn't in allowedObjectTypes for some reason
+                println("Warning: Texture '${imageEntry.name}' guessed as $objectType, which is not in the allowed list for the panel. Assigning to first allowed type.")
+                val fallbackType = allowedObjectTypes.firstOrNull() ?: ObjectType.WALL // Failsafe
+                val textureEntry = TextureEntry(fallbackType, imageEntry)
+                texturesByType.getOrPut(fallbackType) { mutableListOf() }.add(textureEntry)
+            }
         }
 
-        updateTextureList()
+        updateTextureList() // Refresh the list based on the selected type
     }
 
-    fun clearTextureForType(objectType: ObjectType) {
+    private fun clearTextureForType(objectType: ObjectType) {
         // Find any texture marked as default for this type and unmark it
         texturesByType[objectType]?.forEachIndexed { index, texture ->
             texturesByType[objectType]!![index] = texture.copy(isDefault = false)

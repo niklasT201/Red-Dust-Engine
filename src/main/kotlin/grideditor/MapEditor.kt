@@ -351,6 +351,16 @@ class GridEditor : JPanel() {
         repaint()
     }
 
+    fun clearPillarTexture() {
+        currentPillarTexture = null
+        repaint()
+    }
+
+    fun clearRampTexture() {
+        currentRampTexture = null
+        repaint()
+    }
+
     fun updateSelectedCell(color: Color? = null, height: Double? = null, width: Double? = null, texture: ImageEntry? = null) {
         selectedCell?.let { cell ->
             grid[cell]?.let { gridCell ->

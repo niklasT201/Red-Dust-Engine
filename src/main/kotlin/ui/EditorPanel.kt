@@ -90,13 +90,25 @@ class EditorPanel(var gridEditor: GridEditor, val renderer: Renderer, private va
                 when (objectType) {
                     ObjectType.WALL -> {
                         gridEditor.setWallTexture(entry.imageEntry)
-                        gridEditor.currentWallTexture = entry.imageEntry
+                        // gridEditor.currentWallTexture = entry.imageEntry // Direct setting is redundant if setter works
                         println("Listener: Applied wall texture '${entry.imageEntry.name}' to GridEditor")
                     }
                     ObjectType.FLOOR -> {
                         gridEditor.setFloorTexture(entry.imageEntry)
-                        gridEditor.currentFloorTexture = entry.imageEntry
+                        // gridEditor.currentFloorTexture = entry.imageEntry // Redundant
                         println("Listener: Applied floor texture '${entry.imageEntry.name}' to GridEditor")
+                    }
+                    ObjectType.PILLAR -> { // Added
+                        gridEditor.setPillarTexture(entry.imageEntry)
+                        println("Listener: Applied pillar texture '${entry.imageEntry.name}' to GridEditor")
+                    }
+                    ObjectType.WATER -> { // Added
+                        gridEditor.setWaterTexture(entry.imageEntry)
+                        println("Listener: Applied water texture '${entry.imageEntry.name}' to GridEditor")
+                    }
+                    ObjectType.RAMP -> { // Added
+                        gridEditor.setRampTexture(entry.imageEntry)
+                        println("Listener: Applied ramp texture '${entry.imageEntry.name}' to GridEditor")
                     }
                     // Handle other types
                     else -> {
@@ -118,10 +130,17 @@ class EditorPanel(var gridEditor: GridEditor, val renderer: Renderer, private va
                         gridEditor.clearFloorTexture()
                         println("Listener: Cleared floor texture, reverting to color")
                     }
+                    ObjectType.PILLAR -> { // Added
+                        gridEditor.clearPillarTexture() // Needs to be added to GridEditor
+                        println("Listener: Cleared pillar texture, reverting to color")
+                    }
                     ObjectType.WATER -> {
-                        // Clear the floor texture and revert to using color
-                        gridEditor.clearWaterTexture()
+                        gridEditor.clearWaterTexture() // Already existed
                         println("Listener: Cleared water texture, reverting to color")
+                    }
+                    ObjectType.RAMP -> { // Added
+                        gridEditor.clearRampTexture() // Needs to be added to GridEditor
+                        println("Listener: Cleared ramp texture, reverting to color")
                     }
                     else -> {
                         println("Listener: Object type ${objectType.name} not handled for texture clearing")
@@ -580,7 +599,6 @@ class EditorPanel(var gridEditor: GridEditor, val renderer: Renderer, private va
                 waterObject?.let {
                     objectSelectorPanel.updateWaterProperties(
                         color = it.color, // Assuming WaterObject has these properties
-                        floorHeight = it.floorHeight,
                         depth = it.depth,
                         waveHeight = it.waveHeight,
                         waveSpeed = it.waveSpeed,
