@@ -1,6 +1,6 @@
 package ui.topbar
 
-import controls.KeyBindingManager
+import keyinput.KeyBindingManager
 import java.awt.*
 import javax.swing.*
 import javax.swing.border.CompoundBorder

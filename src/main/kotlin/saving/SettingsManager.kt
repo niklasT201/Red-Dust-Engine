@@ -6,7 +6,7 @@ import player.Player
 import grideditor.GridEditor
 import java.awt.Component
 import java.awt.Container
-import controls.KeyBindings
+import keyinput.KeyBindings
 import ui.components.*
 import javax.swing.SwingUtilities
 

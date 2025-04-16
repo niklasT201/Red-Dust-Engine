@@ -30,9 +30,6 @@ class ResourceManager {
         loadAllLocalTextures()
     }
 
-    /**
-     * Adds an image to the resource manager and copies it to the local textures directory
-     */
     fun addImage(name: String, path: String, image: Image): String {
         // Generate unique ID for the image
         val id = "img_${System.currentTimeMillis()}_${images.size}"

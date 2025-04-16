@@ -1,6 +1,6 @@
 package ui.topbar
 
-import controls.KeyBindings
+import keyinput.KeyBindings
 import saving.WorldSaver
 import grideditor.GridEditor
 import java.awt.Component

@@ -1,6 +1,6 @@
 package ui.topbar
 
-import controls.KeyBindingManager
+import keyinput.KeyBindingManager
 import java.awt.Color
 import java.awt.Component
 import java.awt.Font

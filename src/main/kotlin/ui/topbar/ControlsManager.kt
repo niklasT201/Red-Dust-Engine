@@ -1,7 +1,7 @@
 package ui.topbar
 
-import controls.KeyBindingManager
-import controls.KeyBindings
+import keyinput.KeyBindingManager
+import keyinput.KeyBindings
 import java.awt.Component
 import javax.swing.JOptionPane
 import javax.swing.JTable

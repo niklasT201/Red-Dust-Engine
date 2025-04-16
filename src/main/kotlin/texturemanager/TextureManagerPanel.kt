@@ -390,7 +390,7 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
     }
 
     private fun updatePreview() {
-        val selectedTexture = textureList.selectedValue as? TextureEntry
+        val selectedTexture = textureList.selectedValue
         if (selectedTexture != null) {
             val image = selectedTexture.imageEntry.image
             val scaledImage = image.getScaledInstance(150, 150, Image.SCALE_SMOOTH)
@@ -398,14 +398,6 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
         } else {
             previewLabel.icon = null
         }
-    }
-
-    fun getDefaultTextureForType(type: ObjectType): ImageEntry? {
-        return texturesByType[type]?.find { it.isDefault }?.imageEntry
-    }
-
-    fun getTexturesForType(type: ObjectType): List<ImageEntry> {
-        return texturesByType[type]?.map { it.imageEntry } ?: emptyList()
     }
 
     private fun loadTexturesFromResourceManager() {

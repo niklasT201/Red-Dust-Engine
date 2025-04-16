@@ -1,4 +1,4 @@
-import controls.KeyBindings
+import keyinput.KeyBindings
 import grideditor.GridEditor
 import player.Player
 import player.uis.CustomizableGameUI

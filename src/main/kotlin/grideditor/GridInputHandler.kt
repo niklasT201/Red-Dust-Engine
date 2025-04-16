@@ -9,8 +9,7 @@ import RampObject
 import RemoveObjectCommand
 import WallObject
 import WaterObject
-import controls.KeyBindings
-import java.awt.Color
+import keyinput.KeyBindings
 import java.awt.event.*
 import javax.swing.*
 

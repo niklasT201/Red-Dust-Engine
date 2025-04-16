@@ -1,4 +1,4 @@
-package controls
+package keyinput
 
 import java.awt.event.KeyEvent
 import java.io.*
