@@ -8,7 +8,7 @@ import javax.swing.border.EmptyBorder
 
 class UIControlPanel(
     private val customUI: CustomizableGameUI,
-    private val previewPanel: UIBuilder.UIPreviewPanel
+    private val previewPanel: UIPreviewPanel
 ) : JPanel() {
 
     init {
