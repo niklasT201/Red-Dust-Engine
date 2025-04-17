@@ -217,3 +217,6 @@ class ResourceManager {
         textureCache.clear()
     }
 }
+
+// can you help me with my kotlin boomer shooter engine?
+//i have this project directory and want to also implement now the assets folder to it. so that it is not saved as its own folder, instead it also checks if you have a current project opened. can you help me with this? i also did this for my keys file and there i needed only to change one file when i rememeber it right.
