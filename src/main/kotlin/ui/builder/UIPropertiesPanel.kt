@@ -295,25 +295,100 @@ class UIPropertiesPanel : JPanel() {
             preferredSize = Dimension(80, preferredSize.height)
         })
 
-        val imageTypes = arrayOf("face", "weapon", "key", "ammo")
+        val imageTypes = arrayOf("face", "weapon", "key", "ammo", "custom")
         val typeBox = JComboBox(imageTypes)
         typeBox.selectedItem = component.imageType
 
         typeBox.addActionListener {
-            component.imageType = typeBox.selectedItem as String
-            component.updateImage()
-            changeListener?.invoke()
+            val newType = typeBox.selectedItem as String
+            component.imageType = newType
+
+            // If selecting custom, prompt for image file
+            if (newType == "custom") {
+                val fileChooser = JFileChooser()
+                fileChooser.dialogTitle = "Select Image"
+                fileChooser.fileFilter = javax.swing.filechooser.FileNameExtensionFilter(
+                    "Image files", "jpg", "jpeg", "png", "gif", "bmp"
+                )
+
+                if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+                    component.imagePath = fileChooser.selectedFile.absolutePath
+                    component.updateImage()
+                    changeListener?.invoke()
+                }
+            } else {
+                component.updateImage()
+                changeListener?.invoke()
+            }
         }
 
         imageTypePanel.add(typeBox)
         add(imageTypePanel)
 
-        // Scale properties
-        add(createHeader("Scale"))
-        add(createSlider("Scale", (component.scale * 100).toInt(), 10, 200) { value ->
-            component.scale = value / 100.0
+        // Custom image section
+        if (component.imageType == "custom") {
+            add(createHeader("Custom Image"))
+
+            // Show current image path
+            val pathPanel = JPanel()
+            pathPanel.layout = BoxLayout(pathPanel, BoxLayout.X_AXIS)
+            pathPanel.alignmentX = Component.LEFT_ALIGNMENT
+            pathPanel.border = EmptyBorder(3, 0, 3, 0)
+
+            val pathLabel = JLabel("Path: ")
+            pathLabel.preferredSize = Dimension(80, pathLabel.preferredSize.height)
+
+            val pathField = JTextField(component.imagePath)
+            pathField.isEditable = false
+
+            val browseButton = JButton("Browse...")
+            browseButton.addActionListener {
+                val fileChooser = JFileChooser()
+                fileChooser.dialogTitle = "Select Image"
+                fileChooser.fileFilter = javax.swing.filechooser.FileNameExtensionFilter(
+                    "Image files", "jpg", "jpeg", "png", "gif", "bmp"
+                )
+
+                if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+                    component.imagePath = fileChooser.selectedFile.absolutePath
+                    pathField.text = component.imagePath
+                    component.updateImage()
+                    changeListener?.invoke()
+                }
+            }
+
+            pathPanel.add(pathLabel)
+            pathPanel.add(pathField)
+            pathPanel.add(browseButton)
+            add(pathPanel)
+        }
+
+        // Sizing options
+        add(createHeader("Size Options"))
+
+        // Aspect ratio toggle
+        add(createCheckBox("Preserve Aspect Ratio", component.preserveAspectRatio) { value ->
+            component.preserveAspectRatio = value
             changeListener?.invoke()
         })
+
+        // Scale (only visible when preserving aspect ratio)
+        if (component.preserveAspectRatio) {
+            add(createSlider("Scale", (component.scale * 100).toInt(), 10, 200) { value ->
+                component.scale = value / 100.0
+                changeListener?.invoke()
+            })
+        } else {
+            // Width and height fields (only visible when not preserving aspect)
+            add(createNumberField("Width", component.width) { value ->
+                component.width = value
+                changeListener?.invoke()
+            })
+            add(createNumberField("Height", component.height) { value ->
+                component.height = value
+                changeListener?.invoke()
+            })
+        }
     }
 
     private fun addProgressBarProperties(component: ProgressBarComponent) {
