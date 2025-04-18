@@ -1,10 +1,13 @@
 package texturemanager
 
 import ImageEntry
+import ObjectType
 import java.awt.Image
 import java.io.File
 import javax.imageio.ImageIO
 import java.awt.image.BufferedImage
+import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -15,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap
 class ResourceManager {
     private val images = ConcurrentHashMap<String, ImageEntry>()
     private val textureCache = ConcurrentHashMap<String, BufferedImage>()
+    private val textureMetadata = ConcurrentHashMap<String, ObjectType>()
 
     // Directory where textures will be stored locally
     private val texturesDirectory = "assets/textures"
@@ -25,6 +29,9 @@ class ResourceManager {
         if (!directory.exists()) {
             directory.mkdirs()
         }
+
+        // Load metadata first
+        loadMetadataFromFile()
 
         // Load all textures from the textures directory on startup
         loadAllLocalTextures()
@@ -216,7 +223,63 @@ class ResourceManager {
     fun clearCache() {
         textureCache.clear()
     }
-}
 
-// can you help me with my kotlin boomer shooter engine?
-//i have this project directory and want to also implement now the assets folder to it. so that it is not saved as its own folder, instead it also checks if you have a current project opened. can you help me with this? i also did this for my keys file and there i needed only to change one file when i rememeber it right.
+    // Save texture's object type association
+    fun saveTextureObjectType(imagePath: String, objectType: ObjectType) {
+        textureMetadata[imagePath] = objectType
+        saveMetadataToFile()
+    }
+
+    // Get texture's associated object type
+    fun getTextureObjectType(imagePath: String): ObjectType? {
+        return textureMetadata[imagePath]
+    }
+
+    // Save metadata to a file
+    private fun saveMetadataToFile() {
+        try {
+            val metadataFile = File("$texturesDirectory/texture_metadata.properties")
+            val properties = Properties()
+
+            textureMetadata.forEach { (path, type) ->
+                // Store just the filename part, not the full path
+                val filename = File(path).name
+                properties.setProperty(filename, type.name)
+            }
+
+            properties.store(FileOutputStream(metadataFile), "Texture object type associations")
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    // Load metadata from file
+    private fun loadMetadataFromFile() {
+        try {
+            val metadataFile = File("$texturesDirectory/texture_metadata.properties")
+            if (metadataFile.exists()) {
+                val properties = Properties()
+                properties.load(FileInputStream(metadataFile))
+
+                properties.forEach { (filename, typeName) ->
+                    // Find the full path for the filename
+                    val files = File(texturesDirectory).listFiles { file ->
+                        file.name == filename
+                    }
+
+                    if (files?.isNotEmpty() == true) {
+                        try {
+                            val objectType = ObjectType.valueOf(typeName.toString())
+                            textureMetadata[files[0].absolutePath] = objectType
+                        } catch (e: IllegalArgumentException) {
+                            // Handle case where the saved type doesn't exist anymore
+                            println("Warning: Unknown object type '$typeName' for texture '$filename'")
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+}

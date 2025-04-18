@@ -287,6 +287,9 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
 
         // Add to type-specific list
         texturesByType.getOrPut(selectedType) { mutableListOf() }.add(textureEntry)
+
+        // Save the association
+        resourceManager.saveTextureObjectType(imageEntry.path, selectedType)
     }
 
     private fun removeSelectedTexture() {
@@ -380,6 +383,9 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
         // Update the texture list to show the new default
         updateTextureList()
 
+        // Update metadata if needed
+        resourceManager.saveTextureObjectType(entry.imageEntry.path, objectType)
+
         println("TextureManager: Marked '${entry.imageEntry.name}' as default for ${objectType.name}")
     }
 
@@ -407,9 +413,13 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
         for (entry in resourceManager.getAllImages()) {
             val (_, imageEntry) = entry
 
+            // First try to get the object type from metadata
+            var objectType = resourceManager.getTextureObjectType(imageEntry.path)
+
+            if (objectType == null) {
             // Attempt to determine object type from file name patterns
-            val filename = imageEntry.name.lowercase()
-            val objectType = when {
+                val filename = imageEntry.name.lowercase()
+                objectType = when {
                 // WALL Keywords
                 filename.contains("wall") || filename.contains("brick") ||
                         filename.contains("wood") || filename.contains("stone") ||
@@ -441,6 +451,9 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
                 filename.contains("spawn") || filename.contains("start") -> ObjectType.PLAYER_SPAWN
 
                 else -> objectTypeComboBox.selectedItem as ObjectType
+            }
+                // Save this guessed association for future use
+                resourceManager.saveTextureObjectType(imageEntry.path, objectType)
             }
 
             if (allowedObjectTypes.contains(objectType)) {
