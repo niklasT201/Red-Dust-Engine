@@ -7,6 +7,17 @@ import javax.swing.*
 import java.io.File
 
 class UIBuilder(private val game3D: Game3D) : JPanel() {
+    // Color scheme matching the About dialog
+    companion object {
+        val BACKGROUND_COLOR_DARK = Color(30, 33, 40)
+        val BACKGROUND_COLOR_LIGHT = Color(45, 48, 55)
+        val ACCENT_COLOR = Color(220, 95, 60) // Warm orange/red
+        val TEXT_COLOR = Color(200, 200, 200)
+        val BORDER_COLOR = Color(25, 28, 35)
+        val BUTTON_BG = Color(60, 63, 65)
+        val BUTTON_BORDER = Color(80, 83, 85)
+    }
+
     val customizableGameUI = CustomizableGameUI()
     val previewPanel = UIPreviewPanel(game3D, customizableGameUI)
     private val controlPanel = UIControlPanel(customizableGameUI, previewPanel)
@@ -16,21 +27,48 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
 
     init {
         layout = BorderLayout()
+        background = BACKGROUND_COLOR_DARK
 
-        // Create toolbar
+        // Apply gradient background
+        UIManager.put("Panel.background", BACKGROUND_COLOR_DARK)
+        UIManager.put("Button.background", BUTTON_BG)
+        UIManager.put("Button.foreground", TEXT_COLOR)
+        UIManager.put("Label.foreground", TEXT_COLOR)
+        UIManager.put("TextField.background", BACKGROUND_COLOR_LIGHT)
+        UIManager.put("TextField.foreground", TEXT_COLOR)
+        UIManager.put("ComboBox.background", BACKGROUND_COLOR_LIGHT)
+        UIManager.put("ComboBox.foreground", TEXT_COLOR)
+        UIManager.put("Spinner.background", BACKGROUND_COLOR_LIGHT)
+        UIManager.put("Spinner.foreground", TEXT_COLOR)
+
+        // Create toolbar with styled components
         val toolbar = createToolbar()
 
         // Create a split pane for component palette and properties
-        val leftPanel = JSplitPane(JSplitPane.VERTICAL_SPLIT)
-        leftPanel.topComponent = JScrollPane(componentPalette)
-        leftPanel.bottomComponent = JScrollPane(propertiesPanel)
-        leftPanel.resizeWeight = 0.5
+        val leftPanel = JSplitPane(JSplitPane.VERTICAL_SPLIT).apply {
+            topComponent = JScrollPane(componentPalette).apply {
+                border = BorderFactory.createLineBorder(BORDER_COLOR)
+                background = BACKGROUND_COLOR_DARK
+            }
+            bottomComponent = JScrollPane(propertiesPanel).apply {
+                border = BorderFactory.createLineBorder(BORDER_COLOR)
+                background = BACKGROUND_COLOR_DARK
+            }
+            resizeWeight = 0.5
+            border = BorderFactory.createEmptyBorder()
+            dividerSize = 5
+            background = BACKGROUND_COLOR_DARK
+        }
 
         // Create main split pane
-        val mainSplitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT)
-        mainSplitPane.leftComponent = leftPanel
-        mainSplitPane.rightComponent = previewPanel
-        mainSplitPane.resizeWeight = 0.2
+        val mainSplitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT).apply {
+            leftComponent = leftPanel
+            rightComponent = previewPanel
+            resizeWeight = 0.2
+            border = BorderFactory.createEmptyBorder()
+            dividerSize = 5
+            background = BACKGROUND_COLOR_DARK
+        }
 
         add(toolbar, BorderLayout.NORTH)
         add(mainSplitPane, BorderLayout.CENTER)
@@ -44,7 +82,7 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
             propertiesPanel.setComponent(component)
         }
 
-        // Add this: Connect preview panel's selection to properties panel
+        // Connect preview panel's selection to properties panel
         previewPanel.setSelectionListener { component ->
             propertiesPanel.setComponent(component)
         }
@@ -56,11 +94,42 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
     }
 
     private fun createToolbar(): JToolBar {
-        val toolbar = JToolBar()
-        toolbar.isFloatable = false
+        val toolbar = JToolBar().apply {
+            isFloatable = false
+            background = BACKGROUND_COLOR_DARK
+            border = BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER_COLOR),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+            )
+        }
+
+        // Helper function to create styled buttons
+        fun createStyledButton(text: String): JButton {
+            return JButton(text).apply {
+                foreground = Color.WHITE
+                background = BUTTON_BG
+                font = Font("Arial", Font.BOLD, 12)
+                border = BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(BUTTON_BORDER),
+                    BorderFactory.createEmptyBorder(5, 15, 5, 15)
+                )
+                isFocusPainted = false
+
+                // Add hover effect
+                addMouseListener(object : java.awt.event.MouseAdapter() {
+                    override fun mouseEntered(e: java.awt.event.MouseEvent) {
+                        background = BUTTON_BORDER
+                    }
+
+                    override fun mouseExited(e: java.awt.event.MouseEvent) {
+                        background = BUTTON_BG
+                    }
+                })
+            }
+        }
 
         // New layout button
-        val newButton = JButton("New Layout")
+        val newButton = createStyledButton("New Layout")
         newButton.addActionListener {
             if (JOptionPane.showConfirmDialog(
                     this,
@@ -74,9 +143,10 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
             }
         }
         toolbar.add(newButton)
+        toolbar.addSeparator(Dimension(10, 10))
 
         // Save layout button
-        val saveButton = JButton("Save Layout")
+        val saveButton = createStyledButton("Save Layout")
         saveButton.addActionListener {
             val fileChooser = JFileChooser()
             fileChooser.dialogTitle = "Save UI Layout"
@@ -89,9 +159,10 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
             }
         }
         toolbar.add(saveButton)
+        toolbar.addSeparator(Dimension(10, 10))
 
         // Load layout button
-        val loadButton = JButton("Load Layout")
+        val loadButton = createStyledButton("Load Layout")
         loadButton.addActionListener {
             val fileChooser = JFileChooser()
             fileChooser.dialogTitle = "Load UI Layout"
@@ -101,9 +172,10 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
             }
         }
         toolbar.add(loadButton)
+        toolbar.addSeparator(Dimension(10, 10))
 
         // Apply to game button
-        val applyButton = JButton("Apply to Game")
+        val applyButton = createStyledButton("Apply to Game")
         applyButton.addActionListener {
             // Apply current UI to the game
             game3D.setCustomUI(customizableGameUI)
@@ -115,6 +187,13 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
             )
         }
         toolbar.add(applyButton)
+
+        // Add a title to the right side of toolbar
+        toolbar.add(Box.createHorizontalGlue())
+        toolbar.add(JLabel("UI BUILDER").apply {
+            foreground = ACCENT_COLOR
+            font = Font("Impact", Font.BOLD, 18)
+        })
 
         return toolbar
     }
