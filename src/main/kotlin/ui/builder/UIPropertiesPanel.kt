@@ -6,6 +6,8 @@ import player.uis.components.TextComponent
 import java.awt.*
 import java.awt.event.FocusAdapter
 import java.awt.event.FocusEvent
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import javax.swing.*
 import javax.swing.border.EmptyBorder
 
@@ -13,12 +15,28 @@ class UIPropertiesPanel : JPanel() {
     private var currentComponent: UIComponent? = null
     private var changeListener: (() -> Unit)? = null
 
+    // Color scheme matching the About dialog and UIBuilder
+    companion object {
+        val BACKGROUND_COLOR_DARK = Color(30, 33, 40)
+        val BACKGROUND_COLOR_LIGHT = Color(45, 48, 55)
+        val ACCENT_COLOR = Color(220, 95, 60) // Warm orange/red
+        val TEXT_COLOR = Color(200, 200, 200)
+        val TEXT_COLOR_DIMMED = Color(180, 180, 180)
+        val BORDER_COLOR = Color(25, 28, 35)
+        val BUTTON_BG = Color(60, 63, 65)
+        val BUTTON_BORDER = Color(80, 83, 85)
+        val FIELD_BG = Color(35, 38, 45)
+    }
+
     init {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         border = EmptyBorder(10, 10, 10, 10)
+        background = BACKGROUND_COLOR_DARK
 
-        add(JLabel("Select a component to edit its properties").apply {
+        add(createStyledLabel("Select a component to edit its properties").apply {
             alignmentX = Component.LEFT_ALIGNMENT
+            foreground = TEXT_COLOR
+            font = Font("Arial", Font.PLAIN, 14)
         })
     }
 
@@ -29,12 +47,14 @@ class UIPropertiesPanel : JPanel() {
         removeAll()
 
         if (component == null) {
-            add(JLabel("Select a component to edit its properties").apply {
+            add(createStyledLabel("Select a component to edit its properties").apply {
                 alignmentX = Component.LEFT_ALIGNMENT
+                foreground = TEXT_COLOR
+                font = Font("Arial", Font.PLAIN, 14)
             })
         } else {
             // Create property editors for the component
-            add(createHeader("Component Properties: ${component.javaClass.simpleName}"))
+            add(createHeader(component.javaClass.simpleName))
 
             // Position properties
             add(createHeader("Position"))
@@ -80,45 +100,61 @@ class UIPropertiesPanel : JPanel() {
 
             // Delete button
             add(Box.createVerticalStrut(20))
-            add(JButton("Delete Component").apply {
-                alignmentX = Component.LEFT_ALIGNMENT
-                addActionListener {
-                    if (JOptionPane.showConfirmDialog(
-                            this@UIPropertiesPanel, // Context for the dialog
-                            "Delete this component?",
-                            "Confirm Delete",
-                            JOptionPane.YES_NO_OPTION
-                        ) == JOptionPane.YES_OPTION
-                    ) {
-                        // Find the UIBuilder instance - START SEARCHING FROM THIS PANEL
-                        val parentUI = SwingUtilities.getAncestorOfClass(
-                            UIBuilder::class.java, // The class to find
-                            this@UIPropertiesPanel // The component to start searching from <--- FIX HERE
-                        ) as? UIBuilder
-
-                        if (parentUI != null) {
-                            // Get the component to delete (make sure currentComponent isn't null)
-                            val componentToDelete = currentComponent
-                            if (componentToDelete != null) {
-                                // Remove component
-                                parentUI.customizableGameUI.removeComponent(componentToDelete)
-                                setComponent(null) // Clear the properties panel
-                                parentUI.previewPanel.repaint() // Update the preview
-                            } else {
-                                // Optional: Handle case where currentComponent is somehow null
-                                println("Error: Tried to delete but no component was selected.")
-                            }
-                        } else {
-                            // Optional: Handle case where UIBuilder ancestor wasn't found (shouldn't happen in this structure)
-                            println("Error: Could not find the parent UIBuilder component.")
-                        }
-                    }
-                }
-            })
+            add(createDeleteButton(component))
         }
 
         revalidate()
         repaint()
+    }
+
+    private fun createDeleteButton(component: UIComponent): JButton {
+        return JButton("Delete Component").apply {
+            alignmentX = Component.LEFT_ALIGNMENT
+            foreground = Color.WHITE
+            background = Color(160, 50, 50) // Reddish background for delete button
+            font = Font("Arial", Font.BOLD, 12)
+            border = BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Color(180, 70, 70)),
+                BorderFactory.createEmptyBorder(5, 15, 5, 15)
+            )
+            isFocusPainted = false
+
+            // Hover effect
+            addMouseListener(object : MouseAdapter() {
+                override fun mouseEntered(e: MouseEvent) {
+                    background = Color(180, 70, 70)
+                }
+
+                override fun mouseExited(e: MouseEvent) {
+                    background = Color(160, 50, 50)
+                }
+            })
+
+            addActionListener {
+                if (JOptionPane.showConfirmDialog(
+                        this@UIPropertiesPanel,
+                        "Delete this component?",
+                        "Confirm Delete",
+                        JOptionPane.YES_NO_OPTION
+                    ) == JOptionPane.YES_OPTION
+                ) {
+                    // Find the UIBuilder instance
+                    val parentUI = SwingUtilities.getAncestorOfClass(
+                        UIBuilder::class.java,
+                        this@UIPropertiesPanel
+                    ) as? UIBuilder
+
+                    if (parentUI != null) {
+                        // Remove component
+                        parentUI.customizableGameUI.removeComponent(component)
+                        setComponent(null) // Clear the properties panel
+                        parentUI.previewPanel.repaint() // Update the preview
+                    } else {
+                        println("Error: Could not find the parent UIBuilder component.")
+                    }
+                }
+            }
+        }
     }
 
     private fun addHealthBarProperties(component: HealthBarComponent) {
@@ -244,16 +280,21 @@ class UIPropertiesPanel : JPanel() {
         })
 
         // Add font style dropdown
-        val fontStylePanel = JPanel()
+        val fontStylePanel = createStyledPanel()
         fontStylePanel.layout = BoxLayout(fontStylePanel, BoxLayout.X_AXIS)
         fontStylePanel.alignmentX = Component.LEFT_ALIGNMENT
 
-        fontStylePanel.add(JLabel("Style: ").apply {
+        fontStylePanel.add(createStyledLabel("Style: ").apply {
             preferredSize = Dimension(80, preferredSize.height)
         })
 
         val fontStyles = arrayOf("Plain", "Bold", "Italic", "Bold+Italic")
-        val styleBox = JComboBox(fontStyles)
+        val styleBox = JComboBox(fontStyles).apply {
+            background = FIELD_BG
+            foreground = TEXT_COLOR
+            border = BorderFactory.createLineBorder(BORDER_COLOR)
+        }
+
         when (component.fontStyle) {
             Font.PLAIN -> styleBox.selectedIndex = 0
             Font.BOLD -> styleBox.selectedIndex = 1
@@ -287,16 +328,20 @@ class UIPropertiesPanel : JPanel() {
         // Image type
         add(createHeader("Image Type"))
 
-        val imageTypePanel = JPanel()
+        val imageTypePanel = createStyledPanel()
         imageTypePanel.layout = BoxLayout(imageTypePanel, BoxLayout.X_AXIS)
         imageTypePanel.alignmentX = Component.LEFT_ALIGNMENT
 
-        imageTypePanel.add(JLabel("Type: ").apply {
+        imageTypePanel.add(createStyledLabel("Type: ").apply {
             preferredSize = Dimension(80, preferredSize.height)
         })
 
         val imageTypes = arrayOf("face", "weapon", "key", "ammo", "custom")
-        val typeBox = JComboBox(imageTypes)
+        val typeBox = JComboBox(imageTypes).apply {
+            background = FIELD_BG
+            foreground = TEXT_COLOR
+            border = BorderFactory.createLineBorder(BORDER_COLOR)
+        }
         typeBox.selectedItem = component.imageType
 
         typeBox.addActionListener {
@@ -330,18 +375,43 @@ class UIPropertiesPanel : JPanel() {
             add(createHeader("Custom Image"))
 
             // Show current image path
-            val pathPanel = JPanel()
+            val pathPanel = createStyledPanel()
             pathPanel.layout = BoxLayout(pathPanel, BoxLayout.X_AXIS)
             pathPanel.alignmentX = Component.LEFT_ALIGNMENT
             pathPanel.border = EmptyBorder(3, 0, 3, 0)
 
-            val pathLabel = JLabel("Path: ")
+            val pathLabel = createStyledLabel("Path: ")
             pathLabel.preferredSize = Dimension(80, pathLabel.preferredSize.height)
 
-            val pathField = JTextField(component.imagePath)
-            pathField.isEditable = false
+            val pathField = JTextField(component.imagePath).apply {
+                isEditable = false
+                background = FIELD_BG
+                foreground = TEXT_COLOR
+                border = BorderFactory.createLineBorder(BORDER_COLOR)
+            }
 
-            val browseButton = JButton("Browse...")
+            val browseButton = JButton("Browse...").apply {
+                foreground = TEXT_COLOR
+                background = BUTTON_BG
+                font = Font("Arial", Font.BOLD, 12)
+                border = BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(BUTTON_BORDER),
+                    BorderFactory.createEmptyBorder(2, 8, 2, 8)
+                )
+                isFocusPainted = false
+
+                // Hover effect
+                addMouseListener(object : MouseAdapter() {
+                    override fun mouseEntered(e: MouseEvent) {
+                        background = BUTTON_BORDER
+                    }
+
+                    override fun mouseExited(e: MouseEvent) {
+                        background = BUTTON_BG
+                    }
+                })
+            }
+
             browseButton.addActionListener {
                 val fileChooser = JFileChooser()
                 fileChooser.dialogTitle = "Select Image"
@@ -427,16 +497,23 @@ class UIPropertiesPanel : JPanel() {
     }
 
     private fun createTextField(label: String, initialValue: String, onValueChanged: (String) -> Unit): JPanel {
-        val panel = JPanel()
+        val panel = createStyledPanel()
         panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
         panel.alignmentX = Component.LEFT_ALIGNMENT
         panel.border = EmptyBorder(3, 0, 3, 0)
 
-        panel.add(JLabel("$label: ").apply {
+        panel.add(createStyledLabel("$label: ").apply {
             preferredSize = Dimension(80, preferredSize.height)
         })
 
-        val textField = JTextField(initialValue, 10)
+        val textField = JTextField(initialValue, 10).apply {
+            background = FIELD_BG
+            foreground = TEXT_COLOR
+            caretColor = TEXT_COLOR
+            border = BorderFactory.createLineBorder(BORDER_COLOR)
+            font = Font("SansSerif", Font.PLAIN, 12)
+        }
+
         textField.addActionListener {
             onValueChanged(textField.text)
         }
@@ -451,17 +528,29 @@ class UIPropertiesPanel : JPanel() {
     }
 
     private fun createFontSizeField(label: String, initialValue: Int, onValueChanged: (Int) -> Unit): JPanel {
-        val panel = JPanel()
+        val panel = createStyledPanel()
         panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
         panel.alignmentX = Component.LEFT_ALIGNMENT
         panel.border = EmptyBorder(3, 0, 3, 0)
 
-        panel.add(JLabel("$label: ").apply {
+        panel.add(createStyledLabel("$label: ").apply {
             preferredSize = Dimension(80, preferredSize.height)
         })
 
-        val spinner = JSpinner(SpinnerNumberModel(initialValue, 8, 72, 1))
-        spinner.preferredSize = Dimension(70, spinner.preferredSize.height)
+        val spinner = JSpinner(SpinnerNumberModel(initialValue, 8, 72, 1)).apply {
+            preferredSize = Dimension(70, preferredSize.height)
+            background = FIELD_BG
+            foreground = TEXT_COLOR
+            border = BorderFactory.createLineBorder(BORDER_COLOR)
+
+            // Style the spinner's editor
+            (getEditor() as JSpinner.DefaultEditor).textField.apply {
+                background = FIELD_BG
+                foreground = TEXT_COLOR
+                caretColor = TEXT_COLOR
+            }
+        }
+
         spinner.addChangeListener {
             onValueChanged(spinner.value as Int)
         }
@@ -471,20 +560,30 @@ class UIPropertiesPanel : JPanel() {
     }
 
     private fun createSlider(label: String, initialValue: Int, min: Int, max: Int, onValueChanged: (Int) -> Unit): JPanel {
-        val panel = JPanel()
+        val panel = createStyledPanel()
         panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
         panel.alignmentX = Component.LEFT_ALIGNMENT
         panel.border = EmptyBorder(3, 0, 3, 0)
 
-        panel.add(JLabel("$label: ").apply {
+        panel.add(createStyledLabel("$label: ").apply {
             preferredSize = Dimension(80, preferredSize.height)
         })
 
-        val slider = JSlider(JSlider.HORIZONTAL, min, max, initialValue)
-        slider.preferredSize = Dimension(100, slider.preferredSize.height)
+        val slider = JSlider(JSlider.HORIZONTAL, min, max, initialValue).apply {
+            preferredSize = Dimension(100, preferredSize.height)
+            background = BACKGROUND_COLOR_DARK
+            foreground = TEXT_COLOR
 
-        val valueLabel = JLabel("$initialValue")
-        valueLabel.preferredSize = Dimension(40, valueLabel.preferredSize.height)
+            // Customize slider colors
+            UIManager.put("Slider.thumb", ACCENT_COLOR)
+            UIManager.put("Slider.track", BACKGROUND_COLOR_LIGHT)
+            UIManager.put("Slider.tickColor", TEXT_COLOR_DIMMED)
+        }
+
+        val valueLabel = createStyledLabel("$initialValue").apply {
+            preferredSize = Dimension(40, preferredSize.height)
+            horizontalAlignment = SwingConstants.CENTER
+        }
 
         slider.addChangeListener {
             val value = slider.value
@@ -501,16 +600,20 @@ class UIPropertiesPanel : JPanel() {
         // Stat type
         add(createHeader("Stat Type"))
 
-        val statTypePanel = JPanel()
+        val statTypePanel = createStyledPanel()
         statTypePanel.layout = BoxLayout(statTypePanel, BoxLayout.X_AXIS)
         statTypePanel.alignmentX = Component.LEFT_ALIGNMENT
 
-        statTypePanel.add(JLabel("Type: ").apply {
+        statTypePanel.add(createStyledLabel("Type: ").apply {
             preferredSize = Dimension(80, preferredSize.height)
         })
 
         val statTypes = arrayOf("kills", "items", "secrets", "armor", "custom")
-        val typeBox = JComboBox(statTypes)
+        val typeBox = JComboBox(statTypes).apply {
+            background = FIELD_BG
+            foreground = TEXT_COLOR
+            border = BorderFactory.createLineBorder(BORDER_COLOR)
+        }
         typeBox.selectedItem = component.statType
 
         typeBox.addActionListener {
@@ -544,26 +647,77 @@ class UIPropertiesPanel : JPanel() {
         })
     }
 
-    private fun createHeader(text: String): JLabel {
-        val label = JLabel(text)
-        label.font = Font(label.font.name, Font.BOLD, 14)
-        label.alignmentX = Component.LEFT_ALIGNMENT
-        label.border = EmptyBorder(5, 0, 5, 0)
-        return label
+    private fun createHeader(text: String): JPanel {
+        val headerPanel = createStyledPanel()
+        headerPanel.layout = BoxLayout(headerPanel, BoxLayout.Y_AXIS)
+        headerPanel.alignmentX = Component.LEFT_ALIGNMENT
+        headerPanel.border = EmptyBorder(10, 0, 5, 0)
+
+        // Add text label
+        headerPanel.add(JLabel(text).apply {
+            foreground = ACCENT_COLOR
+            font = Font("Arial", Font.BOLD, 14)
+            alignmentX = Component.LEFT_ALIGNMENT
+            border = EmptyBorder(0, 0, 3, 0)
+        })
+
+        // Add separator
+        headerPanel.add(object : JPanel() {
+            override fun paintComponent(g: Graphics) {
+                super.paintComponent(g)
+                val g2d = g as Graphics2D
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+
+                // Draw glowing line
+                val width = this.width
+                val y = this.height / 2
+
+                val gradient = LinearGradientPaint(
+                    0f, y.toFloat(), width.toFloat(), y.toFloat(),
+                    floatArrayOf(0.0f, 0.5f, 1.0f),
+                    arrayOf(BACKGROUND_COLOR_LIGHT, ACCENT_COLOR, BACKGROUND_COLOR_LIGHT)
+                )
+
+                g2d.stroke = BasicStroke(1f)
+                g2d.paint = gradient
+                g2d.drawLine(0, y, width, y)
+            }
+
+            init {
+                background = BACKGROUND_COLOR_DARK
+                preferredSize = Dimension(1, 6)
+                alignmentX = Component.LEFT_ALIGNMENT
+                isOpaque = false
+            }
+        })
+
+        return headerPanel
     }
 
     private fun createNumberField(label: String, initialValue: Int, onValueChanged: (Int) -> Unit): JPanel {
-        val panel = JPanel()
+        val panel = createStyledPanel()
         panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
         panel.alignmentX = Component.LEFT_ALIGNMENT
         panel.border = EmptyBorder(3, 0, 3, 0)
 
-        panel.add(JLabel("$label: ").apply {
+        panel.add(createStyledLabel("$label: ").apply {
             preferredSize = Dimension(80, preferredSize.height)
         })
 
-        val spinner = JSpinner(SpinnerNumberModel(initialValue, 0, 1000, 1))
-        spinner.preferredSize = Dimension(70, spinner.preferredSize.height)
+        val spinner = JSpinner(SpinnerNumberModel(initialValue, 0, 1000, 1)).apply {
+            preferredSize = Dimension(70, preferredSize.height)
+            background = FIELD_BG
+            foreground = TEXT_COLOR
+            border = BorderFactory.createLineBorder(BORDER_COLOR)
+
+            // Style the spinner's editor
+            (getEditor() as JSpinner.DefaultEditor).textField.apply {
+                background = FIELD_BG
+                foreground = TEXT_COLOR
+                caretColor = TEXT_COLOR
+            }
+        }
+
         spinner.addChangeListener {
             onValueChanged(spinner.value as Int)
         }
@@ -573,18 +727,25 @@ class UIPropertiesPanel : JPanel() {
     }
 
     private fun createColorField(label: String, initialColor: Color, onColorChanged: (Color) -> Unit): JPanel {
-        val panel = JPanel()
+        val panel = createStyledPanel()
         panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
         panel.alignmentX = Component.LEFT_ALIGNMENT
         panel.border = EmptyBorder(3, 0, 3, 0)
 
-        panel.add(JLabel("$label: ").apply {
+        panel.add(createStyledLabel("$label: ").apply {
             preferredSize = Dimension(80, preferredSize.height)
         })
 
-        val colorButton = JButton()
-        colorButton.background = initialColor
-        colorButton.preferredSize = Dimension(70, 20)
+        val colorButton = JButton().apply {
+            background = initialColor
+            preferredSize = Dimension(70, 20)
+            border = BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR, 1),
+                BorderFactory.createEmptyBorder(2, 2, 2, 2)
+            )
+            isFocusPainted = false
+        }
+
         colorButton.addActionListener {
             val newColor = JColorChooser.showDialog(this, "Choose $label Color", colorButton.background)
             if (newColor != null) {
@@ -598,18 +759,71 @@ class UIPropertiesPanel : JPanel() {
     }
 
     private fun createCheckBox(label: String, initialValue: Boolean, onValueChanged: (Boolean) -> Unit): JPanel {
-        val panel = JPanel()
+        val panel = createStyledPanel()
         panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
         panel.alignmentX = Component.LEFT_ALIGNMENT
         panel.border = EmptyBorder(3, 0, 3, 0)
 
-        val checkbox = JCheckBox(label, initialValue)
+        val checkbox = JCheckBox(label, initialValue).apply {
+            foreground = TEXT_COLOR
+            background = BACKGROUND_COLOR_DARK
+            font = Font("Arial", Font.PLAIN, 12)
+            isFocusPainted = false
+            icon = createCheckBoxIcon(false)
+            selectedIcon = createCheckBoxIcon(true)
+        }
+
         checkbox.addActionListener {
             onValueChanged(checkbox.isSelected)
         }
 
         panel.add(checkbox)
         return panel
+    }
+
+    private fun createCheckBoxIcon(selected: Boolean): Icon {
+        return object : Icon {
+            override fun paintIcon(c: Component?, g: Graphics, x: Int, y: Int) {
+                val g2d = g.create() as Graphics2D
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+
+                // Draw checkbox
+                if (selected) {
+                    g2d.color = ACCENT_COLOR
+                    g2d.fillRect(x, y, iconWidth, iconHeight)
+                    g2d.color = Color.WHITE
+                    g2d.drawLine(x + 3, y + iconHeight/2, x + iconWidth/2 - 1, y + iconHeight - 3)
+                    g2d.drawLine(x + iconWidth/2 - 1, y + iconHeight - 3, x + iconWidth - 3, y + 3)
+                } else {
+                    g2d.color = BACKGROUND_COLOR_LIGHT
+                    g2d.fillRect(x, y, iconWidth, iconHeight)
+                }
+
+                // Draw border
+                g2d.color = BORDER_COLOR
+                g2d.drawRect(x, y, iconWidth - 1, iconHeight - 1)
+
+                g2d.dispose()
+            }
+
+            override fun getIconWidth(): Int = 14
+            override fun getIconHeight(): Int = 14
+        }
+    }
+
+    // Helper methods for consistent component styling
+    private fun createStyledLabel(text: String): JLabel {
+        return JLabel(text).apply {
+            foreground = TEXT_COLOR
+            font = Font("Arial", Font.PLAIN, 12)
+        }
+    }
+
+    private fun createStyledPanel(): JPanel {
+        return JPanel().apply {
+            background = BACKGROUND_COLOR_DARK
+            isOpaque = true
+        }
     }
 
     fun setChangeListener(listener: () -> Unit) {

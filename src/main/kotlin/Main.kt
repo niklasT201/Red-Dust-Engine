@@ -48,8 +48,7 @@ fun main() {
 // player moving a bit when in water
 // add checkExistingWorlds feature, double press to load file
 // move border panel to world tab
-// ui gets saved for each project separated
-// improve ui builder ui
+// ui checks for any ui file, otherwise uses default one
 // allow own assets
 // add image adder for assets
 // ui values referencing actual values
