@@ -24,8 +24,6 @@ class SettingsSaver(private val gridEditor: GridEditor) {
         private const val SETTINGS_SUBDIR = "settings" // Subdirectory within the project
         private const val SKY_IMAGES_SUBDIR = "assets/textures/sky_images"
 
-        private const val SKY_IMAGES_DIR = "assets/textures/sky_images"
-
         // Make sure the settings directory exists
         private fun ensureSettingsDir(projectPath: String) {
             val dir = File(projectPath, SETTINGS_SUBDIR) // Use projectPath and SETTINGS_SUBDIR
@@ -249,7 +247,7 @@ class SettingsSaver(private val gridEditor: GridEditor) {
             } else {
                 // If no image is used, clean up any previous image
                 if (currentSkyImageFilename != null) {
-                    val oldFile = File("$SKY_IMAGES_DIR/$currentSkyImageFilename")
+                    val oldFile = File("$SKY_IMAGES_SUBDIR/$currentSkyImageFilename")
                     if (oldFile.exists()) {
                         oldFile.delete()
                     }

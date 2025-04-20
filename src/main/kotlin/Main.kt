@@ -53,7 +53,6 @@ fun main() {
 // add image adder for assets
 // ui values referencing actual values
 // pillar mode visible behind water color button
-// delete dialog design fix
 
 
 // Object List:

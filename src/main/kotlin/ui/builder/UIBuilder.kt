@@ -29,30 +29,6 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
         layout = BorderLayout()
         background = BACKGROUND_COLOR_DARK
 
-        // Apply gradient background
-        UIManager.put("Panel.background", BACKGROUND_COLOR_DARK)
-        UIManager.put("Button.background", BUTTON_BG)
-        UIManager.put("Button.foreground", TEXT_COLOR)
-        UIManager.put("Label.foreground", TEXT_COLOR)
-        UIManager.put("TextField.background", BACKGROUND_COLOR_LIGHT)
-        UIManager.put("TextField.foreground", TEXT_COLOR)
-        UIManager.put("ComboBox.background", BACKGROUND_COLOR_LIGHT)
-        UIManager.put("ComboBox.foreground", TEXT_COLOR)
-        UIManager.put("Spinner.background", BACKGROUND_COLOR_LIGHT)
-        UIManager.put("Spinner.foreground", TEXT_COLOR)
-
-        UIManager.put("ScrollBar.background", BACKGROUND_COLOR_DARK)
-        UIManager.put("ScrollBar.foreground", ACCENT_COLOR)
-        UIManager.put("ScrollBar.track", BACKGROUND_COLOR_LIGHT)
-        UIManager.put("ScrollBar.thumb", ACCENT_COLOR)
-        UIManager.put("ScrollBar.width", 12)
-
-        // Try to remove default borders/shadows that might clash
-        UIManager.put("ScrollBar.thumbDarkShadow", ACCENT_COLOR.darker())
-        UIManager.put("ScrollBar.thumbHighlight", ACCENT_COLOR)
-        UIManager.put("ScrollBar.thumbShadow", ACCENT_COLOR)
-        UIManager.put("ScrollBarUI", CustomScrollBarUI::class.java.name)
-
         // Create toolbar with styled components
         val toolbar = createToolbar()
 
@@ -101,6 +77,9 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
         propertiesPanel.setChangeListener {
             previewPanel.repaint()
         }
+
+        // Apply styling to all components in the UIBuilder
+        styleComponent(this)
     }
 
     private fun createToolbar(): JToolBar {
@@ -206,5 +185,97 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
         })
 
         return toolbar
+    }
+
+    /**
+     * Styles components recursively with the custom UI Builder theme
+     * instead of using global UIManager settings
+     */
+    private fun styleComponent(component: JComponent) {
+        when (component) {
+            is JPanel -> {
+                component.background = BACKGROUND_COLOR_DARK
+            }
+            is JButton -> {
+                component.background = BUTTON_BG
+                component.foreground = TEXT_COLOR
+                component.font = Font("Arial", Font.BOLD, 12)
+                // Keep the compound border if already set, otherwise create a default one
+                if (component.border !is javax.swing.border.CompoundBorder) {
+                    component.border = BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(BUTTON_BORDER),
+                        BorderFactory.createEmptyBorder(5, 15, 5, 15)
+                    )
+                }
+                component.isFocusPainted = false
+            }
+            is JLabel -> {
+                component.foreground = TEXT_COLOR
+                // Keep custom colors for accent labels
+                if (component.foreground != ACCENT_COLOR) {
+                    component.foreground = TEXT_COLOR
+                }
+            }
+            is JTextField -> {
+                component.background = BACKGROUND_COLOR_LIGHT
+                component.foreground = TEXT_COLOR
+            }
+            is JComboBox<*> -> {
+                component.background = BACKGROUND_COLOR_LIGHT
+                component.foreground = TEXT_COLOR
+            }
+            is JSpinner -> {
+                component.background = BACKGROUND_COLOR_LIGHT
+                component.foreground = TEXT_COLOR
+                // Style the editor component of the spinner
+                val editor = component.editor
+                if (editor is JSpinner.DefaultEditor) {
+                    val textField = editor.textField
+                    textField.background = BACKGROUND_COLOR_LIGHT
+                    textField.foreground = TEXT_COLOR
+                }
+            }
+            is JScrollPane -> {
+                component.background = BACKGROUND_COLOR_DARK
+                component.border = BorderFactory.createLineBorder(BORDER_COLOR)
+
+                // Style the scrollbars
+                component.verticalScrollBar?.apply {
+                    background = BACKGROUND_COLOR_DARK
+                    foreground = ACCENT_COLOR  // For arrows and other UI elements
+
+                    // You may need to set a custom UI for more complex scroll bar styling
+                    // This would replace your UIManager.put("ScrollBarUI", CustomScrollBarUI::class.java.name)
+                    setUI(CustomScrollBarUI())
+                }
+
+                component.horizontalScrollBar?.apply {
+                    background = BACKGROUND_COLOR_DARK
+                    foreground = ACCENT_COLOR
+                    setUI(CustomScrollBarUI())
+                }
+            }
+            is JSplitPane -> {
+                component.background = BACKGROUND_COLOR_DARK
+                component.dividerSize = 5
+                component.border = BorderFactory.createEmptyBorder()
+            }
+            is JToolBar -> {
+                component.isFloatable = false
+                component.background = BACKGROUND_COLOR_DARK
+                component.border = BorderFactory.createCompoundBorder(
+                    BorderFactory.createMatteBorder(0, 0, 1, 0, BORDER_COLOR),
+                    BorderFactory.createEmptyBorder(5, 5, 5, 5)
+                )
+            }
+        }
+
+        // Recursively style child components if this is a container
+        for (i in 0..<component.componentCount) {
+            val child = component.getComponent(i)
+            if (child is JComponent) {
+                styleComponent(child)
+            }
+        }
     }
 }
