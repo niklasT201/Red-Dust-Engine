@@ -41,6 +41,18 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
         UIManager.put("Spinner.background", BACKGROUND_COLOR_LIGHT)
         UIManager.put("Spinner.foreground", TEXT_COLOR)
 
+        UIManager.put("ScrollBar.background", BACKGROUND_COLOR_DARK)
+        UIManager.put("ScrollBar.foreground", ACCENT_COLOR)
+        UIManager.put("ScrollBar.track", BACKGROUND_COLOR_LIGHT)
+        UIManager.put("ScrollBar.thumb", ACCENT_COLOR)
+        UIManager.put("ScrollBar.width", 12)
+
+        // Try to remove default borders/shadows that might clash
+        UIManager.put("ScrollBar.thumbDarkShadow", ACCENT_COLOR.darker())
+        UIManager.put("ScrollBar.thumbHighlight", ACCENT_COLOR)
+        UIManager.put("ScrollBar.thumbShadow", ACCENT_COLOR)
+        UIManager.put("ScrollBarUI", CustomScrollBarUI::class.java.name)
+
         // Create toolbar with styled components
         val toolbar = createToolbar()
 
@@ -48,16 +60,14 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
         val leftPanel = JSplitPane(JSplitPane.VERTICAL_SPLIT).apply {
             topComponent = JScrollPane(componentPalette).apply {
                 border = BorderFactory.createLineBorder(BORDER_COLOR)
-                background = BACKGROUND_COLOR_DARK
             }
             bottomComponent = JScrollPane(propertiesPanel).apply {
                 border = BorderFactory.createLineBorder(BORDER_COLOR)
-                background = BACKGROUND_COLOR_DARK
             }
             resizeWeight = 0.5
             border = BorderFactory.createEmptyBorder()
             dividerSize = 5
-            background = BACKGROUND_COLOR_DARK
+            background = BACKGROUND_COLOR_DARK // SplitPane itself
         }
 
         // Create main split pane
