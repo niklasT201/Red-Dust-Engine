@@ -9,6 +9,7 @@ import render.SkyRenderer
 import ui.GameType
 import ui.WelcomeScreen
 import ui.builder.UIBuilder
+import ui.topbar.FileManager
 import java.awt.*
 import java.awt.event.*
 import java.awt.image.BufferedImage
@@ -39,6 +40,7 @@ class Game3D : JPanel() {
     private val editorPanel = EditorPanel(gridEditor,renderer, this) { toggleEditorMode() }
     private val settingsSaver = saving.SettingsSaver(gridEditor)
     private lateinit var menuSystem: MenuSystem
+    private var fileManager: FileManager
     private var menuBar: JMenuBar
     private val keysPressed = mutableSetOf<Int>()
 
@@ -94,12 +96,6 @@ class Game3D : JPanel() {
         blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(
             cursorImg, Point(0, 0), "blank cursor"
         )
-
-        uiBuilder = UIBuilder(this)
-
-        add(welcomeScreen, "welcome")
-        add(contentPanel, "content")
-        add(uiBuilder, "uiBuilder")
 
         // Initially show the welcome screen
         SwingUtilities.invokeLater { showWelcomeScreen() }
@@ -189,6 +185,13 @@ class Game3D : JPanel() {
             player = player
         )
         this.menuBar = menuSystem.createMenuBar()
+        this.fileManager = menuSystem.getFileManager()
+
+        uiBuilder = UIBuilder(this, this.fileManager)
+
+        add(welcomeScreen, "welcome")
+        add(contentPanel, "content")
+        add(uiBuilder, "uiBuilder")
 
         addComponentListener(object : ComponentAdapter() {
             override fun componentResized(e: ComponentEvent) {
@@ -196,7 +199,7 @@ class Game3D : JPanel() {
             }
         })
 
-        contentPanel.add(menuSystem.createMenuBar(), BorderLayout.NORTH)
+        contentPanel.add(this.menuBar, BorderLayout.NORTH)
         contentPanel.add(splitPane, BorderLayout.CENTER)
 
         // Set initial divider location
@@ -283,6 +286,17 @@ class Game3D : JPanel() {
     }
 
     private fun toggleUIBuilderMode() {
+        // Prevent toggling if no world/project is loaded
+        if (!isWorldLoaded) {
+            JOptionPane.showMessageDialog(
+                this,
+                "Please load or create a project first to use the UI Builder.",
+                "Project Required",
+                JOptionPane.WARNING_MESSAGE
+            )
+            return
+        }
+
         isUIBuilderMode = !isUIBuilderMode
         val cardLayout = this.layout as CardLayout
 
@@ -502,6 +516,47 @@ class Game3D : JPanel() {
         ramps.addAll(gridEditor.generateRamps())
     }
 
+    private fun loadProjectUI() {
+        if (fileManager.getCurrentProjectName() == null) {
+            println("No project loaded, cannot load project UI.")
+            // Ensure a default UI state in the builder if no project is loaded
+            uiBuilder.customizableGameUI.createDefaultLayout(renderPanel.width, renderPanel.height)
+            setCustomUI(uiBuilder.customizableGameUI) // Apply the default internal one
+            return
+        }
+
+        val uiDir = fileManager.getUiDirectory()
+        if (uiDir == null || !uiDir.exists()) {
+            println("Project UI directory not found. Using default UI.")
+            uiBuilder.customizableGameUI.createDefaultLayout(renderPanel.width, renderPanel.height)
+            setCustomUI(uiBuilder.customizableGameUI) // Apply the default internal one
+            return
+        }
+
+        val defaultUiFile = File(uiDir, FileManager.DEFAULT_UI_FILENAME)
+
+        if (defaultUiFile.exists() && defaultUiFile.isFile) {
+            println("Found default project UI file: ${defaultUiFile.absolutePath}")
+            // Try loading into the UIBuilder's instance
+            if (uiBuilder.customizableGameUI.loadFromFile(defaultUiFile)) {
+                println("Successfully loaded custom UI from project file.")
+                // Apply the loaded UI to the game
+                setCustomUI(uiBuilder.customizableGameUI)
+                uiBuilder.previewPanel.repaint() // Update preview in builder too
+            } else {
+                System.err.println("Failed to load custom UI from ${defaultUiFile.name}. Using default.")
+                // Fallback to default if loading fails
+                uiBuilder.customizableGameUI.createDefaultLayout(renderPanel.width, renderPanel.height)
+                setCustomUI(uiBuilder.customizableGameUI)
+            }
+        } else {
+            println("No default UI file ('${FileManager.DEFAULT_UI_FILENAME}') found in project. Using default UI.")
+            // Use default if file doesn't exist
+            uiBuilder.customizableGameUI.createDefaultLayout(renderPanel.width, renderPanel.height)
+            setCustomUI(uiBuilder.customizableGameUI)
+        }
+    }
+
     private fun startNewProject() {
         // Set game type in file manager
         menuSystem.getFileManager().setGameType(gameType)
@@ -515,6 +570,8 @@ class Game3D : JPanel() {
 
         // Show the main content
         showContent()
+
+        println("Started new session. Project name/directory will be requested on first save.")
     }
 
     private fun loadExistingWorld() {
@@ -604,7 +661,7 @@ class Game3D : JPanel() {
 
                     // 6. Switch UI
                     isEditorMode = true // Start in editor mode after loading
-                    updateMode()
+                    //updateMode()
                     showContent() // Show the main editor/game view
                     println("Project '$projectName' loaded.")
 
@@ -630,6 +687,7 @@ class Game3D : JPanel() {
     }
 
     private fun showWelcomeScreen() {
+        isWorldLoaded = false
         (layout as CardLayout).show(this, "welcome")
 
         // Get the parent window (JFrame)
@@ -666,5 +724,6 @@ class Game3D : JPanel() {
         isUIBuilderMode = false
         this.menuBar.isVisible = true // <--- SHOW the stored menu bar when content is shown
         updateMode()
+        loadProjectUI()
     }
 }

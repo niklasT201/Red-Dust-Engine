@@ -33,6 +33,9 @@ class FileManager(
         const val DEFAULT_OPEN_WORLD_FILE = "open_world.world"
         private const val DEFAULT_LEVEL_PREFIX = "level_"
         const val WORLD_EXTENSION = "world"
+        const val ASSETS_DIR = "assets"
+        const val UI_DIR = "ui" // Subdirectory within assets
+        const val DEFAULT_UI_FILENAME = "custom_layout.ui" // Default filename to look for
     }
 
     init {
@@ -370,6 +373,22 @@ class FileManager(
         getProjectsDirectory()
     }
 
+    fun getAssetsDirectory(): File? {
+        return getProjectDirectory()?.let { projectDir ->
+            val dir = File(projectDir, ASSETS_DIR)
+            if (!dir.exists()) dir.mkdirs() // Use mkdirs for safety
+            return dir
+        }
+    }
+
+    fun getUiDirectory(): File? {
+        return getAssetsDirectory()?.let { assetsDir ->
+            val dir = File(assetsDir, UI_DIR)
+            if (!dir.exists()) dir.mkdirs()
+            return dir
+        }
+    }
+
     private fun createProjectDirectoryStructure(projectName: String) {
         // Set current project name
         currentProjectName = projectName
@@ -387,6 +406,10 @@ class FileManager(
 
         // Create quicksaves directory
         getQuicksavesDirectory()
+
+        // Ensure Assets and UI directories are created
+        getAssetsDirectory()
+        getUiDirectory()
     }
 
     // Get a list of existing projects

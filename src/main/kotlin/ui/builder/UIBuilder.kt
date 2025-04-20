@@ -2,11 +2,12 @@ package ui.builder
 
 import Game3D
 import player.uis.*
+import ui.topbar.FileManager
 import java.awt.*
 import javax.swing.*
 import java.io.File
 
-class UIBuilder(private val game3D: Game3D) : JPanel() {
+class UIBuilder(private val game3D: Game3D, private val fileManager: FileManager) : JPanel() {
     // Color scheme matching the About dialog
     companion object {
         val BACKGROUND_COLOR_DARK = Color(30, 33, 40)
@@ -134,30 +135,140 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
         toolbar.add(newButton)
         toolbar.addSeparator(Dimension(10, 10))
 
-        // Save layout button
+        // Save layout button action - MODIFIED
         val saveButton = createStyledButton("Save Layout")
         saveButton.addActionListener {
-            val fileChooser = JFileChooser()
-            fileChooser.dialogTitle = "Save UI Layout"
+            // Check if a project is active
+            if (fileManager.getCurrentProjectName() == null) {
+                JOptionPane.showMessageDialog(
+                    this,
+                    "Please create or load a project before saving a UI layout.",
+                    "Project Required",
+                    JOptionPane.WARNING_MESSAGE
+                )
+                return@addActionListener
+            }
+
+            // Get the project-specific UI directory
+            val uiDir = fileManager.getUiDirectory()
+            if (uiDir == null) {
+                JOptionPane.showMessageDialog(
+                    this,
+                    "Could not determine the UI directory for the current project.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+                )
+                return@addActionListener
+            }
+
+            val fileChooser = JFileChooser().apply {
+                dialogTitle = "Save UI Layout"
+                currentDirectory = uiDir // Start in the project's UI directory
+                fileFilter = javax.swing.filechooser.FileNameExtensionFilter("UI Layout Files (*.ui)", "ui")
+                selectedFile = File(uiDir, FileManager.DEFAULT_UI_FILENAME) // Suggest default name
+            }
+
             if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
                 var file = fileChooser.selectedFile
-                if (!file.name.endsWith(".ui")) {
+                // Ensure the file has the .ui extension
+                if (!file.name.lowercase().endsWith(".ui")) {
                     file = File(file.absolutePath + ".ui")
                 }
-                customizableGameUI.saveToFile(file)
+                // Ensure the file is saved within the project's UI directory
+                if (!file.parentFile.absolutePath.equals(uiDir.absolutePath)) {
+                    JOptionPane.showMessageDialog(
+                        this,
+                        "Layout must be saved within the project's 'assets/ui' directory:\n${uiDir.absolutePath}",
+                        "Save Location Error",
+                        JOptionPane.ERROR_MESSAGE
+                    )
+                    return@addActionListener
+                }
+
+                if (customizableGameUI.saveToFile(file)) {
+                    JOptionPane.showMessageDialog(
+                        this,
+                        "UI Layout saved successfully to:\n${file.name}",
+                        "Save Successful",
+                        JOptionPane.INFORMATION_MESSAGE
+                    )
+                    // If saved as the default name, offer to apply it immediately
+                    if (file.name == FileManager.DEFAULT_UI_FILENAME) {
+                        val choice = JOptionPane.showConfirmDialog(
+                            this,
+                            "You saved the layout as the default name ('${FileManager.DEFAULT_UI_FILENAME}').\n"+
+                                    "This layout will now load automatically when the project opens.\n\n"+
+                                    "Apply this layout to the game now?",
+                            "Apply Default Layout?",
+                            JOptionPane.YES_NO_OPTION,
+                            JOptionPane.QUESTION_MESSAGE
+                        )
+                        if (choice == JOptionPane.YES_OPTION) {
+                            game3D.setCustomUI(customizableGameUI)
+                        }
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(
+                        this,
+                        "Failed to save UI Layout.",
+                        "Save Error",
+                        JOptionPane.ERROR_MESSAGE
+                    )
+                }
             }
         }
         toolbar.add(saveButton)
         toolbar.addSeparator(Dimension(10, 10))
 
-        // Load layout button
+        // Load layout button action - MODIFIED
         val loadButton = createStyledButton("Load Layout")
         loadButton.addActionListener {
-            val fileChooser = JFileChooser()
-            fileChooser.dialogTitle = "Load UI Layout"
+            // Check if a project is active
+            if (fileManager.getCurrentProjectName() == null) {
+                JOptionPane.showMessageDialog(
+                    this,
+                    "Please create or load a project before loading a UI layout.",
+                    "Project Required",
+                    JOptionPane.WARNING_MESSAGE
+                )
+                return@addActionListener
+            }
+
+            // Get the project-specific UI directory
+            val uiDir = fileManager.getUiDirectory()
+            if (uiDir == null || !uiDir.exists()) { // Check existence too
+                JOptionPane.showMessageDialog(
+                    this,
+                    "Could not find the UI directory for the current project, or it's empty.\nSave a layout first.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+                )
+                return@addActionListener
+            }
+
+            val fileChooser = JFileChooser().apply{
+                dialogTitle = "Load UI Layout"
+                currentDirectory = uiDir // Start in the project's UI directory
+                fileFilter = javax.swing.filechooser.FileNameExtensionFilter("UI Layout Files (*.ui)", "ui")
+            }
+
             if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-                customizableGameUI.loadFromFile(fileChooser.selectedFile)
-                previewPanel.repaint()
+                if (customizableGameUI.loadFromFile(fileChooser.selectedFile)) {
+                    previewPanel.repaint()
+                    JOptionPane.showMessageDialog(
+                        this,
+                        "UI Layout '${fileChooser.selectedFile.name}' loaded successfully.",
+                        "Load Successful",
+                        JOptionPane.INFORMATION_MESSAGE
+                    )
+                } else {
+                    JOptionPane.showMessageDialog(
+                        this,
+                        "Failed to load UI Layout from '${fileChooser.selectedFile.name}'.",
+                        "Load Error",
+                        JOptionPane.ERROR_MESSAGE
+                    )
+                }
             }
         }
         toolbar.add(loadButton)
@@ -170,7 +281,7 @@ class UIBuilder(private val game3D: Game3D) : JPanel() {
             game3D.setCustomUI(customizableGameUI)
             JOptionPane.showMessageDialog(
                 this,
-                "UI layout applied to game successfully.",
+                "Current UI layout applied to the game.",
                 "UI Applied",
                 JOptionPane.INFORMATION_MESSAGE
             )
