@@ -5,15 +5,26 @@ import java.awt.Color
 import java.awt.Graphics2D
 import java.awt.image.BufferedImage
 import java.io.File
+import java.io.ObjectInputStream
+import java.io.ObjectOutputStream
+import java.io.Serializable
 import javax.imageio.ImageIO
 
 // A standalone image component that can be placed anywhere
-class ImageComponent(x: Int, y: Int, width: Int, height: Int) : UIComponent(x, y, width, height) {
+class ImageComponent(x: Int, y: Int, width: Int, height: Int) : UIComponent(x, y, width, height), Serializable {
+    // Mark the image as transient to exclude it from serialization
+    @Transient
     private var image: BufferedImage? = null
+
     var imageType: String = "face" // Default to face, could be "custom" for user images
     var scale: Double = 1.0
     var preserveAspectRatio: Boolean = true
     var imagePath: String = "" // Path to custom image file
+
+    companion object {
+        // Add serialVersionUID for serialization compatibility
+        private const val serialVersionUID: Long = 1L
+    }
 
     init {
         updateImage()
@@ -25,6 +36,7 @@ class ImageComponent(x: Int, y: Int, width: Int, height: Int) : UIComponent(x, y
                 try {
                     ImageIO.read(File(imagePath))
                 } catch (e: Exception) {
+                    println("Failed to load image from $imagePath: ${e.message}")
                     createFaceImage(64) // Fallback if loading fails
                 }
             }
@@ -64,8 +76,26 @@ class ImageComponent(x: Int, y: Int, width: Int, height: Int) : UIComponent(x, y
         return image
     }
 
+    // Custom serialization to skip the BufferedImage field
+    @Throws(java.io.IOException::class)
+    private fun writeObject(out: ObjectOutputStream) {
+        out.defaultWriteObject() // Write all non-transient fields
+    }
+
+    // Custom deserialization to reconstruct the BufferedImage after loading
+    @Throws(java.io.IOException::class, ClassNotFoundException::class)
+    private fun readObject(input: ObjectInputStream) {
+        input.defaultReadObject() // Read all non-transient fields
+        updateImage() // Recreate the image using the loaded properties
+    }
+
     override fun render(g2: Graphics2D, screenWidth: Int, screenHeight: Int) {
         if (!visible) return
+
+        // If image is null for any reason, try to recreate it
+        if (image == null) {
+            updateImage()
+        }
 
         image?.let {
             if (preserveAspectRatio) {
