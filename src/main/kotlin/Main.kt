@@ -54,7 +54,6 @@ fun main() {
 // ui values referencing actual values
 // pillar mode visible behind water color button
 // create assets system
-// !!FIX VERY IMPORTANT UI COMPONENT BUG WITH BUFFER IMAGES!!
 
 
 // Object List:

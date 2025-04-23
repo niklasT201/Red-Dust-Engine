@@ -14,10 +14,6 @@ class CustomizableGameUI {
     // Add a component
     fun addComponent(component: UIComponent) {
         // Ensure the component is serializable before adding (optional but good practice)
-        if (component !is Serializable) {
-            println("Warning: UIComponent ${component::class.simpleName} with id '${component.id}' is not Serializable and won't be saved.")
-            // Optionally throw an exception or prevent adding
-        }
         components.add(component)
     }
 

@@ -3,14 +3,16 @@ package texturemanager
 import ImageEntry
 import ObjectType
 import grideditor.GridEditor
+import ui.topbar.FileManager
 import java.awt.*
 import java.awt.image.BufferedImage
 import java.io.File
+import java.nio.file.Paths
 import javax.swing.*
 import javax.swing.border.TitledBorder
 import javax.swing.filechooser.FileNameExtensionFilter
 
-class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel() {
+class TextureManagerPanel(private val resourceManager: ResourceManager,  private val fileManager: FileManager) : JPanel() {
     var gridEditor: GridEditor? = null
 
     // Filter the object types to only include FLOOR and WALL
@@ -131,6 +133,8 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
                 val objectType = objectTypeComboBox.selectedItem as ObjectType
                 clearTextureForType(objectType)
             })
+            // Add the NEW button
+            add(createButton("View Project Assets") { viewProjectAssets() }) // New Button
         }
 
         // Layout
@@ -148,6 +152,24 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
         textureList.addListSelectionListener { updatePreview() }
 
         loadTexturesFromResourceManager()
+    }
+
+    private fun viewProjectAssets() {
+        if (fileManager.getCurrentProjectName() == null) {
+            JOptionPane.showMessageDialog(
+                this,
+                "No project is currently loaded. Please load or create a project first.",
+                "No Project Loaded",
+                JOptionPane.WARNING_MESSAGE
+            )
+            return
+        }
+
+        // Find the parent JFrame
+        val parentFrame = SwingUtilities.getWindowAncestor(this) as? JFrame
+        // Create and show the dialog
+        val dialog = ProjectAssetsDialog(parentFrame, fileManager)
+        dialog.isVisible = true
     }
 
     interface TextureSelectionListener {
@@ -365,13 +387,14 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
 
     // Helper method to find the ID of an ImageEntry in the ResourceManager
     private fun findImageId(imageEntry: ImageEntry): String? {
-        val allImages = resourceManager.getAllImages()
-        for ((id, entry) in allImages) {
-            if (entry.path == imageEntry.path) {
-                return id
+        return resourceManager.getAllImages().entries.find { (_, entry) ->
+            // Compare normalized paths for robustness
+            try {
+                Paths.get(entry.path).normalize() == Paths.get(imageEntry.path).normalize()
+            } catch (e: Exception) {
+                entry.path == imageEntry.path // Fallback to direct string compare if path invalid
             }
-        }
-        return null
+        }?.key
     }
 
     private fun setAsDefault(entry: TextureEntry, objectType: ObjectType) {
@@ -390,9 +413,15 @@ class TextureManagerPanel(private val resourceManager: ResourceManager) : JPanel
     }
 
     private fun updateTextureList() {
+        val selectedIndex = textureList.selectedIndex // Preserve selection if possible
         textureListModel.clear()
         val selectedType = objectTypeComboBox.selectedItem as ObjectType
         texturesByType[selectedType]?.forEach { textureListModel.addElement(it) }
+        if (selectedIndex != -1 && selectedIndex < textureListModel.size) {
+            textureList.selectedIndex = selectedIndex
+        } else {
+            updatePreview() // Clear preview if selection is lost
+        }
     }
 
     private fun updatePreview() {

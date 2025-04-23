@@ -6,6 +6,7 @@ import ui.EditorPanel
 import ui.MenuSystem
 import ui.components.CrosshairShape
 import render.SkyRenderer
+import texturemanager.ResourceManager
 import ui.GameType
 import ui.WelcomeScreen
 import ui.builder.UIBuilder
@@ -37,10 +38,11 @@ class Game3D : JPanel() {
     private val renderPanel = RenderPanel(this, renderer, player, walls, floors, waters, ramps)
 
     private val gridEditor = GridEditor()
-    private val editorPanel = EditorPanel(gridEditor,renderer, this) { toggleEditorMode() }
-    private val settingsSaver = saving.SettingsSaver(gridEditor)
     private lateinit var menuSystem: MenuSystem
     private var fileManager: FileManager
+    private val resourceManager: ResourceManager
+    private var editorPanel: EditorPanel
+    private val settingsSaver = saving.SettingsSaver(gridEditor)
     private var menuBar: JMenuBar
     private val keysPressed = mutableSetOf<Int>()
 
@@ -60,13 +62,7 @@ class Game3D : JPanel() {
     }
 
     // Main split pane
-    private val splitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT).apply {
-        leftComponent = editorPanel
-        rightComponent = rightPanel
-        dividerSize = 5
-        isContinuousLayout = true
-        resizeWeight = 0.0  // Editor panel keeps its size when resizing window
-    }
+    private var splitPane: JSplitPane
 
     private val welcomeScreen: WelcomeScreen
     private val contentPanel = JPanel().apply {
@@ -108,26 +104,12 @@ class Game3D : JPanel() {
             renderPanel.repaint()
         }
 
-        // Set up wall style change listener
-        editorPanel.setWallStyleChangeListener { useBlockWalls ->
-            gridEditor.useBlockWalls = useBlockWalls
-            // Regenerate walls with new style
-            val newWalls = gridEditor.generateWalls()
-            updateWalls(newWalls)
-            renderPanel.repaint()
-        }
-
-        editorPanel.gridEditor = gridEditor
-
         // Setup render panel
         renderPanel.apply {
             preferredSize = Dimension(800, 600)
             background = Color(135, 206, 235)
             isFocusable = true
         }
-
-        // Set initial size for editor panel
-        editorPanel.preferredSize = Dimension(250, height)
 
         // Create menu bar with reference to GridEditor for save/load functionality
         menuSystem = MenuSystem(
@@ -184,10 +166,41 @@ class Game3D : JPanel() {
             game3D = this,
             player = player
         )
-        this.menuBar = menuSystem.createMenuBar()
-        this.fileManager = menuSystem.getFileManager()
+        fileManager = menuSystem.getFileManager()
+        resourceManager = ResourceManager(fileManager)
+
+        editorPanel = EditorPanel(
+            gridEditor = gridEditor,
+            renderer = renderer,
+            game3D = this,
+            resourceManager = resourceManager,
+            fileManager = fileManager,
+            onModeSwitch = { toggleEditorMode() }
+        )
+
+        splitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT).apply {
+            leftComponent = editorPanel // Now editorPanel is initialized
+            rightComponent = rightPanel
+            dividerSize = 5
+            isContinuousLayout = true
+            resizeWeight = 0.0
+        }
+
+        // Set up wall style change listener
+        editorPanel.setWallStyleChangeListener { useBlockWalls ->
+            gridEditor.useBlockWalls = useBlockWalls
+            // Regenerate walls with new style
+            val newWalls = gridEditor.generateWalls()
+            updateWalls(newWalls)
+            renderPanel.repaint()
+        }
+
+        editorPanel.gridEditor = gridEditor
+        // Set initial size for editor panel
+        editorPanel.preferredSize = Dimension(250, height)
 
         uiBuilder = UIBuilder(this, this.fileManager)
+        menuBar = menuSystem.createMenuBar()
 
         add(welcomeScreen, "welcome")
         add(contentPanel, "content")
@@ -622,7 +635,7 @@ class Game3D : JPanel() {
                         file.isFile && file.name.lowercase().endsWith(".world") // Use constant
                     }?.sortedBy { it.name }
 
-                    if (levelFiles != null && levelFiles.isNotEmpty()) {
+                    if (!levelFiles.isNullOrEmpty()) {
                         worldFileToLoad = levelFiles[0]
                         loadedGameType = GameType.LEVEL_BASED
                     }
