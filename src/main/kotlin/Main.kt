@@ -49,11 +49,15 @@ fun main() {
 // add checkExistingWorlds feature, double press to load file
 // move border panel to world tab
 // ui checks for any ui file, otherwise uses default one
-// allow own assets
-// add image adder for assets
 // ui values referencing actual values
 // pillar mode visible behind water color button
 // create assets system
+// texture manager saving all images and showing them again fix
+// project dialog design change
+// project dialog preview image upscaling with mouse
+// maybe changing path to textures/objects/
+// saving folder path for finding images faster
+// texture manager design fix
 
 
 // Object List:
