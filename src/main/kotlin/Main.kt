@@ -52,7 +52,6 @@ fun main() {
 // ui values referencing actual values
 // pillar mode visible behind water color button
 // create assets system
-// project dialog preview image upscaling with mouse
 // maybe changing path to textures/objects/
 // saving folder path for finding images faster
 // texture manager design fix

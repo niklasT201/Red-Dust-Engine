@@ -4,6 +4,7 @@ import ui.topbar.FileManager
 import java.awt.*
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import java.awt.image.BufferedImage
 import java.io.File
 import javax.imageio.ImageIO
 import javax.swing.*
@@ -20,7 +21,7 @@ import java.util.*
 
 class ProjectAssetsDialog(
     parent: JFrame?,
-    private val fileManager: FileManager
+    fileManager: FileManager
 ) : JDialog(parent, "Project Assets", true) {
 
     private lateinit var tree: JTree
@@ -30,6 +31,9 @@ class ProjectAssetsDialog(
     private lateinit var filterComboBox: JComboBox<String>
     private lateinit var searchField: JTextField
     private val projectDir: File?
+    private var zoomFactor = 1.0
+    private var currentImage: BufferedImage? = null
+    private lateinit var imagePanel: JPanel
 
     // Main theme colors - matching the About dialog style
     private val BACKGROUND_COLOR = Color(40, 44, 52)
@@ -355,6 +359,7 @@ class ProjectAssetsDialog(
 
     private fun updatePreview(file: File) {
         previewPanel.removeAll()
+        zoomFactor = 1.0 // Reset zoom when loading a new image
 
         // Header for preview panel showing filename
         val headerPanel = JPanel(BorderLayout()).apply {
@@ -374,26 +379,127 @@ class ProjectAssetsDialog(
                     try {
                         val image = ImageIO.read(file)
                         if (image != null) {
-                            val previewImage = createScaledImage(image, 400, 400)
-                            val imageLabel = JLabel(ImageIcon(previewImage))
-                            imageLabel.horizontalAlignment = SwingConstants.CENTER
+                            currentImage = image
 
-                            val previewContentPanel = JPanel(BorderLayout()).apply {
-                                isOpaque = false
-                                add(JScrollPane(imageLabel).apply {
-                                    background = Color(30, 33, 40)
-                                    border = null
-                                    viewport.background = Color(30, 33, 40)
-                                }, BorderLayout.CENTER)
+                            // Create a panel to display the image with zoom functionality
+                            imagePanel = object : JPanel(BorderLayout()) {
+                                override fun paintComponent(g: Graphics) {
+                                    super.paintComponent(g)
+                                    val g2d = g as Graphics2D
+                                    g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
+                                    g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
+
+                                    currentImage?.let {
+                                        val scaledWidth = (it.width * zoomFactor).toInt()
+                                        val scaledHeight = (it.height * zoomFactor).toInt()
+
+                                        // Center the image in the panel
+                                        val x = (width - scaledWidth) / 2
+                                        val y = (height - scaledHeight) / 2
+
+                                        g2d.drawImage(it, x, y, scaledWidth, scaledHeight, this)
+                                    }
+                                }
+
+                                override fun getPreferredSize(): Dimension {
+                                    return currentImage?.let {
+                                        Dimension(
+                                            (it.width * zoomFactor).toInt().coerceAtLeast(500),
+                                            (it.height * zoomFactor).toInt().coerceAtLeast(400)
+                                        )
+                                    } ?: Dimension(500, 400)
+                                }
+                            }.apply {
+                                background = Color(30, 33, 40)
+                            }
+
+                            // Add mouse wheel listener for zooming
+                            imagePanel.addMouseWheelListener { e ->
+                                if (e.wheelRotation < 0) {
+                                    // Zoom in (scroll up)
+                                    zoomFactor *= 1.1
+                                } else {
+                                    // Zoom out (scroll down)
+                                    zoomFactor /= 1.1
+                                }
+                                // Limit zoom factor to reasonable range
+                                zoomFactor = zoomFactor.coerceIn(0.1, 10.0)
+
+                                // Update the panel size and repaint
+                                imagePanel.revalidate()
+                                imagePanel.repaint()
+                            }
+
+                            // Create a scroll pane for the image panel
+                            val scrollPane = JScrollPane(imagePanel).apply {
+                                background = Color(30, 33, 40)
+                                border = null
+                                viewport.background = Color(30, 33, 40)
+                                horizontalScrollBarPolicy = JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED
+                                verticalScrollBarPolicy = JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
                             }
 
                             previewPanel.add(headerPanel, BorderLayout.NORTH)
-                            previewPanel.add(previewContentPanel, BorderLayout.CENTER)
-                            previewPanel.add(JLabel("Dimensions: ${image.width}x${image.height}").apply {
-                                foreground = SECONDARY_TEXT_COLOR
-                                horizontalAlignment = SwingConstants.CENTER
-                                border = EmptyBorder(5, 0, 5, 0)
-                            }, BorderLayout.SOUTH)
+                            previewPanel.add(scrollPane, BorderLayout.CENTER)
+
+                            // Add zoom info and image dimensions to footer
+                            val infoPanel = JPanel(BorderLayout()).apply {
+                                isOpaque = false
+                                add(JLabel("Dimensions: ${image.width}x${image.height} | Zoom: 100%").apply {
+                                    name = "zoomInfoLabel"  // Set a name so we can find and update it
+                                    foreground = SECONDARY_TEXT_COLOR
+                                    horizontalAlignment = SwingConstants.CENTER
+                                    border = EmptyBorder(5, 0, 5, 0)
+                                }, BorderLayout.CENTER)
+
+                                // Add zoom controls
+                                val controlPanel = JPanel(FlowLayout(FlowLayout.CENTER)).apply {
+                                    isOpaque = false
+
+                                    val zoomInButton = createStyledButton("+").apply {
+                                        preferredSize = Dimension(40, 26)
+                                        addActionListener {
+                                            zoomFactor *= 1.25
+                                            zoomFactor = zoomFactor.coerceIn(0.1, 10.0)
+                                            imagePanel.revalidate()
+                                            imagePanel.repaint()
+                                            updateZoomLabel()
+                                        }
+                                    }
+
+                                    val zoomOutButton = createStyledButton("-").apply {
+                                        preferredSize = Dimension(40, 26)
+                                        addActionListener {
+                                            zoomFactor /= 1.25
+                                            zoomFactor = zoomFactor.coerceIn(0.1, 10.0)
+                                            imagePanel.revalidate()
+                                            imagePanel.repaint()
+                                            updateZoomLabel()
+                                        }
+                                    }
+
+                                    val resetZoomButton = createStyledButton("1:1").apply {
+                                        preferredSize = Dimension(40, 26)
+                                        addActionListener {
+                                            zoomFactor = 1.0
+                                            imagePanel.revalidate()
+                                            imagePanel.repaint()
+                                            updateZoomLabel()
+                                        }
+                                    }
+
+                                    add(zoomOutButton)
+                                    add(resetZoomButton)
+                                    add(zoomInButton)
+                                }
+
+                                add(controlPanel, BorderLayout.EAST)
+                            }
+
+                            previewPanel.add(infoPanel, BorderLayout.SOUTH)
+
+                            // Add mouse listeners for panning (optional)
+                            addPanningSupport(imagePanel, scrollPane)
                         } else {
                             showPreviewPlaceholder(headerPanel, "Could not load image")
                         }
@@ -401,6 +507,7 @@ class ProjectAssetsDialog(
                         showPreviewPlaceholder(headerPanel, "Error loading image: ${e.message}")
                     }
                 }
+                // Keep the rest of your when cases unchanged
                 audioExtensions.contains(extension) -> {
                     showPreviewPlaceholder(headerPanel, "Audio file: ${file.name}")
                 }
@@ -438,6 +545,60 @@ class ProjectAssetsDialog(
 
         previewPanel.revalidate()
         previewPanel.repaint()
+    }
+
+    // Add these helper functions
+    private fun updateZoomLabel() {
+        val zoomPercent = (zoomFactor * 100).toInt()
+        previewPanel.components.forEach { component ->
+            if (component is JPanel) {
+                component.components.forEach { subComponent ->
+                    if (subComponent is JLabel && subComponent.name == "zoomInfoLabel") {
+                        currentImage?.let {
+                            subComponent.text = "Dimensions: ${it.width}x${it.height} | Zoom: $zoomPercent%"
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun addPanningSupport(imagePanel: JPanel, scrollPane: JScrollPane) {
+        var lastPoint: Point? = null
+
+        imagePanel.addMouseListener(object : MouseAdapter() {
+            override fun mousePressed(e: MouseEvent) {
+                imagePanel.cursor = Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR)
+                lastPoint = e.point
+            }
+
+            override fun mouseReleased(e: MouseEvent) {
+                imagePanel.cursor = Cursor.getDefaultCursor()
+                lastPoint = null
+            }
+        })
+
+        imagePanel.addMouseMotionListener(object : MouseAdapter() {
+            override fun mouseDragged(e: MouseEvent) {
+                if (lastPoint != null) {
+                    val viewPort = scrollPane.viewport
+                    val viewRect = viewPort.viewRect
+
+                    // Calculate how much to move
+                    val deltaX = lastPoint!!.x - e.x
+                    val deltaY = lastPoint!!.y - e.y
+
+                    // Create a new position
+                    val newX = viewRect.x + deltaX
+                    val newY = viewRect.y + deltaY
+
+                    // Scroll to the new position
+                    val scrollTo = Point(newX, newY)
+                    viewPort.viewPosition = scrollTo
+                }
+                lastPoint = e.point
+            }
+        })
     }
 
     private fun updateDetails(file: File) {
@@ -509,29 +670,6 @@ class ProjectAssetsDialog(
                 font = Font("Arial", Font.ITALIC, 14)
             }, BorderLayout.CENTER)
         }, BorderLayout.CENTER)
-    }
-
-    private fun createScaledImage(image: Image, maxWidth: Int, maxHeight: Int): Image {
-        val width = image.getWidth(null)
-        val height = image.getHeight(null)
-
-        if (width <= maxWidth && height <= maxHeight) {
-            return image // No need to scale
-        }
-
-        val ratio = width.toDouble() / height.toDouble()
-        val newWidth: Int
-        val newHeight: Int
-
-        if (width > height) {
-            newWidth = maxWidth
-            newHeight = (maxWidth / ratio).toInt()
-        } else {
-            newHeight = maxHeight
-            newWidth = (maxHeight * ratio).toInt()
-        }
-
-        return image.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH)
     }
 
     private fun createDetailItem(text: String): JLabel {
