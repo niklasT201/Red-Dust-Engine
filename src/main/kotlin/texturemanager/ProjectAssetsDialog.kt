@@ -31,6 +31,15 @@ class ProjectAssetsDialog(
     private lateinit var searchField: JTextField
     private val projectDir: File?
 
+    // Main theme colors - matching the About dialog style
+    private val BACKGROUND_COLOR = Color(40, 44, 52)
+    private val PANEL_COLOR = Color(45, 48, 55)
+    private val ACCENT_COLOR = Color(220, 95, 60) // Using your warm orange/red accent color
+    private val BUTTON_COLOR = Color(60, 63, 65)
+    private val BUTTON_HOVER_COLOR = Color(80, 83, 85)
+    private val TEXT_COLOR = Color.WHITE
+    private val SECONDARY_TEXT_COLOR = Color(180, 180, 180)
+
     // Asset file extensions
     private val imageExtensions = listOf("png", "jpg", "jpeg", "gif", "bmp")
     private val audioExtensions = listOf("wav", "mp3", "ogg")
@@ -59,7 +68,22 @@ class ProjectAssetsDialog(
         size = Dimension(900, 700)
         setLocationRelativeTo(parent)
         layout = BorderLayout(5, 5)
-        background = Color(40, 44, 52)
+
+        // Set dialog background to use gradient like in About dialog
+        contentPane = object : JPanel() {
+            override fun paintComponent(g: Graphics) {
+                super.paintComponent(g)
+                val g2d = g as Graphics2D
+                val gradientPaint = GradientPaint(
+                    0f, 0f, Color(30, 33, 40),
+                    0f, height.toFloat(), Color(45, 48, 55)
+                )
+                g2d.paint = gradientPaint
+                g2d.fillRect(0, 0, width, height)
+            }
+        }.apply {
+            layout = BorderLayout(5, 5)
+        }
 
         // Setup components
         setupFilterPanel()
@@ -70,18 +94,15 @@ class ProjectAssetsDialog(
         // Split panes for layout
         val leftPanel = JSplitPane(JSplitPane.VERTICAL_SPLIT).apply {
             topComponent = JScrollPane(tree).apply {
-                border = BorderFactory.createTitledBorder(
-                    BorderFactory.createLineBorder(Color(70, 73, 75)),
-                    "Project Structure",
-                    TitledBorder.LEFT,
-                    TitledBorder.TOP,
-                    null,
-                    Color.WHITE
-                )
+                border = createStyledBorder("Project Structure")
+                background = PANEL_COLOR
+                viewport.background = PANEL_COLOR
             }
             bottomComponent = detailsPanel
             dividerLocation = 400
             border = EmptyBorder(5, 5, 5, 0)
+            background = BACKGROUND_COLOR
+            dividerSize = 5
         }
 
         val mainSplitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT).apply {
@@ -89,65 +110,110 @@ class ProjectAssetsDialog(
             rightComponent = previewPanel
             dividerLocation = 400
             border = EmptyBorder(5, 5, 5, 5)
+            background = BACKGROUND_COLOR
+            dividerSize = 5
         }
 
         // Add components to dialog
-        add(mainSplitPane, BorderLayout.CENTER)
+        contentPane.add(mainSplitPane, BorderLayout.CENTER)
 
-        // Add a close button
-        val closeButton = createButton("Close").apply {
+        // Add a close button with style matching About dialog
+        val closeButton = createStyledButton("Close").apply {
             addActionListener { dispose() }
         }
+
         val buttonPanel = JPanel().apply {
-            background = Color(40, 44, 52)
+            isOpaque = false
+            layout = FlowLayout(FlowLayout.CENTER)
             add(closeButton)
         }
-        add(buttonPanel, BorderLayout.SOUTH)
+
+        contentPane.add(buttonPanel, BorderLayout.SOUTH)
     }
 
     private fun setupFilterPanel() {
         val filterPanel = JPanel(BorderLayout(5, 0)).apply {
-            background = Color(40, 44, 52)
+            isOpaque = false
             border = EmptyBorder(5, 5, 5, 5)
         }
 
-        // Filter combo box
+        // Create a stylized title for the filter panel
+        val titleLabel = JLabel("PROJECT ASSETS", SwingConstants.LEFT).apply {
+            foreground = ACCENT_COLOR
+            font = Font("Impact", Font.BOLD, 18)
+            border = EmptyBorder(0, 5, 5, 0)
+        }
+
+        // Add stylized separator similar to About dialog
+        val separator = createGlowingSeparator()
+
+        val headerPanel = JPanel(BorderLayout()).apply {
+            isOpaque = false
+            add(titleLabel, BorderLayout.NORTH)
+            add(separator, BorderLayout.CENTER)
+        }
+
+        // Filter combo box with custom style
         filterComboBox = JComboBox(arrayOf("All Files", "Images", "Audio", "3D Models", "Scripts")).apply {
-            background = Color(60, 63, 65)
-            foreground = Color.WHITE
+            background = BUTTON_COLOR
+            foreground = TEXT_COLOR
+            font = Font("Arial", Font.PLAIN, 12)
             addActionListener {
                 refreshTree()
             }
         }
 
-        // Search field
+        // Search field with custom style
         searchField = JTextField().apply {
-            background = Color(60, 63, 65)
-            foreground = Color.WHITE
+            background = BUTTON_COLOR
+            foreground = TEXT_COLOR
+            font = Font("Arial", Font.PLAIN, 12)
             columns = 15
+            border = BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Color(25, 28, 35)),
+                BorderFactory.createEmptyBorder(3, 5, 3, 5)
+            )
             addActionListener {
                 refreshTree()
             }
         }
 
-        val searchButton = createButton("Search").apply {
+        val searchButton = createStyledButton("Search").apply {
+            preferredSize = Dimension(80, 26)
             addActionListener {
                 refreshTree()
             }
         }
 
-        filterPanel.add(JLabel("Filter:").apply { foreground = Color.WHITE }, BorderLayout.WEST)
-        filterPanel.add(filterComboBox, BorderLayout.CENTER)
+        val filterControlsPanel = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
+            isOpaque = false
+            add(JLabel("Filter:").apply {
+                foreground = TEXT_COLOR
+                font = Font("Arial", Font.PLAIN, 12)
+            })
+            add(filterComboBox)
+        }
 
         val searchPanel = JPanel(FlowLayout(FlowLayout.RIGHT)).apply {
-            background = Color(40, 44, 52)
-            add(JLabel("Search:").apply { foreground = Color.WHITE })
+            isOpaque = false
+            add(JLabel("Search:").apply {
+                foreground = TEXT_COLOR
+                font = Font("Arial", Font.PLAIN, 12)
+            })
             add(searchField)
             add(searchButton)
         }
 
-        filterPanel.add(searchPanel, BorderLayout.EAST)
-        add(filterPanel, BorderLayout.NORTH)
+        val controlsPanel = JPanel(BorderLayout()).apply {
+            isOpaque = false
+            add(filterControlsPanel, BorderLayout.WEST)
+            add(searchPanel, BorderLayout.EAST)
+        }
+
+        filterPanel.add(headerPanel, BorderLayout.NORTH)
+        filterPanel.add(controlsPanel, BorderLayout.CENTER)
+
+        contentPane.add(filterPanel, BorderLayout.NORTH)
     }
 
     private fun setupTreePanel() {
@@ -162,18 +228,19 @@ class ProjectAssetsDialog(
         tree = JTree(treeModel).apply {
             showsRootHandles = true
             isEditable = false
-            background = Color(50, 54, 62)
-            foreground = Color.WHITE
+            background = PANEL_COLOR
+            foreground = TEXT_COLOR
+            font = Font("Arial", Font.PLAIN, 12)
             selectionModel.selectionMode = TreeSelectionModel.SINGLE_TREE_SELECTION
 
             // Custom cell renderer with file icons
             setCellRenderer(object : DefaultTreeCellRenderer() {
                 init {
-                    textSelectionColor = Color.WHITE
-                    textNonSelectionColor = Color.WHITE
-                    backgroundSelectionColor = Color(100, 100, 255)
-                    backgroundNonSelectionColor = Color(50, 54, 62)
-                    borderSelectionColor = Color(70, 70, 200)
+                    textSelectionColor = TEXT_COLOR
+                    textNonSelectionColor = TEXT_COLOR
+                    backgroundSelectionColor = ACCENT_COLOR.darker()
+                    backgroundNonSelectionColor = PANEL_COLOR
+                    borderSelectionColor = ACCENT_COLOR
                 }
 
                 override fun getTreeCellRendererComponent(
@@ -257,15 +324,8 @@ class ProjectAssetsDialog(
     private fun setupDetailsPanel() {
         detailsPanel = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            background = Color(40, 44, 52)
-            border = BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(Color(70, 73, 75)),
-                "File Details",
-                TitledBorder.LEFT,
-                TitledBorder.TOP,
-                null,
-                Color.WHITE
-            )
+            background = PANEL_COLOR
+            border = createStyledBorder("File Details")
 
             // Details will be populated when a file is selected
             add(createDetailItem("Name:"))
@@ -278,25 +338,33 @@ class ProjectAssetsDialog(
 
     private fun setupPreviewPanel() {
         previewPanel = JPanel(BorderLayout()).apply {
-            background = Color(40, 44, 52)
-            border = BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(Color(70, 73, 75)),
-                "Preview",
-                TitledBorder.LEFT,
-                TitledBorder.TOP,
-                null,
-                Color.WHITE
-            )
+            background = PANEL_COLOR
+            border = createStyledBorder("Preview")
 
             // Default message when no file selected
-            add(JLabel("Select a file to preview", SwingConstants.CENTER).apply {
-                foreground = Color.WHITE
-            }, BorderLayout.CENTER)
+            val placeholderPanel = JPanel(BorderLayout()).apply {
+                isOpaque = false
+                add(JLabel("Select a file to preview", SwingConstants.CENTER).apply {
+                    foreground = SECONDARY_TEXT_COLOR
+                    font = Font("Arial", Font.ITALIC, 14)
+                }, BorderLayout.CENTER)
+            }
+            add(placeholderPanel, BorderLayout.CENTER)
         }
     }
 
     private fun updatePreview(file: File) {
         previewPanel.removeAll()
+
+        // Header for preview panel showing filename
+        val headerPanel = JPanel(BorderLayout()).apply {
+            isOpaque = false
+            add(JLabel(file.name).apply {
+                foreground = ACCENT_COLOR
+                font = Font("Arial", Font.BOLD, 14)
+                border = EmptyBorder(0, 5, 5, 0)
+            }, BorderLayout.WEST)
+        }
 
         if (!file.isDirectory) {
             val extension = file.extension.lowercase()
@@ -310,27 +378,34 @@ class ProjectAssetsDialog(
                             val imageLabel = JLabel(ImageIcon(previewImage))
                             imageLabel.horizontalAlignment = SwingConstants.CENTER
 
-                            previewPanel.add(JScrollPane(imageLabel).apply {
-                                background = Color(30, 33, 40)
-                                border = null
-                            }, BorderLayout.CENTER)
+                            val previewContentPanel = JPanel(BorderLayout()).apply {
+                                isOpaque = false
+                                add(JScrollPane(imageLabel).apply {
+                                    background = Color(30, 33, 40)
+                                    border = null
+                                    viewport.background = Color(30, 33, 40)
+                                }, BorderLayout.CENTER)
+                            }
 
-                            previewPanel.add(JLabel("Image dimensions: ${image.width}x${image.height}").apply {
-                                foreground = Color.WHITE
+                            previewPanel.add(headerPanel, BorderLayout.NORTH)
+                            previewPanel.add(previewContentPanel, BorderLayout.CENTER)
+                            previewPanel.add(JLabel("Dimensions: ${image.width}x${image.height}").apply {
+                                foreground = SECONDARY_TEXT_COLOR
                                 horizontalAlignment = SwingConstants.CENTER
+                                border = EmptyBorder(5, 0, 5, 0)
                             }, BorderLayout.SOUTH)
                         } else {
-                            showPreviewPlaceholder("Could not load image")
+                            showPreviewPlaceholder(headerPanel, "Could not load image")
                         }
                     } catch (e: Exception) {
-                        showPreviewPlaceholder("Error loading image: ${e.message}")
+                        showPreviewPlaceholder(headerPanel, "Error loading image: ${e.message}")
                     }
                 }
                 audioExtensions.contains(extension) -> {
-                    showPreviewPlaceholder("Audio file: ${file.name}")
+                    showPreviewPlaceholder(headerPanel, "Audio file: ${file.name}")
                 }
                 modelExtensions.contains(extension) -> {
-                    showPreviewPlaceholder("3D Model file: ${file.name}")
+                    showPreviewPlaceholder(headerPanel, "3D Model file: ${file.name}")
                 }
                 else -> {
                     // For text-based files, we could add a simple text preview
@@ -340,20 +415,25 @@ class ProjectAssetsDialog(
                             val textArea = JTextArea(text).apply {
                                 isEditable = false
                                 background = Color(30, 33, 40)
-                                foreground = Color.WHITE
+                                foreground = TEXT_COLOR
                                 font = Font(Font.MONOSPACED, Font.PLAIN, 12)
+                                caretColor = ACCENT_COLOR
                             }
-                            previewPanel.add(JScrollPane(textArea), BorderLayout.CENTER)
+                            previewPanel.add(headerPanel, BorderLayout.NORTH)
+                            previewPanel.add(JScrollPane(textArea).apply {
+                                border = null
+                                viewport.background = Color(30, 33, 40)
+                            }, BorderLayout.CENTER)
                         } catch (e: Exception) {
-                            showPreviewPlaceholder("File not previewable")
+                            showPreviewPlaceholder(headerPanel, "File not previewable")
                         }
                     } else {
-                        showPreviewPlaceholder("File too large to preview")
+                        showPreviewPlaceholder(headerPanel, "File too large to preview")
                     }
                 }
             }
         } else {
-            showPreviewPlaceholder("Directory: ${file.name}")
+            showPreviewPlaceholder(headerPanel, "Directory: ${file.name}")
         }
 
         previewPanel.revalidate()
@@ -400,7 +480,7 @@ class ProjectAssetsDialog(
 
     private fun clearPreview() {
         previewPanel.removeAll()
-        showPreviewPlaceholder("Select a file to preview")
+        showPreviewPlaceholder(null, "Select a file to preview")
         previewPanel.revalidate()
         previewPanel.repaint()
     }
@@ -417,9 +497,17 @@ class ProjectAssetsDialog(
         }
     }
 
-    private fun showPreviewPlaceholder(message: String) {
-        previewPanel.add(JLabel(message, SwingConstants.CENTER).apply {
-            foreground = Color.WHITE
+    private fun showPreviewPlaceholder(headerPanel: JPanel?, message: String) {
+        if (headerPanel != null) {
+            previewPanel.add(headerPanel, BorderLayout.NORTH)
+        }
+
+        previewPanel.add(JPanel(BorderLayout()).apply {
+            isOpaque = false
+            add(JLabel(message, SwingConstants.CENTER).apply {
+                foreground = SECONDARY_TEXT_COLOR
+                font = Font("Arial", Font.ITALIC, 14)
+            }, BorderLayout.CENTER)
         }, BorderLayout.CENTER)
     }
 
@@ -448,18 +536,75 @@ class ProjectAssetsDialog(
 
     private fun createDetailItem(text: String): JLabel {
         return JLabel(text).apply {
-            foreground = Color.WHITE
-            font = Font(Font.SANS_SERIF, Font.PLAIN, 12)
+            foreground = TEXT_COLOR
+            font = Font("Arial", Font.PLAIN, 12)
             alignmentX = Component.LEFT_ALIGNMENT
-            border = EmptyBorder(3, 5, 3, 5)
+            border = EmptyBorder(5, 8, 5, 8)
         }
     }
 
-    private fun createButton(text: String): JButton {
+    private fun createStyledButton(text: String): JButton {
         return JButton(text).apply {
-            background = Color(60, 63, 65)
-            foreground = Color.WHITE
+            foreground = TEXT_COLOR
+            background = BUTTON_COLOR
+            font = Font("Arial", Font.BOLD, 12)
+            preferredSize = Dimension(120, 30)
             isFocusPainted = false
+            border = BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Color(80, 83, 85)),
+                BorderFactory.createEmptyBorder(5, 15, 5, 15)
+            )
+
+            // Hover effect
+            addMouseListener(object : MouseAdapter() {
+                override fun mouseEntered(e: MouseEvent) {
+                    background = BUTTON_HOVER_COLOR
+                }
+
+                override fun mouseExited(e: MouseEvent) {
+                    background = BUTTON_COLOR
+                }
+            })
+        }
+    }
+
+    private fun createStyledBorder(title: String): javax.swing.border.Border {
+        return BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(Color(70, 73, 75)),
+            title,
+            TitledBorder.LEFT,
+            TitledBorder.TOP,
+            Font("Arial", Font.BOLD, 12),
+            ACCENT_COLOR
+        )
+    }
+
+    private fun createGlowingSeparator(): JPanel {
+        return object : JPanel() {
+            override fun paintComponent(g: Graphics) {
+                super.paintComponent(g)
+                val g2d = g as Graphics2D
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+
+                // Draw glowing line
+                val width = this.width
+                val y = this.height / 2
+
+                val gradient = LinearGradientPaint(
+                    0f, y.toFloat(), width.toFloat(), y.toFloat(),
+                    floatArrayOf(0.0f, 0.5f, 1.0f),
+                    arrayOf(PANEL_COLOR, ACCENT_COLOR, PANEL_COLOR)
+                )
+
+                g2d.stroke = BasicStroke(2f)
+                g2d.paint = gradient
+                g2d.drawLine(0, y, width, y)
+            }
+
+            init {
+                preferredSize = Dimension(1, 10)
+                isOpaque = false
+            }
         }
     }
 
