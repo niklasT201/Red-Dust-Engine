@@ -18,7 +18,7 @@ import java.awt.*
 import javax.swing.*
 
 class EditorPanel(var gridEditor: GridEditor, val renderer: Renderer, private val game3D: Game3D, resourceManager: ResourceManager, fileManager: FileManager, private val onModeSwitch: () -> Unit) : JPanel() {
-    private val textureManager = TextureManagerPanel(resourceManager, fileManager)
+    val textureManager = TextureManagerPanel(resourceManager, fileManager)
     private val modeButton = JButton("Editor Mode")
     private val mainPanel = JPanel()
     private var onWallStyleChange: ((Boolean) -> Unit)? = null

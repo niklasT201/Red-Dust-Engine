@@ -617,6 +617,9 @@ class Game3D : JPanel() {
             val fileManager = menuSystem.getFileManager()
             fileManager.setCurrentProjectName(projectName) // This also updates KeyBindings
 
+            resourceManager.reloadProjectAssets() // Reload ResourceManager data for the project
+            editorPanel.textureManager.refreshTextures()
+
             // 3. Find the World File to Load
             var worldFileToLoad: File? = null
             var loadedGameType: GameType? = null
@@ -672,11 +675,14 @@ class Game3D : JPanel() {
                         )
                     }
 
+                    loadProjectUI()
+
                     // 6. Switch UI
                     isEditorMode = true // Start in editor mode after loading
                     //updateMode()
                     showContent() // Show the main editor/game view
                     println("Project '$projectName' loaded.")
+                    editorPanel.textureManager.dumpTextureManagementState()
 
                 } else {
                     // World loading failed

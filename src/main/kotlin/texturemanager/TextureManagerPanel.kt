@@ -8,6 +8,7 @@ import java.awt.*
 import java.awt.image.BufferedImage
 import java.io.File
 import java.nio.file.Paths
+import javax.imageio.ImageIO
 import javax.swing.*
 import javax.swing.border.TitledBorder
 import javax.swing.filechooser.FileNameExtensionFilter
@@ -152,6 +153,11 @@ class TextureManagerPanel(private val resourceManager: ResourceManager,  private
         textureList.addListSelectionListener { updatePreview() }
 
         loadTexturesFromResourceManager()
+
+        SwingUtilities.invokeLater {
+            println("\n==== TEXTURE MANAGER INITIALIZED ====")
+            dumpTextureManagementState()
+        }
     }
 
     private fun viewProjectAssets() {
@@ -435,12 +441,42 @@ class TextureManagerPanel(private val resourceManager: ResourceManager,  private
         }
     }
 
+    fun dumpTextureManagementState() {
+        println("\n==== TEXTURE MANAGER DEBUG STATE ====")
+        println("Total textures by type:")
+        texturesByType.forEach { (type, textures) ->
+            val defaultTexture = textures.find { it.isDefault }
+            println("  ${type.name}: ${textures.size} textures" +
+                    (defaultTexture?.let { " [Default: ${it.imageEntry.name}]" } ?: " [No default]"))
+
+            // List all textures for this type
+            textures.forEachIndexed { index, texture ->
+                println("    ${index+1}. ${texture.imageEntry.name}" +
+                        (if (texture.isDefault) " (DEFAULT)" else "") +
+                        " | Path: ${texture.imageEntry.path}")
+            }
+        }
+
+        // Check if any types have no textures
+        allowedObjectTypes.forEach { type ->
+            if (!texturesByType.containsKey(type) || texturesByType[type].isNullOrEmpty()) {
+                println("  ${type.name}: No textures")
+            }
+        }
+        println("=============================\n")
+    }
+
     private fun loadTexturesFromResourceManager() {
         // Clear existing entries first
         texturesByType.clear()
 
+        println("\nLoading textures from ResourceManager, total available: ${resourceManager.getAllImages().size}")
+
         for (entry in resourceManager.getAllImages()) {
-            val (_, imageEntry) = entry
+            val (id, imageEntry) = entry
+
+            println("Processing image: ${imageEntry.name} (ID: $id)")
+            println("  Path: ${imageEntry.path}")
 
             // First try to get the object type from metadata
             var objectType = resourceManager.getTextureObjectType(imageEntry.path)
@@ -449,55 +485,64 @@ class TextureManagerPanel(private val resourceManager: ResourceManager,  private
             // Attempt to determine object type from file name patterns
                 val filename = imageEntry.name.lowercase()
                 objectType = when {
-                // WALL Keywords
-                filename.contains("wall") || filename.contains("brick") ||
-                        filename.contains("wood") || filename.contains("stone") ||
-                        filename.contains("siding") -> ObjectType.WALL
+                    // Pattern matching logic as before
+                    // WALL Keywords
+                    filename.contains("wall") || filename.contains("brick") ||
+                            filename.contains("wood") || filename.contains("stone") ||
+                            filename.contains("siding") -> ObjectType.WALL
 
-                // FLOOR Keywords
-                filename.contains("floor") || filename.contains("ground") ||
-                        filename.contains("tile") || filename.contains("carpet") ||
-                        filename.contains("grass") || filename.contains("dirt") -> ObjectType.FLOOR
+                    // FLOOR Keywords
+                    filename.contains("floor") || filename.contains("ground") ||
+                            filename.contains("tile") || filename.contains("carpet") ||
+                            filename.contains("grass") || filename.contains("dirt") -> ObjectType.FLOOR
 
-                // PILLAR Keywords
-                filename.contains("pillar") || filename.contains("column") ||
-                        filename.contains("support") -> ObjectType.PILLAR // Added
+                    // PILLAR Keywords
+                    filename.contains("pillar") || filename.contains("column") ||
+                            filename.contains("support") -> ObjectType.PILLAR
 
-                // WATER Keywords
-                filename.contains("water") || filename.contains("liquid") ||
-                        filename.contains("fluid") -> ObjectType.WATER // Added
+                    // WATER Keywords
+                    filename.contains("water") || filename.contains("liquid") ||
+                            filename.contains("fluid") -> ObjectType.WATER
 
-                // RAMP Keywords
-                filename.contains("ramp") || filename.contains("slope") ||
-                        filename.contains("incline") -> ObjectType.RAMP // Added
+                    // RAMP Keywords
+                    filename.contains("ramp") || filename.contains("slope") ||
+                            filename.contains("incline") -> ObjectType.RAMP
 
-                // PROP Keywords (General catch-all for items/decorations)
-                filename.contains("prop") || filename.contains("object") ||
-                        filename.contains("item") || filename.contains("decor") ||
-                        filename.contains("sprite") -> ObjectType.PROP
+                    // PLAYER_SPAWN (Usually not textured, but handle if named)
+                    filename.contains("spawn") || filename.contains("start") -> ObjectType.PLAYER_SPAWN
 
-                // PLAYER_SPAWN (Usually not textured, but handle if named)
-                filename.contains("spawn") || filename.contains("start") -> ObjectType.PLAYER_SPAWN
+                    else -> objectTypeComboBox.selectedItem as ObjectType
+                }
 
-                else -> objectTypeComboBox.selectedItem as ObjectType
-            }
                 // Save this guessed association for future use
                 resourceManager.saveTextureObjectType(imageEntry.path, objectType)
+                println("  Guessed type: $objectType (based on name)")
             }
 
+            // Check if it's an allowed type
             if (allowedObjectTypes.contains(objectType)) {
+                // CRITICAL: Check if the image is actually available before adding
+                // This could be a source of the issue - missing image data
                 val textureEntry = TextureEntry(objectType, imageEntry)
                 texturesByType.getOrPut(objectType) { mutableListOf() }.add(textureEntry)
+                println("  Added to ${objectType.name} texture list")
             } else if (objectType == ObjectType.PLAYER_SPAWN) {
-                // Handle player spawn if needed, or just ignore if it doesn't get textures
-                println("Note: Detected PLAYER_SPAWN texture '${imageEntry.name}', but it's not managed in the panel.")
+                println("  NOTICE: PLAYER_SPAWN texture '${imageEntry.name}' not managed in panel")
             } else {
-                // This case might happen if the fallback type (PROP) isn't in allowedObjectTypes for some reason
-                println("Warning: Texture '${imageEntry.name}' guessed as $objectType, which is not in the allowed list for the panel. Assigning to first allowed type.")
-                val fallbackType = allowedObjectTypes.firstOrNull() ?: ObjectType.WALL // Failsafe
+                println("  WARNING: Texture '${imageEntry.name}' type $objectType not in allowed list")
+                // Assign to first allowed type as fallback
+                val fallbackType = allowedObjectTypes.firstOrNull() ?: ObjectType.WALL
                 val textureEntry = TextureEntry(fallbackType, imageEntry)
                 texturesByType.getOrPut(fallbackType) { mutableListOf() }.add(textureEntry)
+                println("  Added to ${fallbackType.name} texture list as fallback")
             }
+        }
+
+        // Log totals
+        println("\nLoaded textures by type:")
+        for (type in allowedObjectTypes) {
+            val count = texturesByType[type]?.size ?: 0
+            println("  ${type.name}: $count textures")
         }
 
         updateTextureList() // Refresh the list based on the selected type
@@ -512,5 +557,20 @@ class TextureManagerPanel(private val resourceManager: ResourceManager,  private
 
         // Notify listeners that texture has been cleared
         textureSelectionListener?.onTextureCleared(objectType)
+    }
+
+    // Inside TextureManagerPanel class
+    fun refreshTextures() {
+        println("==== TextureManagerPanel Refreshing Textures ====")
+        // The existing method already clears and reloads from ResourceManager
+        loadTexturesFromResourceManager()
+        dumpTextureManagementState() // Dump state after refresh
+        println("==== TextureManagerPanel Refresh Complete ====")
+
+        // Optional: Select the first item or maintain selection if possible
+        if (textureListModel.size > 0) {
+            textureList.selectedIndex = 0
+        }
+        updatePreview()
     }
 }

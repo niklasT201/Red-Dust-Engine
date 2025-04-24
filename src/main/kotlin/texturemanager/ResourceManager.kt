@@ -50,6 +50,8 @@ class ResourceManager(private val fileManager: FileManager) {
             loadAllLocalTextures()
         } ?: println("ResourceManager init: No active project. Local texture loading skipped.")
 
+        dumpResourceState()
+
     }
 
     // Helper to get the textures directory as a File, returns null if no project
@@ -124,9 +126,10 @@ class ResourceManager(private val fileManager: FileManager) {
 
             // Copy the file
             Files.copy(sourceFile.toPath(), targetPath, StandardCopyOption.REPLACE_EXISTING)
-            println("Copied texture to project: $targetPath")
+            val normalizedAbsPath = targetPath.toAbsolutePath().normalize().toString() // <-- Normalize
+            println("Copied texture to project: $normalizedAbsPath") // <-- Log normalized path
 
-            return targetPath.toString()
+            return normalizedAbsPath // <-- Return normalized path
         } catch (e: Exception) {
             e.printStackTrace()
             System.err.println("Error copying image to project storage: ${e.message}")
@@ -141,25 +144,31 @@ class ResourceManager(private val fileManager: FileManager) {
     fun loadImageFromFile(file: File): ImageEntry? {
         // Only proceed if a project is active
         if (fileManager.getCurrentProjectName() == null) {
-            println("Cannot load texture from file: No active project.")
+            println("DEBUG: Cannot load texture from file: No active project.")
             return null
         }
 
         try {
+            println("Loading image from: ${file.absolutePath}")
             val image = ImageIO.read(file)
             if (image != null) {
-                // copyImageToLocalStorage handles the project check internally now
-                val localPath = copyImageToLocalStorage(file.absolutePath, file.name)
-                val entry = ImageEntry(file.name, localPath, image)
-                // Add to our resource manager map (in-memory)
+                val localPath = copyImageToLocalStorage(file.absolutePath, file.name) // This now returns normalized path
+                // We need the image entry to store the normalized path regardless if copy happened or not
+                val finalPath = Paths.get(localPath).toAbsolutePath().normalize().toString() // Ensure it's absolute normalized
+                val entry = ImageEntry(file.name, finalPath, image) // <-- Use finalPath
                 val id = "img_${System.currentTimeMillis()}_${images.size}"
                 images[id] = entry
-                println("Loaded image from file: ${file.name}. Stored path: $localPath")
+                println("Successfully loaded image: ${file.name}")
+                println("  - Original path: ${file.absolutePath}")
+                println("  - Stored path: $finalPath") // <-- Log finalPath
+                println("  - Size: ${image.width}x${image.height}")
                 return entry
+            } else {
+                println("ERROR: ImageIO returned null for ${file.name}")
             }
         } catch (e: Exception) {
+            System.err.println("ERROR loading ${file.name}: ${e.message}")
             e.printStackTrace()
-            System.err.println("Error loading image from file ${file.absolutePath}: ${e.message}")
         }
         return null
     }
@@ -194,41 +203,99 @@ class ResourceManager(private val fileManager: FileManager) {
         return result
     }
 
+    private fun dumpResourceState() {
+        println("\n==== RESOURCE MANAGER DEBUG STATE ====")
+        println("Total images in memory: ${images.size}")
+        println("Total textures in cache: ${textureCache.size}")
+        println("Total texture metadata entries: ${textureMetadata.size}")
+
+        // Group by ObjectType to see distribution
+        val typeCount = mutableMapOf<ObjectType, Int>()
+        textureMetadata.values.forEach { type ->
+            typeCount[type] = typeCount.getOrDefault(type, 0) + 1
+        }
+
+        println("Texture type distribution:")
+        typeCount.forEach { (type, count) ->
+            println("  ${type.name}: $count textures")
+        }
+
+        // Check for mismatches between collections
+        val pathsInImages = images.values.map { it.path }.toSet()
+        val pathsInMetadata = textureMetadata.keys.toSet()
+
+        val inImagesNotMetadata = pathsInImages - pathsInMetadata
+        val inMetadataNotImages = pathsInMetadata - pathsInImages
+
+        if (inImagesNotMetadata.isNotEmpty()) {
+            println("\nWARNING: ${inImagesNotMetadata.size} images don't have metadata:")
+            inImagesNotMetadata.take(10).forEach { println("  - $it") }
+            if (inImagesNotMetadata.size > 10) println("  ... and ${inImagesNotMetadata.size - 10} more")
+        }
+
+        if (inMetadataNotImages.isNotEmpty()) {
+            println("\nWARNING: ${inMetadataNotImages.size} metadata entries don't have corresponding images:")
+            inMetadataNotImages.take(10).forEach { println("  - $it") }
+            if (inMetadataNotImages.size > 10) println("  ... and ${inMetadataNotImages.size - 10} more")
+        }
+
+        println("=============================\n")
+    }
+
+
     /**
      * Loads all textures from the current project's local textures directory
      */
     private fun loadAllLocalTextures() {
-        val directory = getTexturesDirectoryFile() ?: return // No project, nothing to load
+        val directory = getTexturesDirectoryFile() ?: return
 
-        if (!directory.exists() || !directory.isDirectory) return
+        if (!directory.exists() || !directory.isDirectory) {
+            println("ERROR: Textures directory doesn't exist or isn't a directory: ${directory.absolutePath}")
+            return
+        }
 
-        println("Loading local textures from: ${directory.absolutePath}")
+        println("\nLoading local textures from: ${directory.absolutePath}")
         val imageExtensions = listOf("jpg", "jpeg", "png", "gif", "bmp")
         var loadedCount = 0
+        var skippedCount = 0
+        var errorCount = 0
+        val files = directory.listFiles() ?: emptyArray()
 
-        directory.listFiles()?.forEach { file ->
+        println("Found ${files.count { it.isFile && imageExtensions.contains(it.extension.lowercase()) }} image files")
+
+        files.forEach { file ->
             if (file.isFile && imageExtensions.contains(file.extension.lowercase(Locale.getDefault()))) {
                 try {
                     val image = ImageIO.read(file)
                     if (image != null) {
-                        // Check if already loaded by path to avoid duplicates if metadata loaded it first
-                        val existing = images.values.find { it.path == file.absolutePath }
+                        val normalizedAbsPath = file.toPath().toAbsolutePath().normalize().toString() // <-- Normalize
+                        // Check if already loaded using the normalized path
+                        val existing = images.values.find { it.path == normalizedAbsPath }
                         if (existing == null) {
-                            val id = "img_${System.currentTimeMillis()}_${images.size}_${UUID.randomUUID().toString().substring(0,4)}" // Make ID more unique
-                            images[id] = ImageEntry(file.name, file.absolutePath, image)
+                            val id = "img_${System.currentTimeMillis()}_${images.size}_${UUID.randomUUID().toString().substring(0,4)}"
+                            images[id] = ImageEntry(file.name, normalizedAbsPath, image) // <-- Use normalized path
                             loadedCount++
-                            // println("Loaded local texture: ${file.name} (ID: $id)")
+                            println("  Loaded: ${file.name} (ID: $id) Path: $normalizedAbsPath") // <-- Log normalized path
                         } else {
-                            // println("Skipping local texture already loaded: ${file.name}")
+                            skippedCount++
+                            // Optional: Update existing entry's image data if needed?
+                            println("  Skipped: ${file.name} (already loaded with path ${existing.path})")
                         }
+                    } else {
+                        errorCount++
+                        System.err.println("  ERROR: Could not read image data from ${file.name}")
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
-                    System.err.println("Error loading local texture ${file.absolutePath}: ${e.message}")
+                    errorCount++
+                    System.err.println("  ERROR loading texture ${file.name}: ${e.message}")
                 }
             }
         }
-        println("Finished loading $loadedCount local textures.")
+
+        println("Finished loading local textures:")
+        println("  - Loaded: $loadedCount")
+        println("  - Skipped: $skippedCount")
+        println("  - Errors: $errorCount")
     }
 
     fun getImage(id: String): ImageEntry? {
@@ -252,34 +319,48 @@ class ResourceManager(private val fileManager: FileManager) {
      * Gets a cached texture or loads it from the path (tries project dir first).
      */
     fun getTexture(path: String): BufferedImage? {
-        return textureCache.getOrPut(path) {
-            try {
-                var fileToLoad = File(path)
+        // Check cache first
+        val cached = textureCache[path]
+        if (cached != null) {
+            return cached
+        }
 
-                // If the path isn't absolute or doesn't exist, check the project's texture dir
-                if (!fileToLoad.isAbsolute || !fileToLoad.exists()) {
-                    getTexturesDirectoryFile()?.let { texDir ->
-                        val potentialFile = File(texDir, fileToLoad.name) // Look for file by name in project dir
-                        if (potentialFile.exists()) {
-                            fileToLoad = potentialFile
-                            // println("Texture found in project directory: ${fileToLoad.absolutePath}")
-                        }
+        try {
+            println("Attempting to load texture: $path")
+            var fileToLoad = File(path)
+
+            // Path resolution logic
+            if (!fileToLoad.isAbsolute || !fileToLoad.exists()) {
+                println("  File not found at path, checking project textures...")
+                getTexturesDirectoryFile()?.let { texDir ->
+                    val potentialFile = File(texDir, fileToLoad.name)
+                    if (potentialFile.exists()) {
+                        fileToLoad = potentialFile
+                        println("  Found in project directory: ${fileToLoad.absolutePath}")
+                    } else {
+                        println("  Not found in project directory either")
                     }
                 }
-
-                if (fileToLoad.exists() && fileToLoad.isFile) {
-                    // println("Loading texture: ${fileToLoad.absolutePath}")
-                    ImageIO.read(fileToLoad)
-                } else {
-                    System.err.println("Texture file not found: $path (and not found in project textures)")
-                    null
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                System.err.println("Error reading texture file $path: ${e.message}")
-                null
             }
+
+            if (fileToLoad.exists() && fileToLoad.isFile) {
+                println("  Loading texture from: ${fileToLoad.absolutePath}")
+                val image = ImageIO.read(fileToLoad)
+                if (image != null) {
+                    println("  Successfully loaded: ${fileToLoad.name} (${image.width}x${image.height})")
+                    textureCache[path] = image
+                    return image
+                } else {
+                    System.err.println("  ERROR: ImageIO returned null for ${fileToLoad.name}")
+                }
+            } else {
+                System.err.println("  ERROR: Texture file not found: $path")
+            }
+        } catch (e: Exception) {
+            System.err.println("  ERROR reading texture file $path: ${e.message}")
+            e.printStackTrace()
         }
+        return null
     }
 
     fun removeImage(id: String): Boolean {
@@ -357,13 +438,17 @@ class ResourceManager(private val fileManager: FileManager) {
 
             textureMetadata.forEach { (path, type) ->
                 // Store filename relative to textures dir if possible, otherwise full path/name
-                val file = File(path)
-                val filename = if (texturesDir != null && file.toPath().startsWith(texturesDir)) {
-                    texturesDir.relativize(file.toPath()).toString() // Store relative path
+                val file = File(path) // path is the absolute normalized key
+                val keyToSave: String
+                if (texturesDir != null && file.toPath().startsWith(texturesDir)) {
+                    // Store relative path if inside project textures dir
+                    keyToSave = texturesDir.relativize(file.toPath()).toString().replace('\\', '/') // Use forward slashes for consistency
                 } else {
-                    file.name // Fallback to just the name if outside project
+                    // Fallback to absolute path (or just name?) if outside. Let's use absolute for now.
+                    keyToSave = path // Store the absolute normalized path
+                    println("Warning: Saving absolute path for texture outside project: $path")
                 }
-                properties.setProperty(filename, type.name)
+                properties.setProperty(keyToSave, type.name)
             }
 
             FileOutputStream(metadataFile).use { outputStream ->
@@ -378,86 +463,148 @@ class ResourceManager(private val fileManager: FileManager) {
 
     // Load metadata from file
     private fun loadMetadataFromFile() {
-        val metadataFile = getMetadataFilePath()?.toFile() ?: return // No project, nothing to load
-        val texturesDir = getTexturesDirectoryFile() ?: return // Need this to resolve relative paths
+        val metadataFile = getMetadataFilePath()?.toFile() ?: return
+        val texturesDir = getTexturesDirectoryFile() ?: return
 
         if (!metadataFile.exists()) {
-            //println("Metadata file not found: ${metadataFile.absolutePath}")
+            println("DEBUG: Metadata file not found: ${metadataFile.absolutePath}")
             return
         }
 
-        println("Loading texture metadata from: ${metadataFile.absolutePath}")
+        println("\nLoading texture metadata from: ${metadataFile.absolutePath}")
         try {
             val properties = Properties()
             FileInputStream(metadataFile).use { inputStream ->
                 properties.load(inputStream)
             }
 
+            println("Loaded ${properties.size} entries from metadata file")
             val loadedMeta = ConcurrentHashMap<String, ObjectType>()
+            var successCount = 0
+            var failedCount = 0
+            var missingFileCount = 0
 
             properties.forEach { key, value ->
                 val pathOrName = key.toString()
                 val typeName = value.toString()
 
-                // Try to resolve the path relative to the textures directory first
-                val absolutePath = Paths.get(texturesDir.absolutePath, pathOrName).normalize()
-                val file = absolutePath.toFile()
+                try {
+                    // First try absolute path resolution
+                    val absolutePath = Paths.get(texturesDir.absolutePath, pathOrName).normalize()
+                    val file = absolutePath.toFile()
 
-                if (file.exists()) {
-                    try {
-                        val objectType = ObjectType.valueOf(typeName)
-                        loadedMeta[file.absolutePath] = objectType
-                        // Optionally pre-load the image entry if not already loaded
-                        if (!images.values.any { it.path == file.absolutePath }) {
-                            try {
-                                val image = ImageIO.read(file)
-                                if (image != null) {
-                                    val id = "meta_${System.currentTimeMillis()}_${images.size}"
-                                    images[id] = ImageEntry(file.name, file.absolutePath, image)
-                                    // println("Pre-loaded image from metadata: ${file.name}")
-                                }
-                            } catch (readEx: Exception) {
-                                System.err.println("Error pre-loading image from metadata ref ${file.absolutePath}: ${readEx.message}")
-                            }
-                        }
-                    } catch (e: IllegalArgumentException) {
-                        System.err.println("Warning: Unknown object type '$typeName' in metadata for '$pathOrName'")
-                    }
-                } else {
-                    // If relative path fails, maybe it was stored as just a name? Look for it.
-                    val foundFile = texturesDir.listFiles { f -> f.name == pathOrName }?.firstOrNull()
-                    if (foundFile != null) {
+                    if (file.exists()) {
                         try {
                             val objectType = ObjectType.valueOf(typeName)
-                            loadedMeta[foundFile.absolutePath] = objectType
-                            if (!images.values.any { it.path == foundFile.absolutePath }) {
+                            loadedMeta[file.absolutePath] = objectType
+
+                            // Pre-load image if needed
+                            if (!images.values.any { it.path == file.absolutePath }) {
                                 try {
-                                    val image = ImageIO.read(foundFile)
+                                    val image = ImageIO.read(file)
                                     if (image != null) {
                                         val id = "meta_${System.currentTimeMillis()}_${images.size}"
-                                        images[id] = ImageEntry(foundFile.name, foundFile.absolutePath, image)
-                                        //println("Pre-loaded image from metadata (name match): ${foundFile.name}")
+                                        images[id] = ImageEntry(file.name, file.absolutePath, image)
+                                        println("  Loaded from metadata: ${file.name} (type: $objectType)")
+                                        successCount++
+                                    } else {
+                                        println("  WARNING: Could not read image data from ${file.name}")
+                                        failedCount++
                                     }
                                 } catch (readEx: Exception) {
-                                    System.err.println("Error pre-loading image from metadata ref (name match) ${foundFile.absolutePath}: ${readEx.message}")
+                                    println("  ERROR loading ${file.name}: ${readEx.message}")
+                                    failedCount++
                                 }
+                            } else {
+                                println("  Set metadata for already loaded: ${file.name} (type: $objectType)")
+                                successCount++
                             }
                         } catch (e: IllegalArgumentException) {
-                            System.err.println("Warning: Unknown object type '$typeName' in metadata for name match '$pathOrName'")
+                            println("  WARNING: Unknown object type '$typeName' for '${file.name}'")
+                            failedCount++
                         }
                     } else {
-                        System.err.println("Warning: Could not find texture file referenced in metadata: '$pathOrName' (resolved as '${file.absolutePath}')")
+                        // Try by name match
+                        val foundFile = texturesDir.listFiles { f -> f.name == pathOrName }?.firstOrNull()
+                        if (foundFile != null) {
+                            try {
+                                val objectType = ObjectType.valueOf(typeName)
+                                loadedMeta[foundFile.absolutePath] = objectType
+
+                                if (!images.values.any { it.path == foundFile.absolutePath }) {
+                                    try {
+                                        val image = ImageIO.read(foundFile)
+                                        if (image != null) {
+                                            val id = "meta_${System.currentTimeMillis()}_${images.size}"
+                                            images[id] = ImageEntry(foundFile.name, foundFile.absolutePath, image)
+                                            println("  Loaded from metadata (by name): ${foundFile.name} (type: $objectType)")
+                                            successCount++
+                                        } else {
+                                            println("  WARNING: Could not read image data from ${foundFile.name}")
+                                            failedCount++
+                                        }
+                                    } catch (readEx: Exception) {
+                                        println("  ERROR loading ${foundFile.name}: ${readEx.message}")
+                                        failedCount++
+                                    }
+                                } else {
+                                    println("  Set metadata for already loaded (by name): ${foundFile.name} (type: $objectType)")
+                                    successCount++
+                                }
+                            } catch (e: IllegalArgumentException) {
+                                println("  WARNING: Unknown object type '$typeName' for name match '${foundFile.name}'")
+                                failedCount++
+                            }
+                        } else {
+                            println("  WARNING: Missing texture file: '$pathOrName'")
+                            missingFileCount++
+                        }
                     }
+                } catch (e: Exception) {
+                    println("  ERROR processing metadata entry '$pathOrName': ${e.message}")
+                    failedCount++
                 }
             }
-            // Replace the current metadata map atomically
+
+            // Replace metadata map
             textureMetadata.clear()
             textureMetadata.putAll(loadedMeta)
-            println("Finished loading ${textureMetadata.size} metadata entries.")
+
+            println("Metadata loading complete:")
+            println("  - Success: $successCount")
+            println("  - Failed: $failedCount")
+            println("  - Missing files: $missingFileCount")
 
         } catch (e: Exception) {
+            System.err.println("ERROR loading texture metadata: ${e.message}")
             e.printStackTrace()
-            System.err.println("Error loading texture metadata: ${e.message}")
         }
+    }
+
+    // Inside ResourceManager class
+    fun reloadProjectAssets() {
+        println("==== Reloading Project Assets ====")
+        // Consider a more nuanced merge if needed later.
+        images.clear() // Might be too aggressive? Maybe only clear project-related ones?
+        textureCache.clear()
+        textureMetadata.clear()
+
+        // Re-create textures directory if needed (should exist if project loaded)
+        getTexturesDirectoryPath()?.let { path ->
+            if (!path.exists()) {
+                try {
+                    path.createDirectories()
+                } catch (e: Exception) { /* handle error */ }
+            }
+
+            // Reload metadata first using the current project context
+            loadMetadataFromFile()
+
+            // Reload all textures from the project's textures directory
+            loadAllLocalTextures()
+        } ?: println("ResourceManager reload: No active project.")
+
+        dumpResourceState() // Dump state after reload
+        println("==== Project Assets Reload Complete ====")
     }
 }
