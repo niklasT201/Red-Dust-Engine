@@ -18,6 +18,7 @@ import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreeSelectionModel
 import java.text.SimpleDateFormat
 import java.util.*
+import javax.swing.border.CompoundBorder
 
 class ProjectAssetsDialog(
     parent: JFrame?,
@@ -707,14 +708,21 @@ class ProjectAssetsDialog(
     }
 
     private fun createStyledBorder(title: String): javax.swing.border.Border {
-        return BorderFactory.createTitledBorder(
-            BorderFactory.createLineBorder(Color(70, 73, 75)),
+        // 1. Create the original TitledBorder
+        val titledBorder = BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(Color(70, 73, 75)), // The line around the panel
             title,
             TitledBorder.LEFT,
             TitledBorder.TOP,
             Font("Arial", Font.BOLD, 12),
-            ACCENT_COLOR
+            ACCENT_COLOR // Title text color
         )
+
+        // 2. Create an EmptyBorder for padding (adjust the first '8' for more/less space)
+        val topPadding = BorderFactory.createEmptyBorder(8, 0, 0, 0) // 8px top padding
+
+        // 3. Combine them: Padding is outer, TitledBorder is inner
+        return CompoundBorder(topPadding, titledBorder)
     }
 
     private fun createGlowingSeparator(): JPanel {
