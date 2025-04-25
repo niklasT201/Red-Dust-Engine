@@ -5,15 +5,15 @@ import ObjectType
 import grideditor.GridEditor
 import ui.topbar.FileManager
 import java.awt.*
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import java.awt.image.BufferedImage
 import java.io.File
 import java.nio.file.Paths
-import javax.imageio.ImageIO
 import javax.swing.*
-import javax.swing.border.TitledBorder
 import javax.swing.filechooser.FileNameExtensionFilter
 
-class TextureManagerPanel(private val resourceManager: ResourceManager,  private val fileManager: FileManager) : JPanel() {
+class TextureManagerPanel(private val resourceManager: ResourceManager, private val fileManager: FileManager) : JPanel() {
     var gridEditor: GridEditor? = null
 
     // Filter the object types to only include FLOOR and WALL
@@ -36,6 +36,14 @@ class TextureManagerPanel(private val resourceManager: ResourceManager,  private
     // Last browsed directory
     private var lastDirectory: File? = null
 
+    private val bgColor = Color(30, 33, 40)
+    private val panelColor = Color(35, 38, 45)
+    private val listBgColor = Color(40, 43, 50)
+    private val highlightColor = Color(220, 95, 60) // The orange/red accent color
+    private val buttonColor = Color(60, 63, 70)
+    private val buttonHoverColor = Color(80, 83, 90)
+    private val borderColor = Color(50, 53, 60)
+
     data class TextureEntry(
         val objectType: ObjectType,
         val imageEntry: ImageEntry,
@@ -43,81 +51,118 @@ class TextureManagerPanel(private val resourceManager: ResourceManager,  private
     )
 
     init {
-        layout = BoxLayout(this, BoxLayout.Y_AXIS)
-        background = Color(40, 44, 52)
-        border = BorderFactory.createTitledBorder(
-            BorderFactory.createLineBorder(Color(70, 73, 75)),
-            "Texture Manager",
-            TitledBorder.LEFT,
-            TitledBorder.TOP,
-            null,
-            Color.WHITE
-        )
+        layout = BorderLayout(5, 5)
+        background = bgColor
+        border = BorderFactory.createEmptyBorder(5, 5, 5, 5)
 
-        // Object Type Selection
-        val typePanel = JPanel().apply {
-            layout = BoxLayout(this, BoxLayout.X_AXIS)
-            background = Color(40, 44, 52)
-            add(JLabel("Object Type:").apply { foreground = Color.WHITE })
-            add(Box.createHorizontalStrut(10))
-            add(objectTypeComboBox.apply {
-                background = Color(60, 63, 65)
-                foreground = Color.WHITE
-            })
-            alignmentX = LEFT_ALIGNMENT
+        // Title panel with gradient
+        val titlePanel = createGradientPanel().apply {
+            layout = BorderLayout()
+            preferredSize = Dimension(0, 30)
+
+            // Title label
+            add(JLabel("TEXTURE MANAGER", SwingConstants.CENTER).apply {
+                foreground = highlightColor
+                font = Font("Arial", Font.BOLD, 14)
+                border = BorderFactory.createEmptyBorder(5, 0, 5, 0)
+            }, BorderLayout.CENTER)
         }
 
-        // Texture List
+        // Main content panel
+        val contentPanel = JPanel().apply {
+            layout = BorderLayout(10, 10)
+            background = bgColor
+            border = BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        }
+
+        // Object Type Selection with styled combo box
+        val typePanel = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.X_AXIS)
+            background = bgColor
+
+            add(JLabel("Object Type:").apply {
+                foreground = Color.WHITE
+                font = Font("Arial", Font.BOLD, 12)
+            })
+            add(Box.createHorizontalStrut(10))
+            add(objectTypeComboBox.apply {
+                background = buttonColor
+                foreground = Color.WHITE
+                renderer = createStyledComboBoxRenderer()
+                maximumSize = Dimension(120, 25)
+            })
+            border = BorderFactory.createEmptyBorder(0, 0, 5, 0)
+        }
+
+        // Texture List with custom renderer
         textureList.apply {
-            background = Color(50, 54, 62)
+            background = listBgColor
             foreground = Color.WHITE
-            selectionBackground = Color(100, 100, 255)
+            selectionBackground = highlightColor.darker()
             selectionForeground = Color.WHITE
             visibleRowCount = 5
-            fixedCellHeight = 40 // Increased height for thumbnails
+            fixedCellHeight = 32
             cellRenderer = createTextureListRenderer()
         }
 
         val scrollPane = JScrollPane(textureList).apply {
-            preferredSize = Dimension(0, 150) // Increased height
-            border = BorderFactory.createLineBorder(Color(70, 73, 75))
-            background = Color(40, 44, 52)
-            alignmentX = LEFT_ALIGNMENT
+            preferredSize = Dimension(0, 140)
+            border = BorderFactory.createLineBorder(borderColor)
+            background = bgColor
         }
 
-        // Preview Panel
+        // Left side panel - list and controls
+        val leftPanel = JPanel().apply {
+            layout = BorderLayout(0, 5)
+            background = bgColor
+
+            add(typePanel, BorderLayout.NORTH)
+            add(scrollPane, BorderLayout.CENTER)
+        }
+
+        // Right side panel - preview and action buttons
+        val rightPanel = JPanel().apply {
+            layout = BorderLayout(0, 5)
+            background = bgColor
+        }
+
+        // Preview Panel with styled border
         val previewPanel = JPanel().apply {
-            layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            background = Color(40, 44, 52)
-            border = BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(Color(70, 73, 75)),
-                "Preview",
-                TitledBorder.LEFT,
-                TitledBorder.TOP,
-                null,
-                Color.WHITE
+            layout = BorderLayout()
+            background = panelColor
+            border = BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(borderColor),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
             )
-            alignmentX = LEFT_ALIGNMENT
+            preferredSize = Dimension(120, 120)
+
+            // Preview label centered
+            add(JLabel("Preview", SwingConstants.CENTER).apply {
+                foreground = Color.WHITE
+                font = Font("Arial", Font.BOLD, 12)
+                border = BorderFactory.createEmptyBorder(0, 0, 5, 0)
+            }, BorderLayout.NORTH)
 
             // Create a fixed-size panel for the preview
             add(JPanel().apply {
-                preferredSize = Dimension(150, 150) // Larger preview
-                background = Color(50, 54, 62)
+                background = listBgColor
                 layout = BorderLayout()
                 add(previewLabel, BorderLayout.CENTER)
-            })
+                border = BorderFactory.createLineBorder(borderColor)
+            }, BorderLayout.CENTER)
         }
 
-        // Buttons
+        // Streamlined action buttons - now in a vertical layout
         val buttonPanel = JPanel().apply {
-            layout = GridLayout(3, 2, 5, 5) // Changed from 2x2 to 3x2 to add new button
-            background = Color(40, 44, 52)
-            alignmentX = LEFT_ALIGNMENT
+            layout = GridLayout(0, 1, 0, 5)
+            background = bgColor
+            border = BorderFactory.createEmptyBorder(5, 0, 0, 0)
 
-            add(createButton("Add Texture") { addTexture() })
-            add(createButton("Add Folder") { addTextureFolder() })
-            add(createButton("Remove") { removeSelectedTexture() })
-            add(createButton("Set Default") {
+            // Group related actions
+            add(createActionButton("Add Texture", "Plus", false) { addTexture() })
+            add(createActionButton("Add Folder", "FolderPlus", false) { addTextureFolder() })
+            add(Box.createVerticalStrut(5)) // Spacer
+            add(createActionButton("Set Default", "Star", false) {
                 val selectedEntry = textureList.selectedValue
                 if (selectedEntry != null) {
                     val objectType = selectedEntry.objectType
@@ -126,27 +171,29 @@ class TextureManagerPanel(private val resourceManager: ResourceManager,  private
                     // Notify listener (EditorPanel) to update GridEditor
                     textureSelectionListener?.onTextureSetAsDefault(selectedEntry, objectType)
                 } else {
-                    JOptionPane.showMessageDialog(this, "No texture selected!", "Error", JOptionPane.ERROR_MESSAGE)
+                    showErrorMessage("No texture selected!")
                 }
             })
-            // Use color instead of texture
-            add(createButton("Use Color") {
+            add(createActionButton("Use Color", "Palette", false) {
                 val objectType = objectTypeComboBox.selectedItem as ObjectType
                 clearTextureForType(objectType)
             })
-            // Add the NEW button
-            add(createButton("View Project Assets") { viewProjectAssets() }) // New Button
+            add(Box.createVerticalStrut(5)) // Spacer
+            add(createActionButton("Remove", "Trash", true) { removeSelectedTexture() })
+            add(createActionButton("Project Assets", "FolderOpen", false) { viewProjectAssets() })
         }
 
-        // Layout
-        add(typePanel)
-        add(Box.createVerticalStrut(10))
-        add(scrollPane)
-        add(Box.createVerticalStrut(10))
-        add(previewPanel)
-        add(Box.createVerticalStrut(10))
-        add(buttonPanel)
-        add(Box.createVerticalGlue())
+        // Add components to right panel
+        rightPanel.add(previewPanel, BorderLayout.CENTER)
+        rightPanel.add(buttonPanel, BorderLayout.SOUTH)
+
+        // Add main components to content panel
+        contentPanel.add(leftPanel, BorderLayout.CENTER)
+        contentPanel.add(rightPanel, BorderLayout.EAST)
+
+        // Layout the main panel
+        add(titlePanel, BorderLayout.NORTH)
+        add(contentPanel, BorderLayout.CENTER)
 
         // Event Listeners
         objectTypeComboBox.addActionListener { updateTextureList() }
@@ -191,14 +238,65 @@ class TextureManagerPanel(private val resourceManager: ResourceManager,  private
         textureSelectionListener = listener
     }
 
-    private fun createButton(text: String, action: () -> Unit): JButton {
+    private fun createGradientPanel(): JPanel {
+        return object : JPanel() {
+            override fun paintComponent(g: Graphics) {
+                super.paintComponent(g)
+                val g2d = g as Graphics2D
+                val gradientPaint = GradientPaint(
+                    0f, 0f, Color(30, 33, 40),
+                    0f, height.toFloat(), Color(40, 43, 50)
+                )
+                g2d.paint = gradientPaint
+                g2d.fillRect(0, 0, width, height)
+            }
+        }
+    }
+
+    private fun createActionButton(text: String, iconName: String, isDanger: Boolean, action: () -> Unit): JButton {
         return JButton(text).apply {
-            background = Color(60, 63, 65)
+            background = if (isDanger) Color(150, 50, 50) else buttonColor
             foreground = Color.WHITE
             isFocusPainted = false
-            maximumSize = Dimension(140, 25)  // Reduced height from 30
-            margin = Insets(2, 4, 2, 4)  // Smaller internal margins
+            font = Font("Arial", Font.BOLD, 11)
+            border = BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(borderColor),
+                BorderFactory.createEmptyBorder(4, 8, 4, 8)
+            )
+
+            // Style button on hover
+            addMouseListener(object : MouseAdapter() {
+                override fun mouseEntered(e: MouseEvent) {
+                    background = if (isDanger) Color(180, 60, 60) else buttonHoverColor
+                }
+
+                override fun mouseExited(e: MouseEvent) {
+                    background = if (isDanger) Color(150, 50, 50) else buttonColor
+                }
+            })
+
             addActionListener { action() }
+        }
+    }
+
+    private fun createStyledComboBoxRenderer(): DefaultListCellRenderer {
+        return object : DefaultListCellRenderer() {
+            override fun getListCellRendererComponent(
+                list: JList<*>?,
+                value: Any?,
+                index: Int,
+                isSelected: Boolean,
+                cellHasFocus: Boolean
+            ): Component {
+                val component = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus)
+                if (component is JLabel) {
+                    component.foreground = if (isSelected) Color.WHITE else Color.WHITE
+                    component.background = if (isSelected) highlightColor else buttonColor
+                    component.border = BorderFactory.createEmptyBorder(2, 5, 2, 5)
+                    component.font = Font("Arial", Font.PLAIN, 12)
+                }
+                return component
+            }
         }
     }
 
@@ -211,28 +309,59 @@ class TextureManagerPanel(private val resourceManager: ResourceManager,  private
                 isSelected: Boolean,
                 cellHasFocus: Boolean
             ): Component {
-                val panel = JPanel(BorderLayout()).apply {
-                    background = if (isSelected) Color(100, 100, 255) else Color(50, 54, 62)
+                val panel = JPanel(BorderLayout(6, 0)).apply {
+                    background = if (isSelected) highlightColor.darker() else listBgColor
                     border = BorderFactory.createEmptyBorder(2, 5, 2, 5)
                 }
 
                 val entry = value as? TextureEntry
                 if (entry != null) {
-                    // Create thumbnail
-                    val thumb = createThumbnail(entry.imageEntry.image, 32, 32)
-                    val imageLabel = JLabel(ImageIcon(thumb))
+                    // Create thumbnail with border
+                    val thumb = createThumbnail(entry.imageEntry.image, 24, 24)
+                    val imagePanel = JPanel(BorderLayout()).apply {
+                        background = panel.background
+                        preferredSize = Dimension(28, 28)
 
-                    // Create text label
-                    val textLabel = JLabel(if (entry.isDefault) "${entry.imageEntry.name} (Default)" else entry.imageEntry.name)
+                        // Add thumbnail with border
+                        val imageLabel = JLabel(ImageIcon(thumb))
+                        imageLabel.border = BorderFactory.createLineBorder(borderColor)
+                        add(imageLabel, BorderLayout.CENTER)
+                    }
+
+                    // Create text label with custom styling
+                    val textLabel = JLabel(if (entry.isDefault) "${entry.imageEntry.name} ★" else entry.imageEntry.name)
                     textLabel.foreground = Color.WHITE
+                    textLabel.font = if (entry.isDefault)
+                        Font("Arial", Font.BOLD, 12)
+                    else
+                        Font("Arial", Font.PLAIN, 12)
 
-                    panel.add(imageLabel, BorderLayout.WEST)
+                    panel.add(imagePanel, BorderLayout.WEST)
                     panel.add(textLabel, BorderLayout.CENTER)
+
+                    // Add indicator for default textures
+                    if (entry.isDefault) {
+                        panel.add(JLabel().apply {
+                            foreground = Color.YELLOW
+                            font = Font("Arial", Font.BOLD, 14)
+                            horizontalAlignment = SwingConstants.RIGHT
+                        }, BorderLayout.EAST)
+                    }
                 }
 
                 return panel
             }
         }
+    }
+
+    // Show styled error message
+    private fun showErrorMessage(message: String) {
+        JOptionPane.showMessageDialog(
+            this,
+            message,
+            "Error",
+            JOptionPane.ERROR_MESSAGE
+        )
     }
 
     private fun createThumbnail(image: Image, width: Int, height: Int): Image {
@@ -262,7 +391,7 @@ class TextureManagerPanel(private val resourceManager: ResourceManager,  private
                     if (imageEntry != null) {
                         addTextureEntry(imageEntry)
                     } else {
-                        JOptionPane.showMessageDialog(this, "Could not load image: ${file.name}", "Error", JOptionPane.ERROR_MESSAGE)
+                        JOptionPane.showMessageDialog(this, "Please create/save your current project first before using images. Could not load image: ${file.name}", "Error", JOptionPane.ERROR_MESSAGE)
                     }
                 } catch (e: Exception) {
                     JOptionPane.showMessageDialog(this, "Error loading image: ${e.message}", "Error", JOptionPane.ERROR_MESSAGE)

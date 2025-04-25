@@ -53,7 +53,7 @@ fun main() {
 // pillar mode visible behind water color button
 // create assets system
 // saving folder path for finding images faster
-// texture manager design fix
+// texture manager showing images for right object again
 
 
 // Object List:
