@@ -10,6 +10,7 @@ import java.awt.event.MouseEvent
 import java.awt.image.BufferedImage
 import java.io.File
 import java.nio.file.Paths
+import java.util.prefs.Preferences
 import javax.swing.*
 import javax.swing.filechooser.FileNameExtensionFilter
 
@@ -44,6 +45,11 @@ class TextureManagerPanel(private val resourceManager: ResourceManager, private 
     private val buttonHoverColor = Color(80, 83, 90)
     private val borderColor = Color(50, 53, 60)
 
+    companion object {
+        // Unique key for storing the last directory preference
+        private const val PREF_KEY_LAST_DIR = "textureManagerLastDirectory"
+    }
+
     data class TextureEntry(
         val objectType: ObjectType,
         val imageEntry: ImageEntry,
@@ -54,6 +60,8 @@ class TextureManagerPanel(private val resourceManager: ResourceManager, private 
         layout = BorderLayout(5, 5)
         background = bgColor
         border = BorderFactory.createEmptyBorder(5, 5, 5, 5)
+
+        loadLastDirectoryPreference()
 
         // Title panel with gradient
         val titlePanel = createGradientPanel().apply {
@@ -382,6 +390,7 @@ class TextureManagerPanel(private val resourceManager: ResourceManager, private 
 
         if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             lastDirectory = fileChooser.currentDirectory
+            saveLastDirectoryPreference(lastDirectory)
             val files = fileChooser.selectedFiles
 
             for (file in files) {
@@ -409,6 +418,8 @@ class TextureManagerPanel(private val resourceManager: ResourceManager, private 
 
         if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             lastDirectory = fileChooser.selectedFile
+            saveLastDirectoryPreference(lastDirectory)
+
             val directory = fileChooser.selectedFile
 
             // Use ResourceManager to load textures from directory
@@ -701,5 +712,50 @@ class TextureManagerPanel(private val resourceManager: ResourceManager, private 
             textureList.selectedIndex = 0
         }
         updatePreview()
+    }
+
+    private fun loadLastDirectoryPreference() {
+        try {
+            val prefs = Preferences.userNodeForPackage(TextureManagerPanel::class.java)
+            val savedPath = prefs.get(PREF_KEY_LAST_DIR, null) // Get saved path, default null
+            if (savedPath != null) {
+                val savedDir = File(savedPath)
+                // Check if the saved directory still exists and is valid
+                if (savedDir.exists() && savedDir.isDirectory) {
+                    lastDirectory = savedDir
+                    println("TextureManagerPanel: Loaded last directory preference: $savedPath")
+                } else {
+                    println("TextureManagerPanel: Saved last directory '$savedPath' no longer exists or is not a directory.")
+                    // Optionally remove the invalid preference
+                    prefs.remove(PREF_KEY_LAST_DIR)
+                }
+            } else {
+                println("TextureManagerPanel: No last directory preference found.")
+            }
+        } catch (e: SecurityException) {
+            System.err.println("Warning: Could not access preferences to load last directory: ${e.message}")
+        } catch (e: Exception) {
+            System.err.println("Error loading last directory preference: ${e.message}")
+        }
+    }
+
+    // --- Method to save the preference ---
+    private fun saveLastDirectoryPreference(directory: File?) {
+        try {
+            val prefs = Preferences.userNodeForPackage(TextureManagerPanel::class.java)
+            if (directory != null && directory.isDirectory) {
+                prefs.put(PREF_KEY_LAST_DIR, directory.absolutePath)
+                // prefs.flush() // Usually not strictly necessary, but can ensure write
+                println("TextureManagerPanel: Saved last directory preference: ${directory.absolutePath}")
+            } else {
+                // If directory is null or invalid, remove the preference
+                prefs.remove(PREF_KEY_LAST_DIR)
+                println("TextureManagerPanel: Cleared last directory preference.")
+            }
+        } catch (e: SecurityException) {
+            System.err.println("Warning: Could not access preferences to save last directory: ${e.message}")
+        } catch (e: Exception) {
+            System.err.println("Error saving last directory preference: ${e.message}")
+        }
     }
 }
