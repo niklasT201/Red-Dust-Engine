@@ -366,8 +366,10 @@ class ResourceManager(private val fileManager: FileManager) {
         }
 
         try {
-            println("Attempting to load texture: $path")
+            println("ResourceManager.getTexture: Attempting to load '$path'") // Input path
             var fileToLoad = File(path)
+            val originalPathExists = fileToLoad.exists() && fileToLoad.isFile
+            println("  Original path '$path' exists? $originalPathExists")
 
             // Path resolution logic - try objects directory first, then base textures
             if (!fileToLoad.isAbsolute || !fileToLoad.exists()) {
@@ -393,18 +395,19 @@ class ResourceManager(private val fileManager: FileManager) {
                 }
             }
 
+            println("  Final file path to load: '${fileToLoad.absolutePath}'")
             if (fileToLoad.exists() && fileToLoad.isFile) {
                 println("  Loading texture from: ${fileToLoad.absolutePath}")
                 val image = ImageIO.read(fileToLoad)
                 if (image != null) {
-                    println("  Successfully loaded: ${fileToLoad.name} (${image.width}x${image.height})")
-                    textureCache[path] = image
+                    println("  SUCCESS: Loaded ${fileToLoad.name} (${image.width}x${image.height})")
+                    textureCache[path] = image // Use original path as cache key
                     return image
                 } else {
-                    System.err.println("  ERROR: ImageIO returned null for ${fileToLoad.name}")
+                    System.err.println("  ERROR: ImageIO.read returned null for ${fileToLoad.absolutePath}")
                 }
             } else {
-                System.err.println("  ERROR: Texture file not found: $path")
+                System.err.println("  ERROR: Texture file not found or not a file: ${fileToLoad.absolutePath}")
             }
         } catch (e: Exception) {
             System.err.println("  ERROR reading texture file $path: ${e.message}")
@@ -524,10 +527,9 @@ class ResourceManager(private val fileManager: FileManager) {
     // Load metadata from file
     private fun loadMetadataFromFile() {
         val metadataFile = getMetadataFilePath()?.toFile() ?: return
-        val objectsDir = getTexturesDirectoryFile()
-        val baseDir = getBaseTexturesDirectoryFile()
-
-        if (objectsDir == null && baseDir == null) return
+        // No need for objectsDir/baseDir here if keys are absolute paths
+        // val objectsDir = getTexturesDirectoryFile()
+        // val baseDir = getBaseTexturesDirectoryFile()
 
         if (!metadataFile.exists()) {
             println("DEBUG: Metadata file not found: ${metadataFile.absolutePath}")
@@ -548,69 +550,35 @@ class ResourceManager(private val fileManager: FileManager) {
             var missingFileCount = 0
 
             properties.forEach { key, value ->
-                val pathOrName = key.toString()
+                val pathKey = key.toString() // The key IS the absolute path
                 val typeName = value.toString()
 
                 try {
-                    // Check if it's a base texture (prefixed with "base:")
-                    if (pathOrName.startsWith("base:") && baseDir != null) {
-                        val relativePath = pathOrName.substring(5) // Remove "base:" prefix
-                        val absolutePath = Paths.get(baseDir.toString(), relativePath).normalize()
-                        loadTextureMetadataEntry(absolutePath.toFile(), typeName, loadedMeta)?.let {
+                    // Convert the key directly to a Path and File
+                    val absolutePath = Paths.get(pathKey).normalize() // Normalize just in case
+                    val file = absolutePath.toFile()
+
+                    if (file.exists() && file.isFile) {
+                        // Pass the existing file to the helper
+                        loadTextureMetadataEntry(file, typeName, loadedMeta)?.let {
                             successCount++
-                        } ?: run { failedCount++ }
-                    }
-                    // Try objects directory first (for non-prefixed paths)
-                    else if (objectsDir != null) {
-                        val absolutePath = Paths.get(objectsDir.absolutePath, pathOrName).normalize()
-                        val file = absolutePath.toFile()
-
-                        if (file.exists()) {
-                            loadTextureMetadataEntry(file, typeName, loadedMeta)?.let {
-                                successCount++
-                            } ?: run { failedCount++ }
+                        } ?: run {
+                            // loadTextureMetadataEntry handles internal errors/warnings
+                            failedCount++ // Count as failed if helper returns null
                         }
-                        // If not found in objects dir and no base: prefix, try base dir
-                        else if (baseDir != null) {
-                            val baseAbsolutePath = Paths.get(baseDir.absolutePath, pathOrName).normalize()
-                            val baseFile = baseAbsolutePath.toFile()
-
-                            if (baseFile.exists()) {
-                                loadTextureMetadataEntry(baseFile, typeName, loadedMeta)?.let {
-                                    successCount++
-                                } ?: run { failedCount++ }
-                            } else {
-                                // Try by name match across both directories
-                                val foundInObjects = objectsDir.listFiles { f -> f.name == pathOrName }?.firstOrNull()
-                                val foundInBase = baseDir.listFiles { f -> f.name == pathOrName }?.firstOrNull()
-
-                                when {
-                                    foundInObjects != null -> {
-                                        loadTextureMetadataEntry(foundInObjects, typeName, loadedMeta)?.let {
-                                            successCount++
-                                        } ?: run { failedCount++ }
-                                    }
-                                    foundInBase != null -> {
-                                        loadTextureMetadataEntry(foundInBase, typeName, loadedMeta)?.let {
-                                            successCount++
-                                        } ?: run { failedCount++ }
-                                    }
-                                    else -> {
-                                        println("  WARNING: Missing texture file: '$pathOrName'")
-                                        missingFileCount++
-                                    }
-                                }
-                            }
-                        } else {
-                            println("  WARNING: Missing texture file: '$pathOrName'")
-                            missingFileCount++
-                        }
+                    } else {
+                        // File specified in metadata doesn't exist
+                        println("  WARNING: Texture file from metadata key not found: '$pathKey'")
+                        missingFileCount++
                     }
+
                 } catch (e: Exception) {
-                    println("  ERROR processing metadata entry '$pathOrName': ${e.message}")
+                    // Catch errors during path processing or loading for a single entry
+                    println("  ERROR processing metadata entry '$pathKey': ${e.message}")
+                    e.printStackTrace()
                     failedCount++
                 }
-            }
+            } // End properties.forEach
 
             // Replace metadata map
             textureMetadata.clear()
@@ -622,7 +590,8 @@ class ResourceManager(private val fileManager: FileManager) {
             println("  - Missing files: $missingFileCount")
 
         } catch (e: Exception) {
-            System.err.println("ERROR loading texture metadata: ${e.message}")
+            // Catch errors loading the properties file itself
+            System.err.println("ERROR loading texture metadata file: ${e.message}")
             e.printStackTrace()
         }
     }
@@ -634,22 +603,24 @@ class ResourceManager(private val fileManager: FileManager) {
     private fun loadTextureMetadataEntry(file: File, typeName: String, loadedMeta: ConcurrentHashMap<String, ObjectType>): ObjectType? {
         try {
             val objectType = ObjectType.valueOf(typeName)
-            loadedMeta[file.absolutePath] = objectType
+            val absolutePathKey = file.toPath().toAbsolutePath().normalize().toString() // Use normalized absolute path as the key
 
-            // Pre-load image if needed
-            if (!images.values.any { it.path == file.absolutePath }) {
+            loadedMeta[absolutePathKey] = objectType // Store metadata using the correct key
+
+            // Pre-load image if not already loaded by loadAllLocalTextures
+            if (!images.values.any { it.path == absolutePathKey }) {
                 try {
                     val image = ImageIO.read(file)
                     if (image != null) {
                         val id = "meta_${System.currentTimeMillis()}_${images.size}"
-                        images[id] = ImageEntry(file.name, file.absolutePath, image)
+                        images[id] = ImageEntry(file.name, absolutePathKey, image) // Use absolutePathKey
                         println("  Loaded from metadata: ${file.name} (type: $objectType)")
                         return objectType
                     } else {
                         println("  WARNING: Could not read image data from ${file.name}")
                     }
                 } catch (readEx: Exception) {
-                    println("  ERROR loading ${file.name}: ${readEx.message}")
+                    println("  ERROR loading image for metadata entry ${file.name}: ${readEx.message}")
                 }
             } else {
                 println("  Set metadata for already loaded: ${file.name} (type: $objectType)")
@@ -657,8 +628,10 @@ class ResourceManager(private val fileManager: FileManager) {
             }
         } catch (e: IllegalArgumentException) {
             println("  WARNING: Unknown object type '$typeName' for '${file.name}'")
+        } catch (e: Exception) {
+            println("  ERROR in loadTextureMetadataEntry for '${file.name}': ${e.message}")
         }
-        return null
+        return null // Return null if loading failed or type was invalid
     }
 
     // Inside ResourceManager class

@@ -52,7 +52,6 @@ fun main() {
 // ui values referencing actual values
 // pillar mode visible behind water color button
 // create assets system
-// texture manager showing images for right object again
 
 
 // Object List:
