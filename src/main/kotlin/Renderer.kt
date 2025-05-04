@@ -1,5 +1,6 @@
 import player.Camera
 import render.*
+import render.optimization.ViewFrustum
 import java.awt.*
 import kotlin.math.*
 
@@ -14,6 +15,7 @@ class Renderer(
     private var farPlane = 100.0
     var enableRenderDistance = true
     var maxRenderDistance = 50.0
+    private val viewFrustum = ViewFrustum(fov, fov * height / width, nearPlane, farPlane)
 
     // Border properties
     var borderColor = Color.BLACK
@@ -66,6 +68,7 @@ class Renderer(
 
     // Main scene drawing method
     fun drawScene(g2: Graphics2D, walls: List<Wall>, floors: List<Floor>, waters: List<WaterSurface>, ramps: List<Ramp>, camera: Camera) {
+        viewFrustum.update(camera)
         val renderQueue = mutableListOf<RenderableObject>()
 
         // Process floors

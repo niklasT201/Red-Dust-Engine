@@ -48,7 +48,6 @@ fun main() {
 // player moving a bit when in water
 // add checkExistingWorlds feature, double press to load file
 // move border panel to world tab
-// ui checks for any ui file, otherwise uses default one
 // ui values referencing actual values
 // pillar mode visible behind water color button
 // create assets system
@@ -76,6 +75,14 @@ fun main() {
 // distance-based culling
 // Cache calculations
 // spatial partitioning system (like BSP or quadtree)
+
+//Consider implementing column-based rendering rather than traditional triangle rasterization
+//Simplify your world representation to a 2.5D approach
+//Use spatial partitioning (BSP, portals) to quickly determine what's visible
+//Limit vertical look angles if possible
+//Use fixed-point math in performance-critical areas
+//Implement view frustum culling aggressively
+//Cache calculations where possible
 
 // basic lighting system
 // support for ceiling textures
